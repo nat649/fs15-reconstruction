@@ -43,6 +43,7 @@ struct Node {
 // distinct so the host can implement delete(handle) without a Lua state argument.
 std::unordered_map<int, std::unique_ptr<Node>> documents;
 int next_handle = 0x100000;
+constexpr size_t max_xml_bytes = 8 * 1024 * 1024;
 
 struct Context {
     ResourceResolver resolve;
@@ -87,14 +88,10 @@ std::string node_value(IXmlReader* reader) {
     return utf8(value, length);
 }
 
-std::unique_ptr<Node> parse_xml(const std::filesystem::path& path) {
-    ComPtr<IStream> stream;
-    const HRESULT opened = SHCreateStreamOnFileEx(path.c_str(), STGM_READ | STGM_SHARE_DENY_WRITE,
-                                                  FILE_ATTRIBUTE_NORMAL, FALSE, nullptr, stream.GetAddressOf());
-    if (FAILED(opened)) {
-        throw std::runtime_error("Cannot open XML file " + path.u8string() + " (HRESULT " +
-                                 std::to_string(static_cast<unsigned long>(opened)) + ")");
-    }
+std::unique_ptr<Node> parse_xml_stream(IStream* stream) {
+    STATSTG details{};
+    check(stream->Stat(&details, STATFLAG_NONAME), "Read XML stream size");
+    if (details.cbSize.QuadPart > max_xml_bytes) throw std::runtime_error("XML exceeds the 8 MiB limit");
     ComPtr<IXmlReader> reader;
     check(CreateXmlReader(__uuidof(IXmlReader),
                           reinterpret_cast<void**>(reader.GetAddressOf()), nullptr), "Create XML reader");
@@ -102,7 +99,7 @@ std::unique_ptr<Node> parse_xml(const std::filesystem::path& path) {
     // installed; external paths and network entities cannot be requested.
     check(reader->SetProperty(XmlReaderProperty_DtdProcessing, DtdProcessing_Prohibit), "Prohibit XML DTD");
     check(reader->SetProperty(XmlReaderProperty_MaxElementDepth, 512), "Set XML depth limit");
-    check(reader->SetInput(stream.Get()), "Set XML input");
+    check(reader->SetInput(stream), "Set XML input");
 
     std::unique_ptr<Node> root;
     std::vector<Node*> stack;
@@ -155,6 +152,26 @@ std::unique_ptr<Node> parse_xml(const std::filesystem::path& path) {
     }
     if (!root || !stack.empty()) throw std::runtime_error("XML has no complete root element");
     return root;
+}
+
+std::unique_ptr<Node> parse_xml(const std::filesystem::path& path) {
+    ComPtr<IStream> stream;
+    const HRESULT opened = SHCreateStreamOnFileEx(path.c_str(), STGM_READ | STGM_SHARE_DENY_WRITE,
+                                                  FILE_ATTRIBUTE_NORMAL, FALSE, nullptr, stream.GetAddressOf());
+    if (FAILED(opened)) {
+        throw std::runtime_error("Cannot open XML file " + path.u8string() + " (HRESULT " +
+                                 std::to_string(static_cast<unsigned long>(opened)) + ")");
+    }
+    return parse_xml_stream(stream.Get());
+}
+
+std::unique_ptr<Node> parse_xml_memory(std::string_view xml) {
+    if (xml.empty()) throw std::runtime_error("XML memory input is empty");
+    if (xml.size() > max_xml_bytes) throw std::runtime_error("XML exceeds the 8 MiB limit");
+    ComPtr<IStream> stream;
+    stream.Attach(SHCreateMemStream(reinterpret_cast<const BYTE*>(xml.data()), static_cast<UINT>(xml.size())));
+    if (!stream) throw std::runtime_error("Cannot create XML memory stream");
+    return parse_xml_stream(stream.Get());
 }
 
 struct Segment {
@@ -244,17 +261,28 @@ int protected_call(lua_State* state) {
     return lua_error(state);
 }
 
-int load_document(lua_State* state) {
-    luaL_checkstring(state, 1);  // Diagnostic document name; path controls loading.
-    const char* path = luaL_checkstring(state, 2);
+int store_document(lua_State* state, std::unique_ptr<Node> root) {
     auto* context = static_cast<Context*>(lua_touserdata(state, lua_upvalueindex(1)));
-    auto root = parse_xml(context->resolve(path));
     if (next_handle == std::numeric_limits<int>::max()) throw std::runtime_error("XML handle range exhausted");
     const int handle = next_handle++;
     context->owned.insert(handle);
     documents.emplace(handle, std::move(root));
     lua_pushinteger(state, handle);
     return 1;
+}
+
+int load_document(lua_State* state) {
+    luaL_checkstring(state, 1);  // Diagnostic document name; path controls loading.
+    const char* path = luaL_checkstring(state, 2);
+    auto* context = static_cast<Context*>(lua_touserdata(state, lua_upvalueindex(1)));
+    return store_document(state, parse_xml(context->resolve(path)));
+}
+
+int load_memory_document(lua_State* state) {
+    luaL_checkstring(state, 1);
+    size_t size = 0;
+    const char* xml = luaL_checklstring(state, 2, &size);
+    return store_document(state, parse_xml_memory({xml, size}));
 }
 
 int read_string(lua_State* state) {
@@ -352,6 +380,7 @@ void register_xml(lua_State* state, ResourceResolver resolver) {
     const int context_index = lua_gettop(state);
     const luaL_Reg functions[] = {
         {"loadXMLFile", protected_call<load_document>},
+        {"loadXMLFileFromMemory", protected_call<load_memory_document>},
         {"getXMLString", protected_call<read_string>},
         {"getXMLInt", protected_call<read_integer>},
         {"getXMLFloat", protected_call<read_float>},
@@ -373,6 +402,13 @@ bool delete_xml(int handle) {
 
 int xml_document_count() {
     return static_cast<int>(documents.size());
+}
+
+void validate_xml_memory(std::string_view xml, std::string_view expected_root) {
+    const auto root = parse_xml_memory(xml);
+    if (!expected_root.empty() && root->name != expected_root) {
+        throw std::runtime_error("XML has an unexpected root element");
+    }
 }
 
 }  // namespace fs15menu

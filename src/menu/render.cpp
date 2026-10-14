@@ -149,6 +149,31 @@ std::vector<std::uint32_t> codepoints(const std::string& text) {
         result.push_back(value);
     }return result;
 }
+// Byte offsets at UTF-8 codepoint boundaries, including the one-past-end offset.
+// The string natives use codepoint indices, whereas Lua's own string library
+// indexes bytes. Validate complete scalar values before returning a slice.
+std::vector<std::size_t> utf8_boundaries(const std::string& text) {
+    std::vector<std::size_t> result{0};
+    for(std::size_t i=0;i<text.size();) {
+        const auto first=static_cast<unsigned char>(text[i++]);
+        std::uint32_t value=first,minimum=0;unsigned remaining=0;
+        if(first<=0x7f) {}
+        else if(first>=0xc2&&first<=0xdf){value=first&0x1f;minimum=0x80;remaining=1;}
+        else if(first>=0xe0&&first<=0xef){value=first&0x0f;minimum=0x800;remaining=2;}
+        else if(first>=0xf0&&first<=0xf4){value=first&7;minimum=0x10000;remaining=3;}
+        else throw std::runtime_error("Invalid UTF-8 text");
+        for(unsigned j=0;j<remaining;++j){
+            if(i==text.size())throw std::runtime_error("Truncated UTF-8 text");
+            const auto next=static_cast<unsigned char>(text[i++]);
+            if((next&0xc0)!=0x80)throw std::runtime_error("Invalid UTF-8 continuation byte");
+            value=(value<<6)|(next&0x3f);
+        }
+        if(value<minimum||value>0x10ffff||(value>=0xd800&&value<=0xdfff))
+            throw std::runtime_error("Invalid UTF-8 scalar value");
+        result.push_back(i);
+    }
+    return result;
+}
 }
 
 struct Renderer::Impl {
@@ -297,18 +322,53 @@ struct Renderer::Impl {
     int text_height(lua_State* L){const float size=std::max(0.0f,float(luaL_checknumber(L,1)));auto lines=layout(size*height,luaL_checkstring(L,2));lua_pushnumber(L,size*lineScale*lines.size());lua_pushinteger(L,lines.size());return 2;}
     int text_line_height(lua_State* L){lua_pushnumber(L,luaL_checknumber(L,1)*lineScale);return 1;}
     int text_length(lua_State* L){const float size=std::max(0.0f,float(luaL_checknumber(L,1)))*height;auto lines=layout(size,luaL_checkstring(L,2));const int limit=int(luaL_checkinteger(L,3));std::size_t length=0;for(int i=0;i<limit&&i<int(lines.size());++i)length=lines[i].consumed;lua_pushinteger(L,length);return 1;}
+    int utf8_length(lua_State* L){
+        std::size_t bytes=0;const auto* text=luaL_checklstring(L,1,&bytes);
+        lua_pushinteger(L,static_cast<lua_Integer>(utf8_boundaries(std::string(text,bytes)).size()-1));return 1;
+    }
+    int utf8_substring(lua_State* L){
+        std::size_t bytes=0;const auto* data=luaL_checklstring(L,1,&bytes);
+        const auto boundaries=utf8_boundaries(std::string(data,bytes));
+        const auto count=boundaries.size()-1;
+        const lua_Integer start=luaL_checkinteger(L,2);
+        const lua_Integer requested=luaL_optinteger(L,3,static_cast<lua_Integer>(count));
+        if(start<0||requested<0)throw std::runtime_error("UTF-8 substring start and length must be nonnegative");
+        const auto first=std::min(static_cast<std::size_t>(start),count);
+        const auto length=std::min(static_cast<std::size_t>(requested),count-first);
+        lua_pushlstring(L,data+boundaries[first],boundaries[first+length]-boundaries[first]);return 1;
+    }
+    int text_line_length(lua_State* L){
+        const float size=std::max(0.0f,float(luaL_checknumber(L,1)))*height;
+        std::size_t bytes=0;const auto* data=luaL_checklstring(L,2,&bytes);const std::string text(data,bytes);
+        utf8_boundaries(text);
+        const float maximum=float(luaL_checknumber(L,3))*width;
+        if(!std::isfinite(size)||!std::isfinite(maximum))throw std::runtime_error("Text measurement requires finite size and width");
+        const auto chars=codepoints(text);float used=0;std::size_t count=0;
+        if(maximum>=0)for(auto c:chars){
+            if(c=='\n')break;
+            const float advance=c=='\r'?0:glyph(c).advance*size/nominalFontSize;
+            if(used+advance>maximum)break;
+            used+=advance;++count;
+        }
+        lua_pushinteger(L,static_cast<lua_Integer>(count));return 1;
+    }
     int draw_text(lua_State* L){const float x=float(luaL_checknumber(L,1))*width,y=(1-float(luaL_checknumber(L,2)))*height,size=std::max(0.0f,float(luaL_checknumber(L,3)))*height;const auto lines=layout(size,luaL_checkstring(L,4));if(size<=0||textColor[3]<=0)return 0;
         const int end=lineLimit?std::min(int(lines.size()),firstLine+lineLimit):int(lines.size());float baseline=y;
         if(verticalAlignment==1)baseline+=size*0.5f;else if(verticalAlignment==2)baseline+=size;
         ColorMatrix color{};color.m[0][0]=linear_to_srgb(textColor[0]);color.m[1][1]=linear_to_srgb(textColor[1]);color.m[2][2]=linear_to_srgb(textColor[2]);color.m[3][3]=textColor[3];color.m[4][4]=1;
         ImageAttributes attributes;attributes.SetColorMatrix(&color);attributes.SetWrapMode(WrapModeClamp);
+        // SDF coverage is already sampled and antialiased at the output size.
+        // GDI+'s high-quality resampling adds rectangular halos to these small
+        // transparent glyph bitmaps. Copy their coverage without a second filter.
+        const auto previousInterpolation=graphics->GetInterpolationMode();
+        graphics->SetInterpolationMode(InterpolationModeNearestNeighbor);
         for(int i=firstLine;i<end;++i){const auto&line=lines[i];float cursor=x;if(alignment==1)cursor-=line.width/2;else if(alignment==2)cursor-=line.width;
             const float lineY=baseline-(firstLine-i)*size*lineScale;
             for(auto c:line.chars){const auto& g=glyph(c);const float scale=size/nominalFontSize;
                 if(c!=' '&&g.w&&g.h){auto raster=raster_glyph(c,size);RectF dest(cursor+g.dx*scale,lineY-g.dy*scale,g.w*scale,g.h*scale);graphics->DrawImage(raster->bitmap.get(),dest,0,0,float(raster->width),float(raster->height),UnitPixel,&attributes);}
                 cursor+=g.advance*scale;
             }
-        }return 0;
+        }graphics->SetInterpolationMode(previousInterpolation);return 0;
     }
     int set_clip(lua_State* L){if(lua_gettop(L)==0||lua_isnil(L,1)){graphics->ResetClip();return 0;}float x=float(luaL_checknumber(L,1)),y=float(luaL_checknumber(L,2)),w=float(luaL_checknumber(L,3)),h=float(luaL_checknumber(L,4));graphics->SetClip(RectF(x*width,(1-y-h)*height,w*width,h*height),CombineModeReplace);return 0;}
     int reset_clip(lua_State*){graphics->ResetClip();return 0;}
@@ -318,8 +378,36 @@ struct Renderer::Impl {
         BIND("createImageOverlay",create_image);BIND("setOverlayUVs",set_uv);BIND("setOverlayColor",set_color);BIND("setOverlayRotation",set_rotation);BIND("renderOverlay",draw_overlay);
         BIND("setTextColor",set_text_color);BIND("setTextBold",set_bold);BIND("setTextAlignment",set_alignment);BIND("setTextVerticalAlignment",set_vertical);BIND("setTextWrapWidth",set_wrap);BIND("setTextLineHeightScale",set_line_scale);BIND("setTextLineBounds",set_line_bounds);
         BIND("getTextWidth",text_width);BIND("getTextHeight",text_height);BIND("getTextLineHeight",text_line_height);BIND("getTextLength",text_length);BIND("renderText",draw_text);BIND("set2DClipArea",set_clip);BIND("reset2DClipArea",reset_clip);
+        BIND("utf8Strlen",utf8_length);BIND("utf8Substr",utf8_substring);BIND("getTextLineLength",text_line_length);
 #undef BIND
         lua_newtable(L);for(auto value:{std::pair<const char*,int>{"ALIGN_LEFT",0},{"ALIGN_CENTER",1},{"ALIGN_RIGHT",2}}){lua_pushinteger(L,value.second);lua_setfield(L,-2,value.first);}lua_setglobal(L,"RenderText");
+        // Check the public Lua bridge itself, including multi-byte characters,
+        // embedded NULs and actual normal/bold font advances. Restore text state.
+        const bool savedBold=bold;
+        const int check=luaL_dostring(L,R"lua(
+            local text=string.char(65,0xc3,0xa9,0xe4,0xb8,0xad,0xf0,0x9f,0x9a,0x9c,90)
+            assert(utf8Strlen(text)==5 and utf8Strlen('')==0)
+            assert(utf8Substr(text,1,3)==text:sub(2,-2))
+            assert(utf8Substr(text,4)=='Z' and utf8Substr(text,5)=='')
+            assert(utf8Substr(text,0,0)=='' and utf8Substr(text,99)=='')
+            assert(utf8Strlen('A'..string.char(0)..'B')==3)
+            assert(utf8Substr('A'..string.char(0)..'B',1,1)==string.char(0))
+            for _,bad in ipairs({string.char(0xc0,0x80),string.char(0xed,0xa0,0x80),string.char(0xf4,0x90,0x80,0x80),string.char(0xe4,0xb8)}) do
+                assert(not pcall(utf8Strlen,bad))
+            end
+            for _,isBold in ipairs({false,true}) do
+                setTextBold(isBold)
+                local size=0.03125
+                local prefix=getTextWidth(size,'AB')
+                assert(getTextLineLength(size,'ABC',prefix+0.000001)==2)
+                assert(getTextLineLength(size,'ABC',prefix-0.000001)==1)
+                assert(getTextLineLength(size,text,getTextWidth(size,text)+0.000001)==5)
+                assert(getTextLineLength(size,'A',-1)==0)
+                assert(getTextLineLength(size,'',1)==0)
+            end
+        )lua");
+        bold=savedBold;
+        if(check!=0){const std::string message=lua_tostring(L,-1);lua_pop(L,1);throw std::runtime_error("Text bridge self-check failed: "+message);}
     }
 };
 

@@ -9,29 +9,35 @@ and machine-specific analysis outputs remain local.
 ## Compiled components
 
 A newly compiled **FS15MenuRebuilt.exe** now launches a visible main menu
-without starting the original game engine or Steam. It executes **26
-recovered Lua sources** with authored XML/rendering/input services and
-**11 local assets**, including profiles, layouts, localization, textures
+without starting the original game engine or Steam. It executes **36
+recovered Lua sources** with authored XML/rendering/input/read-only save services,
+including profiles, layouts, localization, textures
 and the game's bitmap font. The native window was visually observed.
 
-The menu smoke check renders 120 frames and exercises seven localized buttons,
-mouse Career dispatch, keyboard Down/Enter Multiplayer dispatch, Credits
-update/Back and mouse Quit. The folder package passes the same checks from
-a different working directory with an identical rendered PNG. Source hashes
-are checked against the recovery manifest. The build now has five CTest
+The frontend includes recovered Career, Difficulty and Map Selection screens.
+Career displays twenty slots and reads existing metadata; mutations are
+disabled. Empty slots lead through three difficulties and two base maps,
+with Start stopping explicitly at the missing world engine. Read failures,
+unsupported maps and invalid numeric metadata cannot become new-game slots.
+
+The smoke check renders 120 main-menu frames plus input-path screen captures,
+exercises wheel scrolling to slot twenty, metadata display, new-game choices,
+Back navigation, Credits and Quit. The package passes from a different working
+directory with matching frontend PNGs. Source hashes are checked against the
+recovery manifest. The build now has six CTest
 suites when all local inputs/tools are present.
 
 This is an independently implemented GUI host with a subset bootstrap.
 Original `main.lua` and complete engine startup do not execute. The remaining
 game screens, worlds, physics, audio and networking are unimplemented.
-Credits/Back and Quit work; other destinations produce explicit progress
+Career/Difficulty/Map selection, Credits/Back and Quit work; other destinations produce explicit progress
 dialogs. See [menu notes](../docs/MENU_RUNTIME.md),
 [validation](menu-validation.json) and the [checklist](../PROJECT_CHECKLIST.md).
 
 | Component | Source | Validation | Scope |
 |---|---|---|---|
 | Launcher | `src/launcher/main.cpp` | Nine behavioral checks; dry run against the installed startup configuration | Starts the original game binary; not binary-identical source recovery |
-| Main-menu runtime | `src/menu/` | Visible native launch; 120 frames, recovered input callbacks and portable local package checks | MainScreen and Credits; subset startup, no gameplay |
+| Frontend runtime | `src/menu/` | Native launch, recovered input paths, read-only metadata fixtures and portable package checks | Main/Career/Difficulty/Map Selection/Credits; no world startup |
 | RLE8-to-bit-vector decoder | `src/core/rle8.cpp` | 266 comparisons with the original native function, covering 853,086 values | One engine routine with a documented valid-input domain |
 
 The RLE reconstruction comes from **0x14028f430**, reached through references

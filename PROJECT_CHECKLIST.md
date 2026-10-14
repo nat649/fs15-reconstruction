@@ -4,7 +4,8 @@ Updated: **2026-10-14**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Current milestone:** a newly compiled executable displays the recovered
-main menu without starting the original game engine. Full gameplay is still
+main menu, read-only Career, difficulty and base-map selection screens without
+starting the original game engine. Full gameplay is still
 unimplemented. See [menu validation](analysis/menu-validation.json) and
 [detailed status](analysis/STATUS.md).
 
@@ -40,7 +41,7 @@ unimplemented. See [menu validation](analysis/menu-validation.json) and
 ## Main-menu milestone
 
 - [x] Compile a separate menu executable with no original-engine dependency.
-- [x] Execute 26 recovered GUI/dependency Lua sources in the new host.
+- [x] Execute 36 recovered GUI/dependency Lua sources in the new host.
 - [x] Load the original menu XML, profiles and English localization.
 - [x] Implement the required read-only XML/native property interface.
 - [x] Render recovered textures and the original bitmap font.
@@ -51,7 +52,18 @@ unimplemented. See [menu validation](analysis/menu-validation.json) and
 - [x] Observe the reconstructed main menu in a real Windows window.
 - [x] Package a directly runnable local folder and ZIP.
 - [x] Verify package execution from a different working directory and matching render.
-- [ ] Implement Settings, Career/save selection, Tutorials and Achievements screens.
+- [x] Display the recovered Career screen with twenty selectable slots.
+- [x] Read existing save metadata without changing save files.
+- [x] Block save deletion/writes and mark unsupported metadata unavailable.
+- [x] Exercise list wheel scrolling and selection through slot twenty.
+- [x] Open the recovered Difficulty screen and test all three choices.
+- [x] Open the recovered Map Selection screen with both base-map previews.
+- [x] Preserve selected slot, difficulty and map at the world-loading boundary.
+- [x] Test Career/Difficulty/Map Back navigation and compare packaged captures.
+- [x] Observe Career, mouse-wheel scrolling, Difficulty and Map Selection in the live Windows frontend.
+- [x] Exercise native metadata/XML fixtures, malformed inputs and read-only guards.
+- [x] Support UTF-8 text truncation and fix dark-text rendering artifacts.
+- [ ] Implement Settings, Tutorials and Achievements screens.
 - [ ] Execute a reconstructed equivalent of the full game startup path.
 
 ## Toward a playable game

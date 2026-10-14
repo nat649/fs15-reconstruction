@@ -4,6 +4,7 @@
 #include <objbase.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <shlobj.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -20,10 +21,12 @@ extern "C" {
 }
 #include "xml_bridge.h"
 #include "render.h"
+#include "savegames.h"
 
 namespace fs = std::filesystem;
 static constexpr int screen_width = 1280, screen_height = 720;
 static fs::path resource_root;
+static fs::path save_directory, capture_directory;
 static std::ofstream runtime_log;
 static lua_State* vm = nullptr;
 static std::unique_ptr<fs15menu::Renderer> renderer;
@@ -33,6 +36,7 @@ static std::vector<std::string> loaded_scripts;
 static std::set<std::string> loaded_assets;
 static std::string fatal_error;
 static size_t frame_count = 0, unavailable_count = 0;
+static void draw(HDC dc = nullptr);
 
 static void log_line(const std::string& message) {
     runtime_log << message << '\n';
@@ -142,6 +146,41 @@ static int source(lua_State* state) {
     return error ? lua_error(state) : 0;
 }
 
+static int adapter_source(lua_State* state) {
+    const char* name = luaL_checkstring(state, 1);
+    bool error = false;
+    {
+        try {
+            if (std::string(name) != "career.lua" && std::string(name) != "newgame.lua")
+                throw std::runtime_error("Unknown authored menu module");
+            const auto local = resource_root / name;
+            execute_file(fs::is_regular_file(local) ? local : resource_root / "src/menu" / name,
+                "fs15-menu/" + std::string(name));
+            log_line("ADAPTER " + std::string(name));
+        } catch (const std::exception& exception) { lua_pushstring(state, exception.what()); error = true; }
+    }
+    return error ? lua_error(state) : 0;
+}
+
+static int capture_screen(lua_State* state) {
+    const char* name = luaL_checkstring(state, 1);
+    bool error = false;
+    {
+        try {
+            const std::string label = name;
+            if (label.empty() || label.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-") != std::string::npos)
+                throw std::runtime_error("Invalid menu capture label");
+            draw();
+            if (!capture_directory.empty()) {
+                fs::create_directories(capture_directory);
+                renderer->save_png(capture_directory / (label + ".png"));
+                log_line("CAPTURE " + label);
+            }
+        } catch (const std::exception& exception) { lua_pushstring(state, exception.what()); error = true; }
+    }
+    return error ? lua_error(state) : 0;
+}
+
 static int print(lua_State* state) {
     std::string message;
     for (int i = 1; i <= lua_gettop(state); ++i) {
@@ -178,7 +217,7 @@ static int menu_unavailable(lua_State* state) {
     ++unavailable_count;
     log_line("UNAVAILABLE screen=" + std::string(name));
     if (!smoke_mode) {
-        const auto message = wide("The recovered menu requested " + std::string(name) + ".\n\nThis milestone rebuilds the main menu. Game worlds, multiplayer and these submenus still need an engine implementation.");
+        const auto message = wide("The recovered interface requested " + std::string(name) + ".\n\nThis milestone rebuilds the game frontend. Game worlds and multiplayer still need an engine implementation.");
         MessageBoxW(menu_window, message.c_str(), L"FS15 reconstruction progress", MB_OK | MB_ICONINFORMATION);
     }
     return 0;
@@ -220,6 +259,8 @@ static void boot(const std::string& language) {
     if (!vm) throw std::runtime_error("Cannot create LuaJIT VM");
     luaL_openlibs(vm);
     lua_register(vm, "source", source);
+    lua_register(vm, "menuSource", adapter_source);
+    lua_register(vm, "menuCapture", capture_screen);
     lua_register(vm, "print", print);
     lua_register(vm, "fileExists", file_exists);
     lua_register(vm, "delete", delete_resource);
@@ -235,6 +276,7 @@ static void boot(const std::string& language) {
     global_string("g_languageShort", language);
     global_string("g_languageSuffix", "_" + language);
     fs15menu::register_xml(vm, resolve_asset);
+    fs15menu::register_savegames(vm, save_directory);
     renderer = std::make_unique<fs15menu::Renderer>(resolve_asset, screen_width, screen_height);
     renderer->register_lua(vm);
     const auto packaged = resource_root / "bootstrap.lua";
@@ -251,7 +293,7 @@ static void update() {
     if (exit_requested && menu_window) PostMessageW(menu_window, WM_CLOSE, 0, 0);
 }
 
-static void draw(HDC dc = nullptr) {
+static void draw(HDC dc) {
     renderer->begin_frame();
     lua_getglobal(vm, "fs15_menu_draw");
     call_checked(0);
@@ -259,13 +301,13 @@ static void draw(HDC dc = nullptr) {
     ++frame_count;
 }
 
-static void mouse(int x, int y, bool down, bool up) {
+static void mouse(int x, int y, bool down, bool up, int button = 1) {
     lua_getglobal(vm, "fs15_menu_mouse");
     lua_pushnumber(vm, double(x) / screen_width);
     lua_pushnumber(vm, 1.0 - double(y) / screen_height);
     lua_pushboolean(vm, down);
     lua_pushboolean(vm, up);
-    lua_pushinteger(vm, 1);
+    lua_pushinteger(vm, button);
     call_checked(5);
 }
 
@@ -298,6 +340,18 @@ static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wparam, LP
         case WM_MOUSEMOVE: mouse(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam), false, false); return 0;
         case WM_LBUTTONDOWN: SetCapture(window); mouse(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam), true, false); return 0;
         case WM_LBUTTONUP: ReleaseCapture(); mouse(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam), false, true); return 0;
+        case WM_MOUSEWHEEL: {
+            POINT point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+            ScreenToClient(window, &point);
+            const int delta = GET_WHEEL_DELTA_WPARAM(wparam);
+            const int wheel_button = delta > 0 ? 4 : 5;
+            const int steps = std::max(1, std::abs(delta) / WHEEL_DELTA);
+            for (int i = 0; i < steps; ++i) {
+                mouse(point.x, point.y, true, false, wheel_button);
+                mouse(point.x, point.y, false, true, wheel_button);
+            }
+            return 0;
+        }
         case WM_KEYDOWN:
         case WM_KEYUP:
             lua_getglobal(vm, "fs15_menu_key");
@@ -325,6 +379,14 @@ static fs::path executable_directory() {
     return fs::path(std::wstring(buffer, size)).parent_path();
 }
 
+static fs::path default_save_directory() {
+    PWSTR documents = nullptr;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DONT_VERIFY, nullptr, &documents))) return {};
+    const auto directory = fs::path(documents) / "My Games/FarmingSimulator2015";
+    CoTaskMemFree(documents);
+    return fs::is_directory(directory) ? directory : fs::path{};
+}
+
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
     SetProcessDPIAware();
     const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -337,7 +399,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
             if (fs::exists(parent / "src/menu/bootstrap.lua")) resource_root = parent;
         }
         std::string language = "en";
-        bool test_inputs = false;
+        std::wstring start_screen = L"MainScreen";
+        bool test_inputs = false, save_directory_explicit = false;
         int count = 0;
         auto arguments = CommandLineToArgvW(GetCommandLineW(), &count);
         if (!arguments) throw std::runtime_error("Cannot parse menu arguments");
@@ -346,28 +409,48 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
             if (argument == L"--root" && i + 1 < count) resource_root = fs::absolute(arguments[++i]);
             else if (argument == L"--smoke") smoke_mode = true;
             else if (argument == L"--test-inputs") test_inputs = true;
+            else if (argument == L"--save-dir" && i + 1 < count) { save_directory = fs::absolute(arguments[++i]); save_directory_explicit = true; }
+            else if (argument == L"--empty-saves") { save_directory.clear(); save_directory_explicit = true; }
+            else if (argument == L"--capture-dir" && i + 1 < count) capture_directory = fs::absolute(arguments[++i]);
+            else if (argument == L"--screen" && i + 1 < count) start_screen = arguments[++i];
             else if (argument == L"--screenshot" && i + 1 < count) screenshot = fs::absolute(arguments[++i]);
-            else throw std::runtime_error("Usage: FS15MenuRebuilt.exe [--root PATH] [--smoke] [--test-inputs] [--screenshot PATH]");
+            else throw std::runtime_error("Usage: FS15MenuRebuilt.exe [--root PATH] [--smoke] [--test-inputs] [--screen MainScreen|CareerScreen|DifficultyScreen|MapSelectionScreen|CreditsScreen] [--save-dir PATH|--empty-saves] [--capture-dir PATH] [--screenshot PATH]");
         }
         LocalFree(arguments);
+        if (!save_directory_explicit && !smoke_mode) save_directory = default_save_directory();
         fs::create_directories(resource_root / "logs");
         runtime_log.open(resource_root / "logs/menu-runtime.log", std::ios::trunc);
         if (!runtime_log) throw std::runtime_error("Cannot write menu-runtime.log");
         log_line("FS15 independently compiled menu host; recovered source execution; 1280x720");
+        log_line(std::string("SAVE_SERVICE read_only=true profile=") + (save_directory.empty() ? "empty-slots" : "local-profile"));
         boot(language);
+        auto show_start_screen = [&]() {
+            if (start_screen != L"MainScreen") {
+                const std::vector<std::wstring> allowed{L"CareerScreen", L"DifficultyScreen", L"MapSelectionScreen", L"CreditsScreen"};
+                if (std::find(allowed.begin(), allowed.end(), start_screen) == allowed.end()) throw std::runtime_error("Unknown frontend screen");
+                lua_getglobal(vm, "fs15_menu_show");
+                std::string name;
+                for (wchar_t character : start_screen) name.push_back(static_cast<char>(character));
+                lua_pushlstring(vm, name.data(), name.size());
+                call_checked(1);
+            }
+        };
         if (smoke_mode) {
+            if (!test_inputs) show_start_screen();
             for (int i = 0; i < 120; ++i) { update(); draw(); }
             if (test_inputs) {
                 lua_getglobal(vm, "fs15_menu_test_inputs");
                 call_checked(0);
                 if (!exit_requested) throw std::runtime_error("Recovered Quit callback did not request exit");
-                if (unavailable_count < 2) throw std::runtime_error("Recovered Career/Multiplayer callbacks were not exercised");
+                if (!unavailable_count) throw std::runtime_error("Unavailable engine boundary was not exercised");
                 log_line("INPUT_CHECK_OK actual recovered button handlers exercised");
             }
+            if (test_inputs) { show_start_screen(); draw(); }
             if (renderer->missing_asset_count()) throw std::runtime_error("Missing assets in rendered menu");
             if (!screenshot.empty()) renderer->save_png(screenshot);
             log_line("SMOKE_OK frames=" + std::to_string(frame_count) + " scripts=" + std::to_string(loaded_scripts.size()) + " overlays=" + std::to_string(renderer->overlay_count()));
         } else {
+            show_start_screen();
             WNDCLASSW window_class{};
             window_class.lpfnWndProc = window_proc;
             window_class.hInstance = instance;
@@ -377,7 +460,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
             const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
             RECT rectangle{0, 0, screen_width, screen_height};
             AdjustWindowRect(&rectangle, style, FALSE);
-            menu_window = CreateWindowW(window_class.lpszClassName, L"Farming Simulator 15 - Reconstructed Main Menu", style,
+            menu_window = CreateWindowW(window_class.lpszClassName, L"Farming Simulator 15 - Reconstructed Frontend", style,
                 CW_USEDEFAULT, CW_USEDEFAULT, rectangle.right - rectangle.left, rectangle.bottom - rectangle.top,
                 nullptr, nullptr, instance, nullptr);
             if (!menu_window) throw std::runtime_error("Cannot create menu window");

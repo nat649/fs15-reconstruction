@@ -1,12 +1,19 @@
 {
+  "packageSha256": "959dac8bbc47aade56b11a940a97e83054b731a96059fa5bc03dcc031e7f6f4f",
+  "matchingScreenCaptures": [
+    "CareerScreen",
+    "CreditsScreen",
+    "DifficultyScreen",
+    "MapSelectionScreen"
+  ],
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
   "nativeEngineDependency": false,
-  "recoveredSources": 26,
-  "identicalRender": true,
-  "imageSha256": "623d5cd212cd93eacf3e1d87e7b56d662c432c5ee9ee6048615ef4f67e3baaee",
-  "scope": "Independently compiled main-menu host; recovered Lua GUI; full game engine not rebuilt",
-  "workspaceSmokePassed": true,
   "sourceHashesVerified": true,
-  "packageSha256": "bb7f414d9f37b36b311663d92415e5caba889746549d4f5472cfc0c30284af9f",
-  "recoveredAssets": 11,
+  "recoveredAssets": 17,
+  "saveMetadataReadOnly": true,
+  "recoveredSources": 36,
+  "identicalRender": true,
+  "scope": "Independently compiled frontend; recovered career/difficulty/map selection; full game engine not rebuilt",
+  "workspaceSmokePassed": true,
   "packageSmokePassed": true
 }

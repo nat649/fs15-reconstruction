@@ -129,9 +129,6 @@ function masterServerConnectFront()
 end
 function checkMultiplayerAvailable() return 0 end -- Dispatch to the unsupported-screen adapter.
 function openWebFile() menuUnavailable("Mod downloads") end
-g_careerScreen = {
-    setIsMultiplayer = function(self, value) self.isMultiplayer = value end
-}
 
 g_i18n = I18N:new()
 g_gui = Gui:new(g_languageSuffix)
@@ -151,7 +148,22 @@ function g_gui:showGui(name)
     end
     return recoveredShowGui(self, name)
 end
+menuSource("newgame.lua")
+menuSource("career.lua")
+fs15_install_newgame_screens()
+fs15_install_career()
 g_gui:showGui("MainScreen")
+
+function fs15_menu_show(name)
+    if name == "DifficultyScreen" or name == "MapSelectionScreen" then
+        fs15_newgame_show(name)
+    else
+        assert(g_gui.guis[name] ~= nil, "Unknown recovered frontend screen")
+        g_gui:showGui(name)
+    end
+    assert(g_gui.currentGuiName == name, "Requested frontend screen did not open")
+    if name == "CareerScreen" then print("Career screen: " .. fs15_career_selfcheck()) end
+end
 
 local keyActions = {
     [13] = InputBinding.MENU_ACCEPT, [27] = InputBinding.MENU_CANCEL,
@@ -173,6 +185,10 @@ function fs15_menu_key(vk, isDown)
     g_gui:keyEvent(0, vk, 0, isDown)
 end
 function fs15_menu_mouse(x, y, isDown, isUp, button)
+    if button == Input.MOUSE_BUTTON_WHEEL_UP or button == Input.MOUSE_BUTTON_WHEEL_DOWN then
+        local opposite = button == Input.MOUSE_BUTTON_WHEEL_UP and Input.MOUSE_BUTTON_WHEEL_DOWN or Input.MOUSE_BUTTON_WHEEL_UP
+        Input.mouseButtonPressedThisFrame[opposite] = false
+    end
     Input.updateMouseButtonState(button, isDown)
     g_gui:mouseEvent(x, y, isDown, isUp, button)
 end
@@ -197,7 +213,9 @@ function fs15_menu_selfcheck()
     end
     assert(visible == 7, "Steam edition must display seven main buttons")
     assert(g_gui.guis.CreditsScreen.target == g_creditsScreen, "Credits source not initialized")
-    return "current_gui=MainScreen; visible_buttons=7; recovered_callbacks=7; credits_initialized=true"
+    assert(g_gui.guis.CareerScreen.target == g_careerScreen, "Career source not initialized")
+    fs15_newgame_selfcheck()
+    return "current_gui=MainScreen; visible_buttons=7; recovered_callbacks=7; credits_initialized=true; career_initialized=true; newgame_initialized=true"
 end
 
 function fs15_menu_test_inputs()
@@ -210,10 +228,11 @@ function fs15_menu_test_inputs()
         fs15_menu_mouse(x, y, false, true, Input.MOUSE_BUTTON_LEFT)
     end
 
-    -- Original onCareerClick calls the facade and then asks Gui for CareerScreen.
-    click(g_mainScreen.careerButton)
-    assert(g_careerScreen.isMultiplayer == false, "Original career callback did not run")
-    assert(g_gui.currentGuiName == "MainScreen", "Unsupported career changed the menu")
+    fs15_career_test_inputs()
+    fs15_career_test_fixture_begin()
+    local newgameOk, newgameFailure = xpcall(fs15_newgame_test_inputs, debug.traceback)
+    fs15_career_test_fixture_end()
+    if not newgameOk then error(newgameFailure, 0) end
 
     -- Exercise the recovered FocusManager navigation and activation logic.
     FocusManager:setFocus(g_mainScreen.careerButton)
@@ -232,12 +251,13 @@ function fs15_menu_test_inputs()
     assert(g_gui.currentGuiName == "CreditsScreen", "Credits callback did not open the recovered screen")
     fs15_menu_update(800)
     assert(#g_creditsScreen.creditsLines > 0, "Recovered credits update did not create a line")
+    menuCapture("CreditsScreen")
     click(g_creditsScreen.test1234)
     fs15_menu_selfcheck()
 
     -- Quit runs last. The native host records and verifies its exit request.
     click(g_mainScreen.quitButton)
-    print("Menu input checks: career mouse callback; keyboard Down/Enter multiplayer callback; credits mouse open/update/back; quit mouse callback")
+    print("Menu input checks: recovered career/new-game flow; keyboard Down/Enter multiplayer boundary; credits mouse open/update/back; quit mouse callback")
 end
 
 print("Menu adapter services: keyboard input; XML/2D native bridge; offline presence; zero remote notifications; no DLC updates; no networking; unavailable-screen dialogs; no audio playback")
