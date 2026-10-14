@@ -1,6 +1,6 @@
 -- Authored integration for the recovered career screen and mission metadata.
 -- The native save provider reads careerSavegame.xml; this adapter never saves,
--- deletes, loads a world, or executes a mission script.
+-- deletes, loads a saved simulation, or executes a mission script.
 
 local installed = false
 local fixtureDepth, nativeGetInfo = 0, nil
@@ -104,9 +104,9 @@ function fs15_install_career()
         }
         fs15_last_world_request = self.lastWorldRequest
         if savegame.isValid then
-            menuUnavailable("Load saved game simulation (terrain-only runtime available for new selections)")
+            menuUnavailable("Load saved game simulation (map scene viewer available for new selections)")
         else
-            assert(menuLaunchWorld(savegame.mapId, savegame.difficulty, savegame.savegameIndex), "Terrain runtime was not launched")
+            assert(menuLaunchWorld(savegame.mapId, savegame.difficulty, savegame.savegameIndex), "Map scene runtime was not launched")
         end
     end
 
@@ -127,7 +127,7 @@ function fs15_install_career()
     g_careerScreen.buttonDeletePC:setDisabled(true)
     g_careerScreen.buttonDeleteConsole:setDisabled(true)
     installed = true
-    print("Career adapter: recovered CareerScreen and mission metadata classes; 20 read-only slots; save writes/deletes and world loading unavailable")
+    print("Career adapter: recovered CareerScreen and mission metadata classes; 20 read-only slots; new selections launch map scenes; save writes/deletes and saved simulation unavailable")
 end
 
 function fs15_career_selfcheck()

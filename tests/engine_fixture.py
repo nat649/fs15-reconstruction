@@ -55,19 +55,44 @@ def main() -> None:
         subprocess.run(command, check=True, timeout=30)
         data = json.loads(report.read_text())
         assert data['ready'] and data['driver'] == 'WARP' and not data['original_engine_loaded']
-        assert data['scene_nodes'] == 3 and data['deferred_shape_nodes'] == 1
+        assert data['scene_nodes'] == 3 and data['source_shape_nodes'] == 1
         assert data['source_width'] == 33 and data['world_width'] == 64
         assert data['vertices'] == 289 and data['triangles'] == 512
         assert abs(data['min_height'] - min(values) * 255 / 65535) < 0.001
         assert abs(data['max_height'] - max(values) * 255 / 65535) < 0.001
         assert data['visible_gpu_samples'] > 0 and data['camera_math_check']
         assert image.read_bytes().startswith(b'\x89PNG')
+        # A real mesh above the terrain exercises hierarchy/rotation/scale,
+        # subset upload, instancing, material color and independent GPU samples.
+        vertices = [(-10,0,-10,0,1,0,0,0), (10,0,-10,0,1,0,1,0), (0,10,10,0,1,0,0.5,1)]
+        mesh = (b'FS15MSH\x01' + struct.pack('<I',1) + struct.pack('<4I',7,3,3,1)
+                + struct.pack('<2I',0,3) + b''.join(struct.pack('<8f',*v) for v in vertices)
+                + struct.pack('<3I',0,1,2))
+        (maps / 'map01.meshes').write_bytes(mesh)
+        object_scene = scene.replace('<Scene>', '<Materials><Material materialId="1" diffuseColor="0.7 0.3 0.2"/></Materials><Scene>')
+        object_scene = object_scene.replace('</Scene>',
+            '<TransformGroup name="fixture" translation="4 180 -4" rotation="0 90 0" scale="2 2 2" nodeId="4">'
+            '<Shape shapeId="7" materialIds="1" translation="1 0 2" nodeId="5"/>'
+            '<Shape shapeId="7" materialIds="1" nonRenderable="true" nodeId="6"/>'
+            '<Shape name="fixture_lod1" shapeId="7" materialIds="1" nodeId="7"/>'
+            '</TransformGroup></Scene>')
+        (maps / 'map01.i3d').write_text(object_scene, encoding='utf-8')
+        subprocess.run(command, check=True, timeout=30)
+        data = json.loads(report.read_text())
+        assert data['decoded_meshes'] == 1 and data['rendered_instances'] == 1 and data['object_triangles'] == 1
+        assert data['visible_object_gpu_samples'] > 0
+        matrix = data['first_instance_world']
+        assert all(abs(matrix[12+i] - expected) < 0.001 for i,expected in enumerate([8,180,-6]))
+        assert abs(matrix[2]+2) < 0.001 and abs(matrix[8]-2) < 0.001
+        (maps / 'map01.meshes').write_bytes(mesh[:-1])
+        assert subprocess.run(command, timeout=30).returncode != 0
+        (maps / 'map01.meshes').write_bytes(mesh)
         # Both malformed XML and missing terrain resources must fail explicitly.
         for invalid in ['<!DOCTYPE i3D [<!ENTITY x SYSTEM "file:///invalid">]><i3D>&x;</i3D>',
                         scene.replace('map01/dem.png', 'map01/missing.png')]:
             (maps / 'map01.i3d').write_text(invalid, encoding='utf-8')
             assert subprocess.run(command, timeout=30).returncode != 0
-        print('Authored RG16 heights, I3D hierarchy, WARP rasterization, camera and failure fixtures passed')
+        print('Authored heights, transformed/filtered mesh instances, WARP terrain/object visibility, camera and failure fixtures passed')
     finally:
         if Path(os.path.abspath(temporary.name)).parent != parent:
             raise RuntimeError('Unsafe fixture cleanup target')

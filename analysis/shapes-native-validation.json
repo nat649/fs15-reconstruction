@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "originalFunction": "0x1402b3fa0",
+  "inputImageSha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "differentialCases": 128,
+  "comparedBytes": 74848,
+  "scope": "Mesh cipher only: four seeds, partial/full blocks and 32-bit counter carry; not the full engine"
+}

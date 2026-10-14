@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="Program.cs" />
+    <Compile Include="CipherStream.cs" />
+    <Compile Include="../../tools/I3DShapesTool/I3DShapesTool.Lib/**/*.cs" Exclude="../../tools/I3DShapesTool/I3DShapesTool.Lib/obj/**/*.cs;../../tools/I3DShapesTool/I3DShapesTool.Lib/bin/**/*.cs;../../tools/I3DShapesTool/I3DShapesTool.Lib/Container/Cipher/CipherStream.cs" />
+  </ItemGroup>
+</Project>

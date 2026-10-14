@@ -1,5 +1,5 @@
 // Independently compiled engine bootstrap: actual I3D terrain data, D3D11 and
-// free camera. External .shapes, buildings, simulation and physics are deferred.
+// free camera. Original binary meshes are staged by the local resource bridge.
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>
@@ -18,7 +18,10 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <iomanip>
 #include "resources.h"
+#include "scene_render.h"
+#include "terrain_material.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -36,21 +39,26 @@ struct Camera {
     XMFLOAT3 position{};
     float yaw=0,pitch=0;
     XMFLOAT3 home{};float home_yaw=0,home_pitch=0;
-    void initialize(const fs15world::Terrain& terrain) {
+    void initialize(const fs15world::Terrain& terrain,bool original=false) {
         position={terrain.width*0.85f,terrain.max_height+terrain.width*0.6f,-terrain.depth*0.85f};
         const float dx=-position.x,dy=(terrain.min_height+terrain.max_height)*0.5f-position.y,dz=-position.z;
         yaw=std::atan2(dx,dz);pitch=std::atan2(dy,std::sqrt(dx*dx+dz*dz));home=position;home_yaw=yaw;home_pitch=pitch;
+        if(original&&!terrain.meshes.empty())for(const auto& node:terrain.nodes)if(node.type=="Camera"){
+            position={node.world[12],node.world[13],node.world[14]};
+            yaw=std::atan2(-node.world[8],-node.world[10]);pitch=std::atan2(-node.world[9],std::sqrt(node.world[8]*node.world[8]+node.world[10]*node.world[10]));
+            home=position;home_yaw=yaw;home_pitch=pitch;break;
+        }
     }
     void reset(){position=home;yaw=home_yaw;pitch=home_pitch;}
     void move(float forward,float side,float rise,float dt) {
-        position.x+=(std::sin(yaw)*std::cos(pitch)*forward+std::cos(yaw)*side)*dt;
+        position.x+=(std::sin(yaw)*std::cos(pitch)*forward-std::cos(yaw)*side)*dt;
         position.y+=(std::sin(pitch)*forward+rise)*dt;
-        position.z+=(std::cos(yaw)*std::cos(pitch)*forward-std::sin(yaw)*side)*dt;
+        position.z+=(std::cos(yaw)*std::cos(pitch)*forward+std::sin(yaw)*side)*dt;
     }
     XMMATRIX view()const {
         const auto eye=XMLoadFloat3(&position);
         const auto direction=XMVectorSet(std::sin(yaw)*std::cos(pitch),std::sin(pitch),std::cos(yaw)*std::cos(pitch),0);
-        return XMMatrixLookToLH(eye,direction,XMVectorSet(0,1,0,0));
+        return XMMatrixLookToRH(eye,direction,XMVectorSet(0,1,0,0));
     }
     void update(float dt) {
         float speed=keys[VK_SHIFT]?480.0f:150.0f;
@@ -67,8 +75,18 @@ struct Input { float3 position:POSITION; float3 normal:NORMAL; float2 uv:TEXCOOR
 struct Output { float4 position:SV_POSITION; float3 world:TEXCOORD0; float3 normal:TEXCOORD1; float2 uv:TEXCOORD2; };
 Output vsMain(Input v) { Output o; o.position=mul(float4(v.position,1),viewProjection); o.world=v.position;o.normal=v.normal;o.uv=v.uv;return o; }
 Texture2D overview:register(t0);SamplerState linearSampler:register(s0);
+cbuffer Layers:register(b1){float4 unitSize0;float4 unitSize1;float4 layerOptions;};
+Texture2DArray weights:register(t1);
+Texture2D detail0:register(t2);Texture2D detail1:register(t3);Texture2D detail2:register(t4);Texture2D detail3:register(t5);
+Texture2D detail4:register(t6);Texture2D detail5:register(t7);Texture2D detail6:register(t8);Texture2D detail7:register(t9);
+SamplerState repeatSampler:register(s1);
+#define BLEND_LAYER(i,tex,size) if(layerOptions.x>i){float w=weights.Sample(linearSampler,float3(v.uv,i)).r;sum+=w*tex.Sample(repeatSampler,v.world.xz/size).rgb;total+=w;}
 float4 psMain(Output v):SV_TARGET {
  float3 albedo=overview.Sample(linearSampler,v.uv).rgb;
+ if(layerOptions.x>0){float3 sum=0;float total=0;
+ BLEND_LAYER(0,detail0,unitSize0.x) BLEND_LAYER(1,detail1,unitSize0.y) BLEND_LAYER(2,detail2,unitSize0.z) BLEND_LAYER(3,detail3,unitSize0.w)
+ BLEND_LAYER(4,detail4,unitSize1.x) BLEND_LAYER(5,detail5,unitSize1.y) BLEND_LAYER(6,detail6,unitSize1.z) BLEND_LAYER(7,detail7,unitSize1.w)
+ albedo=total>0.001?sum/total:detail0.Sample(repeatSampler,v.world.xz/unitSize0.x).rgb;}
  float light=0.50+0.50*saturate(dot(normalize(v.normal),normalize(float3(-0.3,0.8,-0.4))));
  float fog=saturate((distance(v.world,eye.xyz)-2000)/5000);
  return float4(lerp(albedo*light,float3(0.58,0.73,0.87),fog),1);
@@ -90,11 +108,14 @@ class Renderer {
     ComPtr<ID3D11RasterizerState> raster;
     ComPtr<ID3D11Query> query;
     unsigned index_count=0;
+    std::unique_ptr<SceneRenderer> scene;
+    std::unique_ptr<TerrainMaterial> terrain_material;
 public:
     D3D_FEATURE_LEVEL feature_level{};
     bool software=false;
     std::uint64_t samples=0;
-    Renderer(HWND window,const fs15world::Terrain& terrain,bool force_warp) {
+    std::uint64_t object_samples=0;
+    Renderer(HWND window,const fs15world::Terrain& terrain,bool force_warp,const fs::path& root) {
         DXGI_SWAP_CHAIN_DESC desc{};desc.BufferDesc.Width=width;desc.BufferDesc.Height=height;desc.BufferDesc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.SampleDesc.Count=1;desc.BufferUsage=DXGI_USAGE_RENDER_TARGET_OUTPUT;desc.BufferCount=1;desc.OutputWindow=window;desc.Windowed=TRUE;desc.SwapEffect=DXGI_SWAP_EFFECT_DISCARD;
         const D3D_FEATURE_LEVEL levels[]{D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0};
@@ -143,10 +164,14 @@ public:
         check(device->CreateRasterizerState(&r,&raster),"Rasterizer");
         D3D11_QUERY_DESC q{};q.Query=D3D11_QUERY_OCCLUSION;check(device->CreateQuery(&q,&query),"GPU visibility query");
         log("GPU_RESOURCES_READY vertices="+std::to_string(terrain.vertices.size())+" triangles="+std::to_string(index_count/3));
+        scene=std::make_unique<SceneRenderer>(device.Get(),context.Get(),terrain,root);
+        terrain_material=std::make_unique<TerrainMaterial>(device.Get(),terrain,root);
+        log("TERRAIN_LAYERS_READY count="+std::to_string(terrain_material->layer_count()));
+        log("SCENE_GPU_READY meshes="+std::to_string(terrain.meshes.size())+" instances="+std::to_string(terrain.rendered_instances)+" textures="+std::to_string(scene->texture_count()));
     }
     void draw(bool measure=false,bool present=true) {
         struct View { XMFLOAT4X4 matrix;XMFLOAT4 eye; } data;
-        const auto projection=XMMatrixPerspectiveFovLH(XM_PI/3,float(width)/height,1.0f,10000.0f);
+        const auto projection=XMMatrixPerspectiveFovRH(XM_PI/3,float(width)/height,1.0f,10000.0f);
         XMStoreFloat4x4(&data.matrix,camera.view()*projection);data.eye={camera.position.x,camera.position.y,camera.position.z,1};
         context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);
         const float sky[]{0.58f,0.73f,0.87f,1};context->ClearRenderTargetView(color_view.Get(),sky);context->ClearDepthStencilView(depth_view.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1,0);
@@ -157,7 +182,8 @@ public:
         context->VSSetShader(vertex_shader.Get(),nullptr,0);context->PSSetShader(pixel_shader.Get(),nullptr,0);
         auto c=constants.Get();context->VSSetConstantBuffers(0,1,&c);context->PSSetConstantBuffers(0,1,&c);
         auto t=texture_view.Get();auto s=sampler.Get();context->PSSetShaderResources(0,1,&t);context->PSSetSamplers(0,1,&s);
-        if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());
+        terrain_material->bind(context.Get());
+        if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());scene->draw(camera.view()*projection,camera.position,measure);
         if(present)check(swap->Present(smoke?0:1,0),"Present 3D frame");
     }
     void verify_visibility() {
@@ -167,6 +193,7 @@ public:
         }
         check(result,"GPU visibility samples");if(!samples)throw std::runtime_error("No terrain geometry rasterized");
         log("TERRAIN_VISIBLE gpu_samples="+std::to_string(samples));
+        object_samples=scene->visible_samples();log("ORIGINAL_MESHES_VISIBLE gpu_samples="+std::to_string(object_samples));
     }
     void capture(const fs::path& filename) {
         D3D11_TEXTURE2D_DESC d{};back->GetDesc(&d);d.BindFlags=0;d.Usage=D3D11_USAGE_STAGING;d.CPUAccessFlags=D3D11_CPU_ACCESS_READ;d.MiscFlags=0;
@@ -186,7 +213,7 @@ static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARA
     case WM_RBUTTONDOWN:rmb=true;last_mouse={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);return 0;
     case WM_LBUTTONUP:
     case WM_RBUTTONUP:rmb=false;ReleaseCapture();return 0;
-    case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};camera.yaw+=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);last_mouse=now;}return 0;
+    case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};camera.yaw-=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);last_mouse=now;}return 0;
     case WM_KILLFOCUS:keys.fill(false);rmb=false;ReleaseCapture();return 0;
     case WM_DESTROY:done=true;PostQuitMessage(0);return 0;
     }
@@ -197,12 +224,13 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     SetProcessDPIAware();HRESULT com=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);HWND window=nullptr;int result=0;
     try {
         check(com,"Engine COM initialization");auto root=exe_directory();if(!fs::exists(root/"assets/data/maps/map01.i3d")&&!fs::exists(root/"recovered/gar/data/maps/map01.i3d"))root=root.parent_path().parent_path();
-        std::string map="Map01";fs::path capture,report;bool warp=false;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
+        std::string map="Map01";fs::path capture,report;bool warp=false,original_view=true;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
         for(int i=1;i<argc;++i){std::wstring arg=argv[i];
             if(arg==L"--root"&&i+1<argc)root=fs::absolute(argv[++i]);
             else if(arg==L"--map"&&i+1<argc){std::wstring m=argv[++i];if(m!=L"Map01"&&m!=L"Map02")throw std::runtime_error("Only Map01/Map02 are supported");map=m==L"Map01"?"Map01":"Map02";}
             else if(arg==L"--smoke")smoke=true;
             else if(arg==L"--warp")warp=true;
+            else if(arg==L"--view"&&i+1<argc){std::wstring view=argv[++i];if(view!=L"original"&&view!=L"overview")throw std::runtime_error("Expected --view original|overview");original_view=view==L"original";}
             else if(arg==L"--capture"&&i+1<argc)capture=fs::absolute(argv[++i]);
             else if(arg==L"--report"&&i+1<argc)report=fs::absolute(argv[++i]);
             else throw std::runtime_error("Usage: FS15EngineRebuilt --root PATH --map Map01|Map02 [--smoke] [--warp] [--capture PNG] [--report JSON]");
@@ -211,30 +239,36 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         if(!log_file)throw std::runtime_error("Cannot open engine log");
         log("ENGINE_BOOT authored Win32/D3D11 runtime; original engine not loaded");
         auto terrain=fs15world::load_terrain(root,map);
-        log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" deferred_shapes="+std::to_string(terrain.deferred_shapes));
-        camera.initialize(terrain);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
+        log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" shape_nodes="+std::to_string(terrain.shape_nodes));
+        camera.initialize(terrain,original_view);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
         if(!camera_test)throw std::runtime_error("Camera movement check failed");
         WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
         if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
         DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;RECT rect{0,0,int(width),int(height)};AdjustWindowRect(&rect,style,FALSE);
-        std::wstring title=L"FS15 Reconstructed Engine - Terrain only - "+wide(map)+L" | WASD/ZQSD, RMB look, Space/Ctrl, Home, Esc";
+        std::wstring title=L"FS15 Reconstructed Engine - Original map scene - "+wide(map)+L" | WASD/ZQSD, mouse look, Space/Ctrl, Home, Esc";
         window=CreateWindowW(wc.lpszClassName,title.c_str(),style,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,instance,nullptr);
         if(!window)throw std::runtime_error("Cannot create engine window");
-        Renderer render(window,terrain,warp);if(!smoke)ShowWindow(window,show);
+        Renderer render(window,terrain,warp,root);if(!smoke)ShowWindow(window,show);
         render.draw(true,!smoke);render.verify_visibility();
         // Capture before Present: discard swap chains need not preserve content.
         if(!capture.empty()){render.draw(false,false);render.capture(capture);}
         if(report.empty())report=root/"logs"/("engine-"+map+".json");
         std::ofstream metadata(report);if(!metadata)throw std::runtime_error("Cannot write engine validation report");
-        metadata<<"{\n\"scope\":\"Terrain-only engine bootstrap; overview texture, no models or physics\",\n"
+        metadata<<"{\n\"scope\":\"Original terrain and binary scene meshes; simplified materials, no physics\",\n"
             <<"\"map\":\""<<map<<"\",\n\"ready\":true,\n\"original_engine_loaded\":false,\n"
             <<"\"driver\":\""<<(render.software?"WARP":"hardware")<<"\",\n\"feature_level\":"<<render.feature_level<<",\n"
-            <<"\"scene_nodes\":"<<terrain.nodes.size()<<",\n\"deferred_shape_nodes\":"<<terrain.deferred_shapes<<",\n"
+            <<"\"scene_nodes\":"<<terrain.nodes.size()<<",\n\"source_shape_nodes\":"<<terrain.shape_nodes<<",\n\"skipped_shape_nodes\":"<<terrain.skipped_instances<<",\n"
+            <<"\"decoded_meshes\":"<<terrain.meshes.size()<<",\n\"rendered_instances\":"<<terrain.rendered_instances<<",\n\"object_triangles\":"<<terrain.object_triangles<<",\n"
+            <<"\"terrain_layers\":"<<terrain.layers.size()<<",\n"
+            <<"\"road_alignment_samples\":"<<terrain.road_alignment_samples<<",\n\"road_median_height_error\":"<<terrain.road_median_error<<",\n\"road_flipped_z_error\":"<<terrain.road_flipped_z_error<<",\n"
             <<"\"source_width\":"<<terrain.source_width<<",\n\"source_height\":"<<terrain.source_height<<",\n"
             <<"\"world_width\":"<<terrain.width<<",\n\"world_depth\":"<<terrain.depth<<",\n"
             <<"\"min_height\":"<<terrain.min_height<<",\n\"max_height\":"<<terrain.max_height<<",\n"
             <<"\"vertices\":"<<terrain.vertices.size()<<",\n\"triangles\":"<<terrain.indices.size()/3<<",\n"
-            <<"\"visible_gpu_samples\":"<<render.samples<<",\n\"camera_math_check\":true\n}\n";metadata.close();
+            <<"\"visible_gpu_samples\":"<<render.samples<<",\n\"visible_object_gpu_samples\":"<<render.object_samples<<",\n\"camera_math_check\":true,\n\"first_instance_world\":[";
+        if(!terrain.groups.empty())for(unsigned i=0;i<16;++i){if(i)metadata<<',';metadata<<terrain.groups[0].instances[0].value[i];}
+        metadata<<"],\n\"resources\":[";for(size_t i=0;i<terrain.used_resources.size();++i){if(i)metadata<<',';metadata<<std::quoted(terrain.used_resources[i].generic_u8string());}
+        metadata<<"]\n}\n";metadata.close();
         log("ENGINE_READY terrain geometry and texture rendered; free camera initialized");
         if(smoke){for(int frame=0;frame<8;++frame)render.draw();log("ENGINE_SMOKE_OK frames=9");}
         else {

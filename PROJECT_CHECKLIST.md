@@ -4,8 +4,9 @@ Updated: **2026-10-15**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Current milestone:** the recovered frontend can launch an independently
-compiled Direct3D 11 terrain engine for either base map. It renders original
-height data with the map overview as its surface texture and a free camera.
+compiled Direct3D 11 scene host for either base map. It renders original
+height data, decoded buildings/trees/props, diffuse textures and terrain layers
+at their original hierarchical transforms, with a free camera.
 Full gameplay is still unimplemented. See [engine validation](analysis/engine-validation.json),
 [menu validation](analysis/menu-validation.json) and
 [detailed status](analysis/STATUS.md).
@@ -73,13 +74,23 @@ Full gameplay is still unimplemented. See [engine validation](analysis/engine-va
 - [x] Parse original I3D scene metadata and resolve both base-map height resources.
 - [x] Render both original height maps as 3D terrain (524,288 triangles each).
 - [x] Upload the original overview DDS including its mip chain as a temporary terrain material.
+- [x] Replace the overview surface with original diffuse/weight terrain layers at I3D repeat sizes.
+- [x] Decode all original shape-container entities for both maps with a pinned existing decoder.
+- [x] Compare the decoder cipher with original GE6 native code in 128 cases / 74,848 bytes.
+- [x] Load original building, tree, road and prop meshes, UVs, subsets and diffuse DDS textures.
+- [x] Compose original parent transforms, rotation and scale in the I3D right-handed coordinate system.
+- [x] Render original mesh instances and filter hidden, nonrenderable and named lower-LOD nodes.
+- [x] Check Bjornholm relief alignment against 272 sampled original road vertices (0.05 m median error).
+- [x] Start at the camera stored in each original I3D and support an overview camera.
+- [x] Observe the packaged Westbridge Hills scene launching from the live frontend, with mouse look and reset.
 - [x] Support free-camera keyboard movement, mouse look and reset.
 - [x] Launch the terrain engine from a new Career selection through Start.
 - [x] Observe native Start launch, mouse camera rotation and Home reset in the live window.
 - [x] Validate visible GPU output for both maps and identical packaged renders.
 - [x] Exercise software-rendered authored fixtures and invalid-resource rejection.
 - [ ] Reconstruct scene graph and complete I3D resource loading.
-- [ ] Load external .shapes geometry, buildings and original terrain materials.
+- [ ] Recover full GIANTS terrain/object shaders, shadows, sky and animated foliage.
+- [ ] Restore distance-based LOD, culling, crop density and terrain detail rendering.
 - [ ] Execute the complete mission startup and game-world services.
 - [ ] Reconstruct physics and vehicle simulation.
 - [ ] Implement terrain, crops and farming interactions.
@@ -93,9 +104,12 @@ Full gameplay is still unimplemented. See [engine validation](analysis/engine-va
 - [x] Publish authored code/tools and English documentation on GitHub.
 - [x] Keep original binaries, recovered game code/assets and local packages out of Git.
 - [x] Publish this checklist and aggregate validation metadata.
+- [x] Show captured renders of both maps in the GitHub README.
 - [ ] Provide a fully reconstructed playable game executable.
 
 Asset extraction currently uses a pinned original cipher oracle. The menu
 and terrain runtimes do not use that oracle, an original code snapshot or the
-original game executable. A new-game selection starts terrain exploration;
+original game executable. Native routines are used separately as local validation
+oracles. Further original-component bridges remain part of the reconstruction
+strategy. A new-game selection starts original-map scene exploration;
 existing saved simulations and unsupported destinations remain unavailable.

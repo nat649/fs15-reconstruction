@@ -25,7 +25,7 @@ Career opens twenty selectable slots. Empty slots reach recovered difficulty
 and base-map selection; three difficulty choices and both original map previews
 execute recovered callbacks. Selected slot/map/difficulty reach an explicit
 world-loading boundary. For empty slots, Start now creates the independently
-authored terrain-engine process for the chosen map. Existing saves are displayed
+native scene process with original terrain, buildings and trees for the chosen map. Existing saves are displayed
 read only and Start reports the missing saved-simulation loader. Multiplayer remains unavailable.
 Credits opens the recovered credits screen, including scrolling text and
 Back. Quit calls the host's exit service. Other game screens and all gameplay
@@ -67,11 +67,12 @@ GAR cipher oracle; that dependency is absent from menu runtime execution.
 `scripts/package-menu.ps1` runs the recovered-menu smoke/input checks, reads
 the source and asset trace, verifies all used recovered-source hashes against
 the recovery manifest, and copies just those dependencies into
-`build/FS15EngineAlpha`. Its manifest records SHA-256 and size for each packaged file.
+`build/FS15SceneAlpha`. Its manifest records SHA-256 and size for each packaged file.
 The LuaJIT copyright notice accompanies the statically linked executable.
 The two authored adapters accompany the bootstrap. Preparation also copies
 the installed base-map preview DDS files and terrain inputs into the local asset tree.
-The package includes `FS15EngineRebuilt.exe`; native terrain verification runs
+The package includes `FS15EngineRebuilt.exe`, local original-mesh caches,
+diffuse textures and weight maps traced by the native renderer. Scene verification runs
 for both maps before ZIP creation. See [engine notes](ENGINE_BOOTSTRAP.md). Pass
 `-Destination build/AnotherFrontend` to stage a separate build while an earlier
 executable is running.

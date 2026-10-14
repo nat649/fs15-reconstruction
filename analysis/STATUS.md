@@ -17,7 +17,7 @@ and the game's bitmap font. The native window was visually observed.
 The frontend includes recovered Career, Difficulty and Map Selection screens.
 Career displays twenty slots and reads existing metadata; mutations are
 disabled. Empty slots lead through three difficulties and two base maps,
-with Start launching the authored terrain engine for a new selection. Existing
+with Start launching the reconstructed original map scene for a new selection. Existing
 saved simulations cannot load yet. Read failures,
 unsupported maps and invalid numeric metadata cannot become new-game slots.
 
@@ -25,7 +25,7 @@ The smoke check renders 120 main-menu frames plus input-path screen captures,
 exercises wheel scrolling to slot twenty, metadata display, new-game choices,
 Back navigation, Credits and Quit. The package passes from a different working
 directory with matching frontend PNGs. Source hashes are checked against the
-recovery manifest. The build now has nine CTest
+recovery manifest. The build now has ten CTest
 suites when all local inputs/tools are present.
 
 This is an independently implemented GUI host with a subset bootstrap.
@@ -39,14 +39,19 @@ dialogs. See [menu notes](../docs/MENU_RUNTIME.md),
 |---|---|---|---|
 | Launcher | `src/launcher/main.cpp` | Nine behavioral checks; dry run against the installed startup configuration | Starts the original game binary; not binary-identical source recovery |
 | Frontend runtime | `src/menu/` | Native launch, recovered input paths, read-only metadata fixtures and portable package checks | Main/Career/Difficulty/Map Selection/Credits; new selections launch terrain exploration |
-| Terrain engine | `src/engine/` | Both original maps on D3D11 hardware, authored WARP fixture, positive GPU samples and identical packaged PNGs | Original DEM geometry with overview texture and free camera; external meshes and simulation deferred |
+| Original map scene | `src/engine/`, `src/shape_bridge/` | Both original maps on hardware, authored WARP transformed-mesh fixture, separate terrain/object GPU samples and package parity | Original terrain, meshes, transforms and diffuse/weight textures; simplified shaders, no simulation |
+| GE6 mesh cipher | `scripts/check_shapes_native.py` | 128 comparisons / 74,848 bytes with original native routine | Local isolated native oracle, not full engine integration |
 | RLE8-to-bit-vector decoder | `src/core/rle8.cpp` | 266 comparisons with the original native function, covering 853,086 values | One engine routine with a documented valid-input domain |
 
-The terrain engine is newly authored code, not recovered GIANTS engine source.
+The rendering host is authored code around recovered GIANTS resources and verified
+format behavior, not recovered full GIANTS renderer source.
 Both 1025-square original DEMs produce 2048-square-metre terrain meshes with
-263,169 vertices and 524,288 triangles each. The I3D reader counts scene metadata
-but does not render external `.shapes` objects. Original overview DDS images
-provide temporary surface color. See [engine scope](../docs/ENGINE_BOOTSTRAP.md)
+263,169 vertices and 524,288 triangles each. Strict version-3 `.shapes` decoding
+recovers 1,155 / 833 triangle meshes. Original I3D transforms place 338,165 /
+107,698 rendered shape instances, including individual leaf attachments.
+Original diffuse textures and eight / six terrain layers are loaded. A 272-point
+Bjornholm road/DEM check has 0.05 m median height difference (21.64 m for reversed Z).
+See [engine scope](../docs/ENGINE_BOOTSTRAP.md)
 and [engine validation](engine-validation.json).
 
 The RLE reconstruction comes from **0x14028f430**, reached through references

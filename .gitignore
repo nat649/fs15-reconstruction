@@ -3,6 +3,9 @@
 /tools/downloads/
 /tools/LuaJIT/
 /tools/luajit-decompiler/
+/tools/I3DShapesTool/
+/src/shape_bridge/bin/
+/src/shape_bridge/obj/
 /analysis/*
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json
@@ -21,6 +24,8 @@
 /FS15MenuRebuilt.exe
 /FS15EngineRebuilt.exe
 !/analysis/engine-validation.json
+!/analysis/scene-recovery.json
+!/analysis/shapes-native-validation.json
 /logs/
 __pycache__/
 *.pyc

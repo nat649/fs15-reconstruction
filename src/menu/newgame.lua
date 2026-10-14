@@ -98,7 +98,7 @@ function fs15_newgame_selfcheck()
         assert(type(button.onClick) == "function" and type(button.onFocus) == "function", "Missing original difficulty callback")
     end
     assert(type(element("MapSelectionScreen", 2).onClick) == "function", "Missing original map Start callback")
-    return "difficulty_choices=3; base_maps=2; recovered_newgame_callbacks=true; world_engine=false"
+    return "difficulty_choices=3; base_maps=2; recovered_newgame_callbacks=true; original_map_scene=true; simulation=false"
 end
 
 -- The caller brackets this with the authored career fixture, so existing user
@@ -146,7 +146,7 @@ function fs15_newgame_test_inputs()
         local request = assert(g_careerScreen.lastWorldRequest, "Map Start did not reach the explicit world boundary")
         assert(request.mapId == MapsUtil.mapList[row].id and request.difficulty == difficulty
             and request.savegameIndex == slot, "World boundary lost the selected map/difficulty/slot")
-        assert(g_gui.currentGuiName == "MapSelectionScreen", "Unimplemented world launch changed the GUI")
+        assert(g_gui.currentGuiName == "MapSelectionScreen", "Scene launch plan unexpectedly changed the frontend screen")
         click(element("MapSelectionScreen", 3))
         assert(g_gui.currentGuiName == "DifficultyScreen", "Map Back did not restore DifficultyScreen")
         click(element("DifficultyScreen", 4))

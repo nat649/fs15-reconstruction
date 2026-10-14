@@ -4,8 +4,13 @@ Early-stage reverse engineering and component reconstruction of **Farming
 Simulator 15 for Windows**, based on a locally installed copy of version
 **1.4.2.0**.
 
-**This is not a complete game rebuild. An authored native terrain engine
-can be compiled; the full original engine and farming simulation remain incomplete.**
+**This is not a complete game rebuild. The recovered frontend and original
+map scenes run in a compiled native host; the full engine and farming simulation remain incomplete.**
+
+The project follows decompilation and reconstruction of the installed GIANTS
+Engine 6 game. Original scripts, geometry, textures, scene transforms and native
+routines are reused or examined where practical. See the
+[reconstruction strategy](docs/RECONSTRUCTION_STRATEGY.md) for component provenance.
 
 ## Current results
 
@@ -16,11 +21,15 @@ can be compiled; the full original engine and farming simulation remain incomple
   metadata; empty slots lead to three difficulty choices and two base-map
   previews. Credits/Back and Quit work. Start launches the new terrain engine
   for an empty-slot selection; existing saved simulations cannot be loaded yet.
-- **Native 3D engine foundation:** a separate authored Direct3D 11 executable
-  renders both original height maps with a free camera. Each terrain has
-  524,288 triangles and uses the map overview image as a temporary surface
-  texture. External buildings/vehicles, original terrain materials and physics
-  are still deferred. See [engine bootstrap notes](docs/ENGINE_BOOTSTRAP.md).
+- **Original map scene reconstruction:** the Direct3D 11 host renders both
+  original terrains, buildings, trees, roads and props. Local `.i3d.shapes`
+  decoding recovers **1,155 / 833 meshes**, instanced through the original scene
+  hierarchy. Original diffuse textures and **8 / 6 terrain weight layers** are
+  loaded at their I3D repeat sizes. The camera starts at the original saved I3D
+  viewpoint. Shaders are simplified; mission simulation and physics remain
+  incomplete. See [engine notes](docs/ENGINE_BOOTSTRAP.md).
+- **Native GE6 mesh-cipher validation:** **128 comparisons / 74,848 bytes**
+  against the isolated original routine, including partial blocks and counter carry.
 - **Reconstructed C++ launcher:** reads the game's startup XML, chooses the
   x86 or x64 executable, and forwards command-line arguments. It still runs
   the original installed game engine.
@@ -50,22 +59,22 @@ Track completed work and remaining milestones in the
 
 ## Current 3D renders
 
-Captured directly from the rebuilt Direct3D 11 runtime. This milestone shows
-the original terrain relief with the overview image as a temporary texture;
-buildings and trees in these images are not separate 3D objects yet.
+Captured directly from the reconstructed scene runtime. Buildings, trees,
+roads and props use recovered original meshes, placements and diffuse textures.
+Terrain uses original height and weight maps. Lighting, water and materials
+are simplified; these are scene-viewer captures, not gameplay.
 
 ### Bjornholm
 
-![Bjornholm terrain bootstrap](docs/screenshots/terrain-map01.png)
+![Bjornholm reconstructed original scene](docs/screenshots/scene-map01.png)
 
 ### Westbridge Hills
 
-![Westbridge Hills terrain bootstrap](docs/screenshots/terrain-map02.png)
+![Westbridge Hills reconstructed original scene](docs/screenshots/scene-map02.png)
 
-The next reconstruction work follows original GIANTS Engine 6 resources and
-native behavior: map coordinates, scene hierarchy, binary meshes and materials.
-Original components may be used locally as references or runtime bridges where
-practical; authored replacement code is identified separately.
+Earlier terrain-only captures remain available for comparison:
+[Bjornholm](docs/screenshots/terrain-map01.png),
+[Westbridge Hills](docs/screenshots/terrain-map02.png).
 
 ## Repository contents
 
@@ -74,7 +83,8 @@ practical; authored replacement code is identified separately.
 | `src/launcher/main.cpp` | Compilable behavioral reconstruction of the launcher |
 | `src/core/rle8.cpp` | Compilable RLE8 engine routine |
 | `src/menu/` | Independently compiled GUI host and authored recovered-menu bootstrap |
-| `src/engine/` | Authored Direct3D 11 terrain runtime, I3D metadata and resource loaders |
+| `src/engine/` | Native scene host, hierarchical I3D transforms, instanced original meshes and terrain layers |
+| `src/shape_bridge/` | Local original-mesh staging bridge using pinned MIT I3DShapesTool source |
 | `scripts/inventory.py` | Read-only inventory, local binary copies, PE reports, and SDK example extraction |
 | `scripts/runtime_snapshot.py` | Capture only the normally loaded game's code section for analysis |
 | `scripts/analyze.ps1` | Ghidra headless runner |
@@ -87,7 +97,10 @@ practical; authored replacement code is identified separately.
 | `scripts/recover_lua.py` | Strict decompilation, recompilation checks, and bytecode comparisons |
 | `scripts/compile_recovered_lua.py` | Build the local recompiled script package |
 | `scripts/package-menu.ps1` | Validate and package the directly runnable local frontend |
-| `scripts/prepare-engine-assets.ps1` | Copy six map inputs from the local installation |
+| `scripts/prepare-engine-assets.ps1` | Copy original terrain inputs and material layers |
+| `scripts/setup_shapes_tools.ps1` | Fetch/build the pinned upstream mesh decoder with a .NET stream adapter |
+| `scripts/prepare_scene.py` | Stage both original mesh caches and textures with local provenance |
+| `scripts/check_shapes_native.py` | Compare the decoder cipher with the isolated original GE6 routine |
 | `scripts/verify-engine-package.ps1` | Verify native rendering and package parity for both maps |
 | `src/menu/savegames.cpp` | Read-only save metadata snapshots and explicit mutation rejection |
 | `scripts/verify_workspace.py` | Check hashes and provenance relationships in local outputs |
@@ -134,12 +147,16 @@ After script/asset recovery below, run:
 ```powershell
 .\scripts\setup_lua_tools.ps1
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR -PrepareOnly
+.\scripts\setup_shapes_tools.ps1
+& 'C:\path\to\python.exe' scripts\prepare_scene.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15EngineAlpha\FS15MenuRebuilt.exe
+.\build\FS15SceneAlpha\FS15MenuRebuilt.exe
 ```
 
-The preparation step copies the installed bitmap fonts, base-map previews and terrain inputs before the
+The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
+reference pack; the packaged native runtime does not require .NET.
+Preparation copies original files and stages geometry locally before the
 build's menu test runs. The menu target is enabled when
 the pinned local LuaJIT static library exists. To build the other components
 without it, use `-DFS15_BUILD_MENU=OFF` in CMake.
@@ -156,7 +173,8 @@ and callbacks. Career shows twenty slots, existing money/duration/map/date
 metadata, and explicit unavailable labels for unsupported metadata. Save
 files are read only; Delete is disabled. An empty slot opens the recovered
 Difficulty and Map Selection screens. Start opens the native terrain window
-without creating a save or starting simulation. Credits/Back and Quit also work.
+with original buildings and trees, without creating a save or starting simulation.
+Credits/Back and Quit also work.
 Use WASD/ZQSD or arrows to move, mouse drag to look, Space/Ctrl for height,
 Shift for speed and Home to reset the view.
 
@@ -166,7 +184,7 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15EngineAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15SceneAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,

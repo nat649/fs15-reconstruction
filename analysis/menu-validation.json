@@ -1,19 +1,19 @@
 {
+  "sourceHashesVerified": true,
+  "workspaceSmokePassed": true,
+  "packageSha256": "024aa75f960efd748542f97d0d2093c4475e049f701fe1428826d0dc39cec653",
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
+  "packageSmokePassed": true,
+  "nativeEngineDependency": false,
+  "recoveredSources": 36,
   "matchingScreenCaptures": [
     "CareerScreen",
     "CreditsScreen",
     "DifficultyScreen",
     "MapSelectionScreen"
   ],
-  "recoveredAssets": 23,
-  "packageSha256": "a26118dae091670dcc97f654da5e6977da8523c42badf2723f02458fa1f18c30",
-  "nativeEngineDependency": false,
-  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
-  "saveMetadataReadOnly": true,
-  "sourceHashesVerified": true,
-  "recoveredSources": 36,
-  "packageSmokePassed": true,
-  "workspaceSmokePassed": true,
   "identicalRender": true,
-  "scope": "Reconstructed frontend and authored native terrain engine; full game simulation not rebuilt"
+  "scope": "Recovered frontend and original I3D terrain/object scene; simplified native renderer, no mission simulation",
+  "recoveredAssets": 308,
+  "saveMetadataReadOnly": true
 }

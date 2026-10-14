@@ -1,0 +1,38 @@
+{
+  "upstream": "https://github.com/Donkie/I3DShapesTool",
+  "upstreamCommit": "1a2ecf3125d6754d9100c342419003bf048dbec5",
+  "license": "MIT",
+  "scope": "Original binary meshes, no authored replacement objects",
+  "maps": [
+    {
+      "inputVersion": 3,
+      "inputSeed": 80,
+      "parts": 1184,
+      "meshes": 1155,
+      "vertices": 596076,
+      "triangles": 407938,
+      "skinned": 0,
+      "map": "map01",
+      "originalShapesSha256": "25214930e92e747c005e02a33518ef71fc35d03a51a820adcaeefca9e8c69565",
+      "cacheSha256": "60f2cb0e3aac5cd100893bacafb42ebb81a336174d04a145bc170afac682651a",
+      "cacheBytes": 23997420
+    },
+    {
+      "inputVersion": 3,
+      "inputSeed": 210,
+      "parts": 857,
+      "meshes": 833,
+      "vertices": 430169,
+      "triangles": 291748,
+      "skinned": 0,
+      "map": "map02",
+      "originalShapesSha256": "92778b95fbfcad0d1f315400dd296c85b24eaff989393c7b7d23430329346382",
+      "cacheSha256": "4df89470d10126b66dc340114246ad3fcab6abe2dfb20798be9656405744de28",
+      "cacheBytes": 17286388
+    }
+  ],
+  "unusedMissingTextureReferences": [
+    "data/maps/textures/foliage/ground_diffuse.dds"
+  ],
+  "copiedResourceCount": 308
+}

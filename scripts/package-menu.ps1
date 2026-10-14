@@ -1,4 +1,4 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15EngineAlpha')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15SceneAlpha')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 & (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir
@@ -49,6 +49,16 @@ if (-not ($runtimeLog | Select-String '^BOOT_OK ') -or -not ($runtimeLog | Selec
 }
 $sourceNames = @($runtimeLog | Where-Object { $_.StartsWith('SOURCE ') } | ForEach-Object { $_.Substring(7) } | Sort-Object -Unique)
 $assetNames = @($runtimeLog | Where-Object { $_.StartsWith('ASSET ') } | ForEach-Object { $_.Substring(6) } | Sort-Object -Unique)
+# Native resource tracing adds binary meshes, object textures and terrain layers.
+foreach ($map in @('Map01','Map02')) {
+    $engineReport = Join-Path $projectRoot "build/engine-assets-$map.json"
+    $engineArguments = '--root "{0}" --map {1} --smoke --report "{2}"' -f $projectRoot,$map,$engineReport
+    $engineProcess = Start-Process -FilePath (Join-Path $projectRoot 'FS15EngineRebuilt.exe') -ArgumentList $engineArguments -Wait -PassThru -WindowStyle Hidden
+    if ($engineProcess.ExitCode -ne 0) { throw "Native resource trace failed for $map" }
+    $engineData = Get-Content -LiteralPath $engineReport -Raw | ConvertFrom-Json
+    $assetNames += @($engineData.resources)
+}
+$assetNames = @($assetNames | Sort-Object -Unique)
 $recovery = Get-Content -LiteralPath (Join-Path $projectRoot 'analysis\lua-recovery.json') -Raw | ConvertFrom-Json
 $manifestFiles = [System.Collections.Generic.List[object]]::new()
 function Copy-PackageFile([string]$Source, [string]$Relative) {
@@ -66,6 +76,9 @@ foreach ($line in ($runtimeLog | Where-Object { $_.StartsWith('ADAPTER ') })) {
     Copy-PackageFile (Join-Path $projectRoot ('src\menu\' + $adapter)) $adapter
 }
 Copy-PackageFile (Join-Path $projectRoot 'tools\LuaJIT\COPYRIGHT') 'licenses\LuaJIT-COPYRIGHT.txt'
+if (Test-Path -LiteralPath (Join-Path $projectRoot 'build/shape-bridge/I3DShapesTool-LICENSE.txt')) {
+    Copy-PackageFile (Join-Path $projectRoot 'build/shape-bridge/I3DShapesTool-LICENSE.txt') 'licenses/I3DShapesTool-LICENSE.txt'
+}
 foreach ($name in $sourceNames) {
     $source = Join-Path $projectRoot ('recovered\lua\' + $name)
     $relativeRecoveryName = [System.IO.Path]::ChangeExtension($name.Substring('dataS/'.Length), '.luc').Replace('\','/')
@@ -92,12 +105,18 @@ copy. It is excluded from GitHub. Do not redistribute the game assets.
 Career displays twenty slots and reads existing save metadata without changing
 files. Mouse wheel and keyboard navigate the original list. Empty slots reach
 the original three difficulty choices and the two base-map previews. Start
-opens FS15EngineRebuilt for a new selection: real 3D height-map terrain with
-the map overview as its surface texture. This is an engine bootstrap, not a
+opens FS15EngineRebuilt for a new selection: original terrain, buildings and
+trees, recovered binary meshes, diffuse textures and terrain layers. This is a
+scene reconstruction with simplified shaders, not a
 complete game session. Existing saved simulations still cannot be loaded.
 Credits/Back and Quit work. Other unimplemented screens report their destination.
-Buildings, external meshes, vehicles, physics and multiplayer are not implemented.
+Vehicles, physics, mission simulation and multiplayer are not implemented.
+Shadows, animated foliage, crop density rendering and full GIANTS materials remain incomplete.
 Original main.lua is not executed. Save deletion/writes are disabled.
+
+WASD/ZQSD or arrows move; mouse drag looks; Shift is faster; Space/Ctrl change
+height; Home resets; Escape closes the map window. --view overview selects the
+whole-map camera; default --view original uses the camera stored in the I3D.
 
 The default local Documents/My Games/FarmingSimulator2015 profile is read only.
 Use --save-dir "PATH" for another profile, or --empty-saves for empty slots.
@@ -108,7 +127,7 @@ $readmePath = Join-Path $packageRoot 'README.txt'
 $readme | Set-Content -LiteralPath $readmePath -Encoding utf8
 $manifestFiles.Add(@{ path='README.txt'; sha256=(Get-FileHash -LiteralPath $readmePath).Hash.ToLower(); bytes=(Get-Item -LiteralPath $readmePath).Length })
 $manifest = @{
-    scope='Reconstructed frontend and authored native terrain engine; full game simulation not rebuilt'
+    scope='Recovered frontend and original I3D terrain/object scene; simplified native renderer, no mission simulation'
     originalEngineLoaded=$false
     originalMainExecuted=$false
     recoveredSources=$sourceNames.Count

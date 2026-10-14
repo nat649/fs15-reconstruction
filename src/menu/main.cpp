@@ -251,14 +251,14 @@ static int launch_world(lua_State* state) {
             if(!fs::is_regular_file(executable))throw std::runtime_error("Build FS15EngineRebuilt before opening a terrain");
             if(smoke_mode) {
                 // GUI tests check this plan; native tests rasterize both maps.
-                log_line("WORLD_LAUNCH_PLAN map="+id+" mode=terrain-only");
+                log_line("WORLD_LAUNCH_PLAN map="+id+" mode=original-map-scene");
             }else {
                 auto command=quote_argument(executable.wstring())+L" --root "+quote_argument(resource_root.wstring())+L" --map "+wide(id);
                 STARTUPINFOW startup{};startup.cb=sizeof(startup);PROCESS_INFORMATION process{};
                 if(!CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,FALSE,0,nullptr,resource_root.c_str(),&startup,&process))
                     throw std::runtime_error("Cannot launch terrain runtime: "+std::to_string(GetLastError()));
                 CloseHandle(process.hThread);CloseHandle(process.hProcess);
-                log_line("WORLD_PROCESS_STARTED map="+id+" mode=terrain-only");
+                log_line("WORLD_PROCESS_STARTED map="+id+" mode=original-map-scene");
             }
             lua_pushboolean(state,1);
         }catch(const std::exception& exception){lua_pushstring(state,exception.what());error=true;}

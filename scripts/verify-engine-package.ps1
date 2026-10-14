@@ -16,6 +16,10 @@ foreach ($map in @('Map01','Map02')) {
         $data = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
         if (-not $data.ready -or $data.original_engine_loaded -or $data.visible_gpu_samples -le 0 -or -not $data.camera_math_check) {
             throw "Native engine $variant $map did not render terrain" }
+        if ($data.decoded_meshes -gt 0 -and ($data.rendered_instances -le 0 -or $data.visible_object_gpu_samples -le 0)) {
+            throw "Native engine $variant $map did not rasterize original objects" }
+        if ($data.road_alignment_samples -gt 0 -and $data.road_median_height_error -gt 0.25) {
+            throw "Original road meshes and height map no longer align for $map" }
         $reports += $data
         $images += (Get-FileHash -LiteralPath $image -Algorithm SHA256).Hash.ToLower()
     }
@@ -25,12 +29,17 @@ foreach ($map in @('Map01','Map02')) {
         vertices=$reports[0].vertices; triangles=$reports[0].triangles
         sourceWidth=$reports[0].source_width; sourceHeight=$reports[0].source_height
         worldWidth=$reports[0].world_width; worldDepth=$reports[0].world_depth
-        sceneNodes=$reports[0].scene_nodes; deferredShapes=$reports[0].deferred_shape_nodes
+        sceneNodes=$reports[0].scene_nodes; sourceShapeNodes=$reports[0].source_shape_nodes; skippedShapeNodes=$reports[0].skipped_shape_nodes
         visibleGpuSamples=$reports[0].visible_gpu_samples; cameraMathCheck=$true
+        decodedMeshes=$reports[0].decoded_meshes; renderedInstances=$reports[0].rendered_instances
+        objectTriangles=$reports[0].object_triangles; terrainLayers=$reports[0].terrain_layers
+        visibleObjectGpuSamples=$reports[0].visible_object_gpu_samples
+        roadAlignmentSamples=$reports[0].road_alignment_samples
+        roadMedianHeightError=$reports[0].road_median_height_error; roadFlippedZError=$reports[0].road_flipped_z_error
         identicalPackageRender=$true; imageSha256=$images[0]
     }
 }
-@{ scope='Authored D3D11 terrain bootstrap; original DEM + overview DDS; external models/physics not rendered'
+@{ scope='Original GE6 I3D terrain and object meshes; diffuse/weight layers and hierarchical transforms; simplified shaders, no physics'
    originalEngineLoaded=$false; maps=$results; syntheticWarpFixture='tests/engine_fixture.py'
 } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $projectRoot 'analysis\engine-validation.json') -Encoding utf8
 Write-Output 'Native engine startup and identical packaged terrain rendering verified for both maps.'
