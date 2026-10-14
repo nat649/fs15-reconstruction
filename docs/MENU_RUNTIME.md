@@ -24,8 +24,9 @@ The Steam edition's seven main buttons retain their recovered callbacks.
 Career opens twenty selectable slots. Empty slots reach recovered difficulty
 and base-map selection; three difficulty choices and both original map previews
 execute recovered callbacks. Selected slot/map/difficulty reach an explicit
-world-loading boundary. Existing saves are displayed read only and Start
-reports the missing load engine. Multiplayer remains unavailable.
+world-loading boundary. For empty slots, Start now creates the independently
+authored terrain-engine process for the chosen map. Existing saves are displayed
+read only and Start reports the missing saved-simulation loader. Multiplayer remains unavailable.
 Credits opens the recovered credits screen, including scrolling text and
 Back. Quit calls the host's exit service. Other game screens and all gameplay
 still need engine reconstruction. The displayed original version string is
@@ -66,10 +67,12 @@ GAR cipher oracle; that dependency is absent from menu runtime execution.
 `scripts/package-menu.ps1` runs the recovered-menu smoke/input checks, reads
 the source and asset trace, verifies all used recovered-source hashes against
 the recovery manifest, and copies just those dependencies into
-`build/FS15Frontend`. Its manifest records SHA-256 and size for each packaged file.
+`build/FS15EngineAlpha`. Its manifest records SHA-256 and size for each packaged file.
 The LuaJIT copyright notice accompanies the statically linked executable.
 The two authored adapters accompany the bootstrap. Preparation also copies
-the installed base-map preview DDS files into the local asset tree. Pass
+the installed base-map preview DDS files and terrain inputs into the local asset tree.
+The package includes `FS15EngineRebuilt.exe`; native terrain verification runs
+for both maps before ZIP creation. See [engine notes](ENGINE_BOOTSTRAP.md). Pass
 `-Destination build/AnotherFrontend` to stage a separate build while an earlier
 executable is running.
 
@@ -123,5 +126,9 @@ Key recovered GUI sources previously classified as `syntax_only` now have
 evidence for these exercised runtime paths. This does not establish complete
 bytecode equivalence, every GUI behavior, original pixel/shader parity or a
 rebuilt game world. Native GUI startup replaces the original engine startup.
+
+New-game smoke checks validate engine launch plans without spawning windows.
+The separate native engine tests perform GPU rendering. Interactive Start
+launches the terrain process; its free camera is independent of mission simulation.
 
 Aggregate metadata: [menu validation](../analysis/menu-validation.json).

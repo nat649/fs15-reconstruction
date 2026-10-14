@@ -1,12 +1,13 @@
 # Project progress checklist
 
-Updated: **2026-10-14**. Checked items have supporting local build, analysis
+Updated: **2026-10-15**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
-**Current milestone:** a newly compiled executable displays the recovered
-main menu, read-only Career, difficulty and base-map selection screens without
-starting the original game engine. Full gameplay is still
-unimplemented. See [menu validation](analysis/menu-validation.json) and
+**Current milestone:** the recovered frontend can launch an independently
+compiled Direct3D 11 terrain engine for either base map. It renders original
+height data with the map overview as its surface texture and a free camera.
+Full gameplay is still unimplemented. See [engine validation](analysis/engine-validation.json),
+[menu validation](analysis/menu-validation.json) and
 [detailed status](analysis/STATUS.md).
 
 ## Installation and analysis
@@ -68,8 +69,18 @@ unimplemented. See [menu validation](analysis/menu-validation.json) and
 
 ## Toward a playable game
 
+- [x] Start an authored native Direct3D 11 device, swap chain and depth buffer.
+- [x] Parse original I3D scene metadata and resolve both base-map height resources.
+- [x] Render both original height maps as 3D terrain (524,288 triangles each).
+- [x] Upload the original overview DDS including its mip chain as a temporary terrain material.
+- [x] Support free-camera keyboard movement, mouse look and reset.
+- [x] Launch the terrain engine from a new Career selection through Start.
+- [x] Observe native Start launch, mouse camera rotation and Home reset in the live window.
+- [x] Validate visible GPU output for both maps and identical packaged renders.
+- [x] Exercise software-rendered authored fixtures and invalid-resource rejection.
 - [ ] Reconstruct scene graph and complete I3D resource loading.
-- [ ] Render a game map and support camera/world input.
+- [ ] Load external .shapes geometry, buildings and original terrain materials.
+- [ ] Execute the complete mission startup and game-world services.
 - [ ] Reconstruct physics and vehicle simulation.
 - [ ] Implement terrain, crops and farming interactions.
 - [ ] Reconstruct audio playback and mixing.
@@ -85,7 +96,6 @@ unimplemented. See [menu validation](analysis/menu-validation.json) and
 - [ ] Provide a fully reconstructed playable game executable.
 
 Asset extraction currently uses a pinned original cipher oracle. The menu
-runtime itself does not use that oracle, an original code snapshot or the
-original game executable. Unsupported menu destinations report their name;
-they do not start a game session. This checklist will advance as those engine
-services are implemented and verified.
+and terrain runtimes do not use that oracle, an original code snapshot or the
+original game executable. A new-game selection starts terrain exploration;
+existing saved simulations and unsupported destinations remain unavailable.

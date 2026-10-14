@@ -1,19 +1,19 @@
 {
-  "packageSha256": "959dac8bbc47aade56b11a940a97e83054b731a96059fa5bc03dcc031e7f6f4f",
   "matchingScreenCaptures": [
     "CareerScreen",
     "CreditsScreen",
     "DifficultyScreen",
     "MapSelectionScreen"
   ],
-  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
+  "recoveredAssets": 23,
+  "packageSha256": "a26118dae091670dcc97f654da5e6977da8523c42badf2723f02458fa1f18c30",
   "nativeEngineDependency": false,
-  "sourceHashesVerified": true,
-  "recoveredAssets": 17,
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
   "saveMetadataReadOnly": true,
+  "sourceHashesVerified": true,
   "recoveredSources": 36,
-  "identicalRender": true,
-  "scope": "Independently compiled frontend; recovered career/difficulty/map selection; full game engine not rebuilt",
+  "packageSmokePassed": true,
   "workspaceSmokePassed": true,
-  "packageSmokePassed": true
+  "identicalRender": true,
+  "scope": "Reconstructed frontend and authored native terrain engine; full game simulation not rebuilt"
 }

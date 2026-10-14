@@ -1,0 +1,249 @@
+// Independently compiled engine bootstrap: actual I3D terrain data, D3D11 and
+// free camera. External .shapes, buildings, simulation and physics are deferred.
+#include <windows.h>
+#include <windowsx.h>
+#include <objbase.h>
+#include <shellapi.h>
+#include <d3d11.h>
+#include <dxgi.h>
+#include <d3dcompiler.h>
+#include <DirectXMath.h>
+#include <wrl/client.h>
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <fstream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include "resources.h"
+
+using Microsoft::WRL::ComPtr;
+using namespace DirectX;
+namespace fs=std::filesystem;
+static constexpr unsigned width=1280,height=720;
+static bool smoke=false,done=false,rmb=false;
+static std::array<bool,256> keys{};
+static POINT last_mouse{};
+static std::ofstream log_file;
+static void log(const std::string& message){log_file<<message<<'\n';log_file.flush();OutputDebugStringA((message+"\n").c_str());}
+static void check(HRESULT result,const char* operation){if(FAILED(result))throw std::runtime_error(std::string(operation)+" failed (HRESULT "+std::to_string(static_cast<unsigned long>(result))+")");}
+static std::wstring wide(const std::string& text){if(text.empty())return {};int n=MultiByteToWideChar(CP_UTF8,0,text.data(),int(text.size()),nullptr,0);std::wstring out(n,0);MultiByteToWideChar(CP_UTF8,0,text.data(),int(text.size()),out.data(),n);return out;}
+
+struct Camera {
+    XMFLOAT3 position{};
+    float yaw=0,pitch=0;
+    XMFLOAT3 home{};float home_yaw=0,home_pitch=0;
+    void initialize(const fs15world::Terrain& terrain) {
+        position={terrain.width*0.85f,terrain.max_height+terrain.width*0.6f,-terrain.depth*0.85f};
+        const float dx=-position.x,dy=(terrain.min_height+terrain.max_height)*0.5f-position.y,dz=-position.z;
+        yaw=std::atan2(dx,dz);pitch=std::atan2(dy,std::sqrt(dx*dx+dz*dz));home=position;home_yaw=yaw;home_pitch=pitch;
+    }
+    void reset(){position=home;yaw=home_yaw;pitch=home_pitch;}
+    void move(float forward,float side,float rise,float dt) {
+        position.x+=(std::sin(yaw)*std::cos(pitch)*forward+std::cos(yaw)*side)*dt;
+        position.y+=(std::sin(pitch)*forward+rise)*dt;
+        position.z+=(std::cos(yaw)*std::cos(pitch)*forward-std::sin(yaw)*side)*dt;
+    }
+    XMMATRIX view()const {
+        const auto eye=XMLoadFloat3(&position);
+        const auto direction=XMVectorSet(std::sin(yaw)*std::cos(pitch),std::sin(pitch),std::cos(yaw)*std::cos(pitch),0);
+        return XMMatrixLookToLH(eye,direction,XMVectorSet(0,1,0,0));
+    }
+    void update(float dt) {
+        float speed=keys[VK_SHIFT]?480.0f:150.0f;
+        float forward=float(keys['W']||keys['Z']||keys[VK_UP])-float(keys['S']||keys[VK_DOWN]);
+        float side=float(keys['D']||keys[VK_RIGHT])-float(keys['A']||keys['Q']||keys[VK_LEFT]);
+        float rise=float(keys[VK_SPACE]||keys[VK_PRIOR])-float(keys[VK_CONTROL]||keys[VK_NEXT]);
+        move(forward*speed,side*speed,rise*speed,dt);
+    }
+} camera;
+
+static constexpr const char* shader=R"hlsl(
+cbuffer View : register(b0) { row_major float4x4 viewProjection; float4 eye; };
+struct Input { float3 position:POSITION; float3 normal:NORMAL; float2 uv:TEXCOORD0; };
+struct Output { float4 position:SV_POSITION; float3 world:TEXCOORD0; float3 normal:TEXCOORD1; float2 uv:TEXCOORD2; };
+Output vsMain(Input v) { Output o; o.position=mul(float4(v.position,1),viewProjection); o.world=v.position;o.normal=v.normal;o.uv=v.uv;return o; }
+Texture2D overview:register(t0);SamplerState linearSampler:register(s0);
+float4 psMain(Output v):SV_TARGET {
+ float3 albedo=overview.Sample(linearSampler,v.uv).rgb;
+ float light=0.50+0.50*saturate(dot(normalize(v.normal),normalize(float3(-0.3,0.8,-0.4))));
+ float fog=saturate((distance(v.world,eye.xyz)-2000)/5000);
+ return float4(lerp(albedo*light,float3(0.58,0.73,0.87),fog),1);
+})hlsl";
+
+class Renderer {
+    ComPtr<ID3D11Device> device;
+    ComPtr<ID3D11DeviceContext> context;
+    ComPtr<IDXGISwapChain> swap;
+    ComPtr<ID3D11Texture2D> back,depth;
+    ComPtr<ID3D11RenderTargetView> color_view;
+    ComPtr<ID3D11DepthStencilView> depth_view;
+    ComPtr<ID3D11VertexShader> vertex_shader;
+    ComPtr<ID3D11PixelShader> pixel_shader;
+    ComPtr<ID3D11InputLayout> layout;
+    ComPtr<ID3D11Buffer> vertices,indices,constants;
+    ComPtr<ID3D11ShaderResourceView> texture_view;
+    ComPtr<ID3D11SamplerState> sampler;
+    ComPtr<ID3D11RasterizerState> raster;
+    ComPtr<ID3D11Query> query;
+    unsigned index_count=0;
+public:
+    D3D_FEATURE_LEVEL feature_level{};
+    bool software=false;
+    std::uint64_t samples=0;
+    Renderer(HWND window,const fs15world::Terrain& terrain,bool force_warp) {
+        DXGI_SWAP_CHAIN_DESC desc{};desc.BufferDesc.Width=width;desc.BufferDesc.Height=height;desc.BufferDesc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count=1;desc.BufferUsage=DXGI_USAGE_RENDER_TARGET_OUTPUT;desc.BufferCount=1;desc.OutputWindow=window;desc.Windowed=TRUE;desc.SwapEffect=DXGI_SWAP_EFFECT_DISCARD;
+        const D3D_FEATURE_LEVEL levels[]{D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0};
+        auto create=[&](D3D_DRIVER_TYPE driver){return D3D11CreateDeviceAndSwapChain(nullptr,driver,nullptr,0,levels,3,D3D11_SDK_VERSION,&desc,&swap,&device,&feature_level,&context);};
+        HRESULT created=force_warp?E_FAIL:create(D3D_DRIVER_TYPE_HARDWARE);
+        if(FAILED(created)){swap.Reset();device.Reset();context.Reset();software=true;created=create(D3D_DRIVER_TYPE_WARP);}
+        check(created,"D3D11 device/swap chain");
+        log(std::string("DEVICE_READY driver=")+(software?"WARP":"hardware")+" feature="+std::to_string(feature_level));
+        check(swap->GetBuffer(0,IID_PPV_ARGS(&back)),"Back buffer");check(device->CreateRenderTargetView(back.Get(),nullptr,&color_view),"Color view");
+        D3D11_TEXTURE2D_DESC depth_desc{};depth_desc.Width=width;depth_desc.Height=height;depth_desc.MipLevels=1;depth_desc.ArraySize=1;
+        depth_desc.Format=DXGI_FORMAT_D24_UNORM_S8_UINT;depth_desc.SampleDesc.Count=1;depth_desc.BindFlags=D3D11_BIND_DEPTH_STENCIL;
+        check(device->CreateTexture2D(&depth_desc,nullptr,&depth),"Depth buffer");check(device->CreateDepthStencilView(depth.Get(),nullptr,&depth_view),"Depth view");
+        ComPtr<ID3DBlob> vs,ps,errors;
+        auto compile=[&](const char* entry,const char* profile,ComPtr<ID3DBlob>& bytecode){
+            HRESULT result=D3DCompile(shader,std::strlen(shader),"fs15world/authored-shader",nullptr,nullptr,entry,profile,
+                D3DCOMPILE_ENABLE_STRICTNESS|D3DCOMPILE_OPTIMIZATION_LEVEL3,0,&bytecode,&errors);
+            if(FAILED(result))throw std::runtime_error(errors?std::string(static_cast<const char*>(errors->GetBufferPointer()),errors->GetBufferSize()):"Shader compilation failed");
+        };
+        compile("vsMain","vs_4_0",vs);compile("psMain","ps_4_0",ps);
+        check(device->CreateVertexShader(vs->GetBufferPointer(),vs->GetBufferSize(),nullptr,&vertex_shader),"Vertex shader");
+        check(device->CreatePixelShader(ps->GetBufferPointer(),ps->GetBufferSize(),nullptr,&pixel_shader),"Pixel shader");
+        D3D11_INPUT_ELEMENT_DESC elements[]{
+            {"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0},
+            {"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D11_INPUT_PER_VERTEX_DATA,0},
+            {"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,24,D3D11_INPUT_PER_VERTEX_DATA,0}};
+        check(device->CreateInputLayout(elements,3,vs->GetBufferPointer(),vs->GetBufferSize(),&layout),"Terrain input layout");
+        auto buffer=[&](const void* data,size_t size,UINT bind,ComPtr<ID3D11Buffer>& out){
+            if(!size||size>UINT_MAX)throw std::runtime_error("Invalid GPU buffer size");
+            D3D11_BUFFER_DESC b{};b.ByteWidth=static_cast<UINT>(size);b.Usage=D3D11_USAGE_DEFAULT;b.BindFlags=bind;
+            D3D11_SUBRESOURCE_DATA initial{};initial.pSysMem=data;check(device->CreateBuffer(&b,data?&initial:nullptr,&out),"Terrain GPU buffer");
+        };
+        buffer(terrain.vertices.data(),terrain.vertices.size()*sizeof(fs15world::Vertex),D3D11_BIND_VERTEX_BUFFER,vertices);
+        buffer(terrain.indices.data(),terrain.indices.size()*sizeof(std::uint32_t),D3D11_BIND_INDEX_BUFFER,indices);
+        index_count=static_cast<unsigned>(terrain.indices.size());buffer(nullptr,80,D3D11_BIND_CONSTANT_BUFFER,constants);
+        auto image=fs15world::load_dds(terrain.texture_file);
+        D3D11_TEXTURE2D_DESC texture_desc{};texture_desc.Width=image.width;texture_desc.Height=image.height;texture_desc.MipLevels=static_cast<unsigned>(image.mip_offsets.size());texture_desc.ArraySize=1;
+        texture_desc.Format=image.compression==1?DXGI_FORMAT_BC1_UNORM:image.compression==2?DXGI_FORMAT_BC2_UNORM:DXGI_FORMAT_BC3_UNORM;
+        texture_desc.SampleDesc.Count=1;texture_desc.Usage=D3D11_USAGE_IMMUTABLE;texture_desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
+        std::vector<D3D11_SUBRESOURCE_DATA> pixels(image.mip_offsets.size());
+        for(size_t i=0;i<pixels.size();++i){pixels[i].pSysMem=image.bytes.data()+image.mip_offsets[i];pixels[i].SysMemPitch=image.mip_pitches[i];}
+        ComPtr<ID3D11Texture2D> texture;check(device->CreateTexture2D(&texture_desc,pixels.data(),&texture),"Original overview texture");
+        check(device->CreateShaderResourceView(texture.Get(),nullptr,&texture_view),"Terrain texture view");
+        D3D11_SAMPLER_DESC s{};s.Filter=D3D11_FILTER_MIN_MAG_MIP_LINEAR;s.AddressU=s.AddressV=s.AddressW=D3D11_TEXTURE_ADDRESS_CLAMP;s.MaxLOD=D3D11_FLOAT32_MAX;
+        check(device->CreateSamplerState(&s,&sampler),"Terrain sampler");
+        D3D11_RASTERIZER_DESC r{};r.FillMode=D3D11_FILL_SOLID;r.CullMode=D3D11_CULL_NONE;r.DepthClipEnable=TRUE;
+        check(device->CreateRasterizerState(&r,&raster),"Rasterizer");
+        D3D11_QUERY_DESC q{};q.Query=D3D11_QUERY_OCCLUSION;check(device->CreateQuery(&q,&query),"GPU visibility query");
+        log("GPU_RESOURCES_READY vertices="+std::to_string(terrain.vertices.size())+" triangles="+std::to_string(index_count/3));
+    }
+    void draw(bool measure=false,bool present=true) {
+        struct View { XMFLOAT4X4 matrix;XMFLOAT4 eye; } data;
+        const auto projection=XMMatrixPerspectiveFovLH(XM_PI/3,float(width)/height,1.0f,10000.0f);
+        XMStoreFloat4x4(&data.matrix,camera.view()*projection);data.eye={camera.position.x,camera.position.y,camera.position.z,1};
+        context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);
+        const float sky[]{0.58f,0.73f,0.87f,1};context->ClearRenderTargetView(color_view.Get(),sky);context->ClearDepthStencilView(depth_view.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1,0);
+        auto target=color_view.Get();context->OMSetRenderTargets(1,&target,depth_view.Get());
+        D3D11_VIEWPORT viewport{0,0,float(width),float(height),0,1};context->RSSetViewports(1,&viewport);context->RSSetState(raster.Get());
+        UINT stride=sizeof(fs15world::Vertex),offset=0;auto vertex_buffer=vertices.Get();context->IASetVertexBuffers(0,1,&vertex_buffer,&stride,&offset);
+        context->IASetIndexBuffer(indices.Get(),DXGI_FORMAT_R32_UINT,0);context->IASetInputLayout(layout.Get());context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        context->VSSetShader(vertex_shader.Get(),nullptr,0);context->PSSetShader(pixel_shader.Get(),nullptr,0);
+        auto c=constants.Get();context->VSSetConstantBuffers(0,1,&c);context->PSSetConstantBuffers(0,1,&c);
+        auto t=texture_view.Get();auto s=sampler.Get();context->PSSetShaderResources(0,1,&t);context->PSSetSamplers(0,1,&s);
+        if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());
+        if(present)check(swap->Present(smoke?0:1,0),"Present 3D frame");
+    }
+    void verify_visibility() {
+        context->Flush();auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);HRESULT result;
+        while((result=context->GetData(query.Get(),&samples,sizeof(samples),0))==S_FALSE) {
+            if(std::chrono::steady_clock::now()>end)throw std::runtime_error("GPU visibility query timed out");Sleep(1);
+        }
+        check(result,"GPU visibility samples");if(!samples)throw std::runtime_error("No terrain geometry rasterized");
+        log("TERRAIN_VISIBLE gpu_samples="+std::to_string(samples));
+    }
+    void capture(const fs::path& filename) {
+        D3D11_TEXTURE2D_DESC d{};back->GetDesc(&d);d.BindFlags=0;d.Usage=D3D11_USAGE_STAGING;d.CPUAccessFlags=D3D11_CPU_ACCESS_READ;d.MiscFlags=0;
+        ComPtr<ID3D11Texture2D> staging;check(device->CreateTexture2D(&d,nullptr,&staging),"Readback texture");context->CopyResource(staging.Get(),back.Get());
+        D3D11_MAPPED_SUBRESOURCE mapped{};check(context->Map(staging.Get(),0,D3D11_MAP_READ,0,&mapped),"Readback pixels");
+        std::vector<std::uint8_t> bgra(size_t(width)*height*4);auto source=static_cast<const std::uint8_t*>(mapped.pData);
+        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<width;++x){auto p=source+y*mapped.RowPitch+x*4;auto o=bgra.data()+(size_t(y)*width+x)*4;o[0]=p[2];o[1]=p[1];o[2]=p[0];o[3]=255;}
+        context->Unmap(staging.Get(),0);fs15world::save_png(filename,width,height,bgra.data(),width*4);
+    }
+};
+
+static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
+    switch(message) {
+    case WM_KEYDOWN:if(wparam<keys.size())keys[wparam]=true;if(wparam==VK_ESCAPE)DestroyWindow(window);if(wparam==VK_HOME)camera.reset();return 0;
+    case WM_KEYUP:if(wparam<keys.size())keys[wparam]=false;return 0;
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:rmb=true;last_mouse={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);return 0;
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:rmb=false;ReleaseCapture();return 0;
+    case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};camera.yaw+=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);last_mouse=now;}return 0;
+    case WM_KILLFOCUS:keys.fill(false);rmb=false;ReleaseCapture();return 0;
+    case WM_DESTROY:done=true;PostQuitMessage(0);return 0;
+    }
+    return DefWindowProcW(window,message,wparam,lparam);
+}
+static fs::path exe_directory(){wchar_t path[32768];auto n=GetModuleFileNameW(nullptr,path,32768);if(!n||n>=32768)throw std::runtime_error("Engine executable path unavailable");return fs::path(std::wstring(path,n)).parent_path();}
+int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
+    SetProcessDPIAware();HRESULT com=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);HWND window=nullptr;int result=0;
+    try {
+        check(com,"Engine COM initialization");auto root=exe_directory();if(!fs::exists(root/"assets/data/maps/map01.i3d")&&!fs::exists(root/"recovered/gar/data/maps/map01.i3d"))root=root.parent_path().parent_path();
+        std::string map="Map01";fs::path capture,report;bool warp=false;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
+        for(int i=1;i<argc;++i){std::wstring arg=argv[i];
+            if(arg==L"--root"&&i+1<argc)root=fs::absolute(argv[++i]);
+            else if(arg==L"--map"&&i+1<argc){std::wstring m=argv[++i];if(m!=L"Map01"&&m!=L"Map02")throw std::runtime_error("Only Map01/Map02 are supported");map=m==L"Map01"?"Map01":"Map02";}
+            else if(arg==L"--smoke")smoke=true;
+            else if(arg==L"--warp")warp=true;
+            else if(arg==L"--capture"&&i+1<argc)capture=fs::absolute(argv[++i]);
+            else if(arg==L"--report"&&i+1<argc)report=fs::absolute(argv[++i]);
+            else throw std::runtime_error("Usage: FS15EngineRebuilt --root PATH --map Map01|Map02 [--smoke] [--warp] [--capture PNG] [--report JSON]");
+        }
+        LocalFree(argv);fs::create_directories(root/"logs");log_file.open(root/"logs"/("engine-"+map+".log"));
+        if(!log_file)throw std::runtime_error("Cannot open engine log");
+        log("ENGINE_BOOT authored Win32/D3D11 runtime; original engine not loaded");
+        auto terrain=fs15world::load_terrain(root,map);
+        log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" deferred_shapes="+std::to_string(terrain.deferred_shapes));
+        camera.initialize(terrain);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
+        if(!camera_test)throw std::runtime_error("Camera movement check failed");
+        WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
+        if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
+        DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;RECT rect{0,0,int(width),int(height)};AdjustWindowRect(&rect,style,FALSE);
+        std::wstring title=L"FS15 Reconstructed Engine - Terrain only - "+wide(map)+L" | WASD/ZQSD, RMB look, Space/Ctrl, Home, Esc";
+        window=CreateWindowW(wc.lpszClassName,title.c_str(),style,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,instance,nullptr);
+        if(!window)throw std::runtime_error("Cannot create engine window");
+        Renderer render(window,terrain,warp);if(!smoke)ShowWindow(window,show);
+        render.draw(true,!smoke);render.verify_visibility();
+        // Capture before Present: discard swap chains need not preserve content.
+        if(!capture.empty()){render.draw(false,false);render.capture(capture);}
+        if(report.empty())report=root/"logs"/("engine-"+map+".json");
+        std::ofstream metadata(report);if(!metadata)throw std::runtime_error("Cannot write engine validation report");
+        metadata<<"{\n\"scope\":\"Terrain-only engine bootstrap; overview texture, no models or physics\",\n"
+            <<"\"map\":\""<<map<<"\",\n\"ready\":true,\n\"original_engine_loaded\":false,\n"
+            <<"\"driver\":\""<<(render.software?"WARP":"hardware")<<"\",\n\"feature_level\":"<<render.feature_level<<",\n"
+            <<"\"scene_nodes\":"<<terrain.nodes.size()<<",\n\"deferred_shape_nodes\":"<<terrain.deferred_shapes<<",\n"
+            <<"\"source_width\":"<<terrain.source_width<<",\n\"source_height\":"<<terrain.source_height<<",\n"
+            <<"\"world_width\":"<<terrain.width<<",\n\"world_depth\":"<<terrain.depth<<",\n"
+            <<"\"min_height\":"<<terrain.min_height<<",\n\"max_height\":"<<terrain.max_height<<",\n"
+            <<"\"vertices\":"<<terrain.vertices.size()<<",\n\"triangles\":"<<terrain.indices.size()/3<<",\n"
+            <<"\"visible_gpu_samples\":"<<render.samples<<",\n\"camera_math_check\":true\n}\n";metadata.close();
+        log("ENGINE_READY terrain geometry and texture rendered; free camera initialized");
+        if(smoke){for(int frame=0;frame<8;++frame)render.draw();log("ENGINE_SMOKE_OK frames=9");}
+        else {
+            auto previous=std::chrono::steady_clock::now();MSG message{};
+            while(!done){while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}if(done)break;
+                auto now=std::chrono::steady_clock::now();float dt=std::min(0.1f,std::chrono::duration<float>(now-previous).count());previous=now;
+                if(IsIconic(window)){Sleep(25);continue;}camera.update(dt);render.draw();
+            }
+        }
+    }catch(const std::exception& error){log(std::string("FATAL ")+error.what());if(!smoke)MessageBoxW(window,wide(error.what()).c_str(),L"Reconstructed engine error",MB_OK|MB_ICONERROR);result=1;}
+    if(window&&IsWindow(window))DestroyWindow(window);log("ENGINE_SHUTDOWN exit="+std::to_string(result));if(SUCCEEDED(com))CoUninitialize();return result;
+}

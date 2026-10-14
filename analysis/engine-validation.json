@@ -1,0 +1,43 @@
+{
+  "originalEngineLoaded": false,
+  "maps": [
+    {
+      "sourceWidth": 1025,
+      "featureLevel": 45056,
+      "cameraMathCheck": true,
+      "vertices": 263169,
+      "imageSha256": "a8f615d52db45c51225f94f847c24a3382547dd49ec9943f92213cdcd9647641",
+      "worldDepth": 2048,
+      "sourceHeight": 1025,
+      "visibleGpuSamples": 125485,
+      "sceneNodes": 352366,
+      "worldWidth": 2048,
+      "map": "Map01",
+      "identicalPackageRender": true,
+      "driver": "hardware",
+      "triangles": 524288,
+      "deferredShapes": 345229,
+      "ready": true
+    },
+    {
+      "sourceWidth": 1025,
+      "featureLevel": 45056,
+      "cameraMathCheck": true,
+      "vertices": 263169,
+      "imageSha256": "6a9da969d88d0b30e9e6f1ee2feca824a8fa3e4fd9b275f45a3f6ec12036e40b",
+      "worldDepth": 2048,
+      "sourceHeight": 1025,
+      "visibleGpuSamples": 124765,
+      "sceneNodes": 113230,
+      "worldWidth": 2048,
+      "map": "Map02",
+      "identicalPackageRender": true,
+      "driver": "hardware",
+      "triangles": 524288,
+      "deferredShapes": 110568,
+      "ready": true
+    }
+  ],
+  "syntheticWarpFixture": "tests/engine_fixture.py",
+  "scope": "Authored D3D11 terrain bootstrap; original DEM + overview DDS; external models/physics not rendered"
+}

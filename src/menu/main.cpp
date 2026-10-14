@@ -229,6 +229,42 @@ static int get_screen_info(lua_State* state) {
     lua_pushinteger(state, 60);
     return 3;
 }
+static std::wstring quote_argument(const std::wstring& value) {
+    std::wstring out=L"\"";size_t slashes=0;
+    for(wchar_t ch:value){if(ch==L'\\'){++slashes;continue;}
+        out.append(slashes*(ch==L'\"'?2:1)+(ch==L'\"'?1:0),L'\\');out+=ch;slashes=0;}
+    out.append(slashes*2,L'\\');return out+L"\"";
+}
+static int launch_world(lua_State* state) {
+    const char* map=luaL_checkstring(state,1);
+    const auto difficulty=luaL_checkinteger(state,2),slot=luaL_checkinteger(state,3);
+    bool error=false;
+    {
+        try {
+            const std::string id=map;
+            if((id!="Map01"&&id!="Map02")||difficulty<1||difficulty>3||slot<1||slot>20)
+                throw std::runtime_error("Invalid terrain launch request");
+            const std::string stem=id=="Map01"?"map01":"map02",dem=id=="Map01"?"map01_dem.png":"americanMap_dem.png";
+            resolve_asset("data/maps/"+stem+".i3d");resolve_asset("data/maps/"+stem+"/"+dem);resolve_asset("data/maps/"+stem+"/pda_map_H.dds");
+            auto executable=resource_root/"FS15EngineRebuilt.exe";
+            if(!fs::is_regular_file(executable))executable=resource_root/"build/Release/FS15EngineRebuilt.exe";
+            if(!fs::is_regular_file(executable))throw std::runtime_error("Build FS15EngineRebuilt before opening a terrain");
+            if(smoke_mode) {
+                // GUI tests check this plan; native tests rasterize both maps.
+                log_line("WORLD_LAUNCH_PLAN map="+id+" mode=terrain-only");
+            }else {
+                auto command=quote_argument(executable.wstring())+L" --root "+quote_argument(resource_root.wstring())+L" --map "+wide(id);
+                STARTUPINFOW startup{};startup.cb=sizeof(startup);PROCESS_INFORMATION process{};
+                if(!CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,FALSE,0,nullptr,resource_root.c_str(),&startup,&process))
+                    throw std::runtime_error("Cannot launch terrain runtime: "+std::to_string(GetLastError()));
+                CloseHandle(process.hThread);CloseHandle(process.hProcess);
+                log_line("WORLD_PROCESS_STARTED map="+id+" mode=terrain-only");
+            }
+            lua_pushboolean(state,1);
+        }catch(const std::exception& exception){lua_pushstring(state,exception.what());error=true;}
+    }
+    return error?lua_error(state):1;
+}
 static int get_screen_mode(lua_State* state) { lua_pushinteger(state, 0); return 1; }
 static int num_gamepads(lua_State* state) { lua_pushinteger(state, 0); return 1; }
 static int upper_utf8(lua_State* state) {
@@ -266,6 +302,7 @@ static void boot(const std::string& language) {
     lua_register(vm, "delete", delete_resource);
     lua_register(vm, "doExit", exit_menu);
     lua_register(vm, "menuUnavailable", menu_unavailable);
+    lua_register(vm, "menuLaunchWorld", launch_world);
     lua_register(vm, "getScreenModeInfo", get_screen_info);
     lua_register(vm, "getScreenMode", get_screen_mode);
     lua_register(vm, "getNumOfGamepads", num_gamepads);

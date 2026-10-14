@@ -4,8 +4,8 @@ Early-stage reverse engineering and component reconstruction of **Farming
 Simulator 15 for Windows**, based on a locally installed copy of version
 **1.4.2.0**.
 
-**This is not a complete game rebuild. The engine and the full game cannot
-be compiled from this repository yet.**
+**This is not a complete game rebuild. An authored native terrain engine
+can be compiled; the full original engine and farming simulation remain incomplete.**
 
 ## Current results
 
@@ -14,8 +14,13 @@ be compiled from this repository yet.**
   Runs 36 recovered Lua sources with authored XML, rendering, input and
   read-only save services. Career displays twenty slots and existing save
   metadata; empty slots lead to three difficulty choices and two base-map
-  previews. Credits/Back and Quit work. Starting a game world remains
-  unimplemented.
+  previews. Credits/Back and Quit work. Start launches the new terrain engine
+  for an empty-slot selection; existing saved simulations cannot be loaded yet.
+- **Native 3D engine foundation:** a separate authored Direct3D 11 executable
+  renders both original height maps with a free camera. Each terrain has
+  524,288 triangles and uses the map overview image as a temporary surface
+  texture. External buildings/vehicles, original terrain materials and physics
+  are still deferred. See [engine bootstrap notes](docs/ENGINE_BOOTSTRAP.md).
 - **Reconstructed C++ launcher:** reads the game's startup XML, chooses the
   x86 or x64 executable, and forwards command-line arguments. It still runs
   the original installed game engine.
@@ -50,6 +55,7 @@ Track completed work and remaining milestones in the
 | `src/launcher/main.cpp` | Compilable behavioral reconstruction of the launcher |
 | `src/core/rle8.cpp` | Compilable RLE8 engine routine |
 | `src/menu/` | Independently compiled GUI host and authored recovered-menu bootstrap |
+| `src/engine/` | Authored Direct3D 11 terrain runtime, I3D metadata and resource loaders |
 | `scripts/inventory.py` | Read-only inventory, local binary copies, PE reports, and SDK example extraction |
 | `scripts/runtime_snapshot.py` | Capture only the normally loaded game's code section for analysis |
 | `scripts/analyze.ps1` | Ghidra headless runner |
@@ -62,6 +68,8 @@ Track completed work and remaining milestones in the
 | `scripts/recover_lua.py` | Strict decompilation, recompilation checks, and bytecode comparisons |
 | `scripts/compile_recovered_lua.py` | Build the local recompiled script package |
 | `scripts/package-menu.ps1` | Validate and package the directly runnable local frontend |
+| `scripts/prepare-engine-assets.ps1` | Copy six map inputs from the local installation |
+| `scripts/verify-engine-package.ps1` | Verify native rendering and package parity for both maps |
 | `src/menu/savegames.cpp` | Read-only save metadata snapshots and explicit mutation rejection |
 | `scripts/verify_workspace.py` | Check hashes and provenance relationships in local outputs |
 | `tools/bootstrap_ghidra.py` | Download and verify a pinned official Ghidra release |
@@ -89,7 +97,8 @@ CMake uses its default Visual Studio generator. Select another explicitly:
 .\scripts\build.ps1 -Generator 'Visual Studio 17 2022'
 ```
 
-The build produces `FS15LauncherRebuilt.exe` and `FS15Core.dll` and runs CTest.
+The build produces `FS15LauncherRebuilt.exe`, `FS15Core.dll` and
+`FS15EngineRebuilt.exe`, plus the frontend when LuaJIT is available, and runs CTest.
 The launcher has nine behavioral checks. If the local native RLE reference
 exists, the build also requires Python 3.11+ and runs the differential tests.
 Pass `-PythonExe 'C:\path\to\python.exe'` to select the interpreter.
@@ -108,27 +117,29 @@ After script/asset recovery below, run:
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR -PrepareOnly
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15Frontend\FS15MenuRebuilt.exe
+.\build\FS15EngineAlpha\FS15MenuRebuilt.exe
 ```
 
-The preparation step copies the installed bitmap fonts and base-map previews before the
+The preparation step copies the installed bitmap fonts, base-map previews and terrain inputs before the
 build's menu test runs. The menu target is enabled when
 the pinned local LuaJIT static library exists. To build the other components
 without it, use `-DFS15_BUILD_MENU=OFF` in CMake.
 
-The local folder contains its executable, bootstrap, recovered Lua sources,
+The local folder contains both executables, bootstrap, recovered Lua sources,
 assets and LuaJIT copyright notice. A ZIP is generated at
 `build/FS15MenuRebuilt-local.zip`. Both stay excluded from GitHub. Keep the
 folder together; the executable finds resources beside itself regardless of
 the working directory. No original game executable, runtime code snapshot,
-archive cipher oracle or Steam process is required **to run this menu**.
+archive cipher oracle or Steam process is required **to run this frontend and terrain engine**.
 
 Mouse, wheel and arrow/Enter input use the recovered GUI's hit testing, focus
 and callbacks. Career shows twenty slots, existing money/duration/map/date
 metadata, and explicit unavailable labels for unsupported metadata. Save
 files are read only; Delete is disabled. An empty slot opens the recovered
-Difficulty and Map Selection screens. Start reports the world-loading boundary
-without creating or loading a game. Credits/Back and Quit also work.
+Difficulty and Map Selection screens. Start opens the native terrain window
+without creating a save or starting simulation. Credits/Back and Quit also work.
+Use WASD/ZQSD or arrows to move, mouse drag to look, Space/Ctrl for height,
+Shift for speed and Home to reset the view.
 
 Interactive runs read the local Windows Documents/My Games/FarmingSimulator2015
 profile. Override it with `--save-dir PATH`, or use `--empty-saves` for empty
@@ -136,10 +147,10 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15Frontend\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15EngineAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
-Other screens report their requested destination. The full `main.lua` startup, game worlds,
+Other screens report their requested destination. The full `main.lua` startup, complete game worlds,
 physics, networking, audio and multiplayer remain outside this milestone.
 See [menu reconstruction notes](docs/MENU_RUNTIME.md).
 

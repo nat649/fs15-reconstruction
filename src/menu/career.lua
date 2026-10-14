@@ -103,7 +103,11 @@ function fs15_install_career()
             isExisting = savegame.isValid == true
         }
         fs15_last_world_request = self.lastWorldRequest
-        menuUnavailable(savegame.isValid and "Load saved game world" or "Create new game world")
+        if savegame.isValid then
+            menuUnavailable("Load saved game simulation (terrain-only runtime available for new selections)")
+        else
+            assert(menuLaunchWorld(savegame.mapId, savegame.difficulty, savegame.savegameIndex), "Terrain runtime was not launched")
+        end
     end
 
     -- Buttons and every recovered entry point to save mutations are blocked.

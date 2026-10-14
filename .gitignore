@@ -19,6 +19,8 @@
 /FS15LauncherRebuilt.exe
 /FS15Core.dll
 /FS15MenuRebuilt.exe
+/FS15EngineRebuilt.exe
+!/analysis/engine-validation.json
 /logs/
 __pycache__/
 *.pyc

@@ -1,6 +1,7 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15Frontend')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15EngineAlpha')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+& (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir
 $fontRoot = Join-Path $projectRoot 'recovered\gar\shared\font'
 foreach ($font in @('defaultFont.font', 'defaultFont.png')) {
     $fontTarget = Join-Path $fontRoot $font
@@ -57,6 +58,7 @@ function Copy-PackageFile([string]$Source, [string]$Relative) {
     $manifestFiles.Add(@{ path=$Relative.Replace('\','/'); sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLower(); bytes=(Get-Item -LiteralPath $target).Length })
 }
 Copy-PackageFile $executable 'FS15MenuRebuilt.exe'
+Copy-PackageFile (Join-Path $projectRoot 'FS15EngineRebuilt.exe') 'FS15EngineRebuilt.exe'
 Copy-PackageFile (Join-Path $projectRoot 'src\menu\bootstrap.lua') 'bootstrap.lua'
 foreach ($line in ($runtimeLog | Where-Object { $_.StartsWith('ADAPTER ') })) {
     $adapter = $line.Substring(8)
@@ -90,9 +92,11 @@ copy. It is excluded from GitHub. Do not redistribute the game assets.
 Career displays twenty slots and reads existing save metadata without changing
 files. Mouse wheel and keyboard navigate the original list. Empty slots reach
 the original three difficulty choices and the two base-map previews. Start
-reports the world-loading boundary; no game session is created or loaded.
+opens FS15EngineRebuilt for a new selection: real 3D height-map terrain with
+the map overview as its surface texture. This is an engine bootstrap, not a
+complete game session. Existing saved simulations still cannot be loaded.
 Credits/Back and Quit work. Other unimplemented screens report their destination.
-No world, physics, multiplayer or full native engine startup is implemented.
+Buildings, external meshes, vehicles, physics and multiplayer are not implemented.
 Original main.lua is not executed. Save deletion/writes are disabled.
 
 The default local Documents/My Games/FarmingSimulator2015 profile is read only.
@@ -104,7 +108,7 @@ $readmePath = Join-Path $packageRoot 'README.txt'
 $readme | Set-Content -LiteralPath $readmePath -Encoding utf8
 $manifestFiles.Add(@{ path='README.txt'; sha256=(Get-FileHash -LiteralPath $readmePath).Hash.ToLower(); bytes=(Get-Item -LiteralPath $readmePath).Length })
 $manifest = @{
-    scope='Independently compiled frontend; recovered career/difficulty/map selection; full game engine not rebuilt'
+    scope='Reconstructed frontend and authored native terrain engine; full game simulation not rebuilt'
     originalEngineLoaded=$false
     originalMainExecuted=$false
     recoveredSources=$sourceNames.Count
@@ -133,6 +137,7 @@ foreach ($name in $captureNames) {
         throw "Packaged frontend capture differs: $name"
     }
 }
+& (Join-Path $PSScriptRoot 'verify-engine-package.ps1') -PackageRoot $packageRoot
 $zipPath = Join-Path $projectRoot 'build\FS15MenuRebuilt-local.zip'
 $zipPaths = @($manifestFiles | ForEach-Object { Join-Path $packageRoot $_.path }) + @(Join-Path $packageRoot 'MENU-MANIFEST.json')
 # Compress the directory structure, keeping the folder runnable after extraction.
