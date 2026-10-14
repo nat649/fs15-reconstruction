@@ -8,9 +8,30 @@ and machine-specific analysis outputs remain local.
 
 ## Compiled components
 
+A newly compiled **FS15MenuRebuilt.exe** now launches a visible main menu
+without starting the original game engine or Steam. It executes **26
+recovered Lua sources** with authored XML/rendering/input services and
+**11 local assets**, including profiles, layouts, localization, textures
+and the game's bitmap font. The native window was visually observed.
+
+The menu smoke check renders 120 frames and exercises seven localized buttons,
+mouse Career dispatch, keyboard Down/Enter Multiplayer dispatch, Credits
+update/Back and mouse Quit. The folder package passes the same checks from
+a different working directory with an identical rendered PNG. Source hashes
+are checked against the recovery manifest. The build now has five CTest
+suites when all local inputs/tools are present.
+
+This is an independently implemented GUI host with a subset bootstrap.
+Original `main.lua` and complete engine startup do not execute. The remaining
+game screens, worlds, physics, audio and networking are unimplemented.
+Credits/Back and Quit work; other destinations produce explicit progress
+dialogs. See [menu notes](../docs/MENU_RUNTIME.md),
+[validation](menu-validation.json) and the [checklist](../PROJECT_CHECKLIST.md).
+
 | Component | Source | Validation | Scope |
 |---|---|---|---|
 | Launcher | `src/launcher/main.cpp` | Nine behavioral checks; dry run against the installed startup configuration | Starts the original game binary; not binary-identical source recovery |
+| Main-menu runtime | `src/menu/` | Visible native launch; 120 frames, recovered input callbacks and portable local package checks | MainScreen and Credits; subset startup, no gameplay |
 | RLE8-to-bit-vector decoder | `src/core/rle8.cpp` | 266 comparisons with the original native function, covering 853,086 values | One engine routine with a documented valid-input domain |
 
 The RLE reconstruction comes from **0x14028f430**, reached through references
@@ -140,5 +161,6 @@ must not be treated as established source types.
 
 The recovered game scripts and assets remain local and excluded from Git.
 Current validation establishes the analysis pipeline, launcher behavior,
-one native routine, archive recovery, and a recompiled Lua layer. It does
-not establish a rebuilt engine startup or full gameplay equivalence.
+one native routine, archive recovery, a recompiled Lua layer and a visible
+recovered-menu launch through an independently compiled host. It does not
+establish full native engine startup or gameplay equivalence.

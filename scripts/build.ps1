@@ -13,3 +13,6 @@ ctest --test-dir $buildDir -C Release --output-on-failure
 if ($LASTEXITCODE -ne 0) { throw 'Reconstruction checks failed' }
 Copy-Item -LiteralPath (Join-Path $buildDir 'Release\FS15LauncherRebuilt.exe') -Destination (Join-Path $projectRoot 'FS15LauncherRebuilt.exe')
 Copy-Item -LiteralPath (Join-Path $buildDir 'Release\FS15Core.dll') -Destination (Join-Path $projectRoot 'FS15Core.dll')
+if (Test-Path -LiteralPath (Join-Path $buildDir 'Release\FS15MenuRebuilt.exe')) {
+    Copy-Item -LiteralPath (Join-Path $buildDir 'Release\FS15MenuRebuilt.exe') -Destination (Join-Path $projectRoot 'FS15MenuRebuilt.exe')
+}

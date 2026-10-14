@@ -13,10 +13,13 @@
 !/analysis/lua-recovery-summary.json
 !/analysis/lua-build-summary.json
 !/analysis/lua-toolchain.json
+!/analysis/menu-validation.json
 /recovered/
 /build/
 /FS15LauncherRebuilt.exe
 /FS15Core.dll
+/FS15MenuRebuilt.exe
+/logs/
 __pycache__/
 *.pyc
 .venv/

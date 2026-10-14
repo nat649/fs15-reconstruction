@@ -9,6 +9,12 @@ be compiled from this repository yet.**
 
 ## Current results
 
+- **Rebuilt main-menu executable:** opens the recovered `MainScreen` in a
+  Windows window without starting the original game executable or Steam.
+  Runs 26 recovered Lua sources with authored XML, rendering and input
+  services, original menu assets and bitmap font. Seven buttons, keyboard
+  focus, Credits/Back and Quit are exercised. This is a menu milestone;
+  starting a game world is still unimplemented.
 - **Reconstructed C++ launcher:** reads the game's startup XML, chooses the
   x86 or x64 executable, and forwards command-line arguments. It still runs
   the original installed game engine.
@@ -33,12 +39,16 @@ Function counts include runtime and third-party library code. They are not
 a measure of game reconstruction completeness. See [the project status](analysis/STATUS.md)
 for evidence, limitations, and the next targets.
 
+Track completed work and remaining milestones in the
+[project checklist](PROJECT_CHECKLIST.md).
+
 ## Repository contents
 
 | Path | Purpose |
 |---|---|
 | `src/launcher/main.cpp` | Compilable behavioral reconstruction of the launcher |
 | `src/core/rle8.cpp` | Compilable RLE8 engine routine |
+| `src/menu/` | Independently compiled GUI host and authored recovered-menu bootstrap |
 | `scripts/inventory.py` | Read-only inventory, local binary copies, PE reports, and SDK example extraction |
 | `scripts/runtime_snapshot.py` | Capture only the normally loaded game's code section for analysis |
 | `scripts/analyze.ps1` | Ghidra headless runner |
@@ -50,6 +60,7 @@ for evidence, limitations, and the next targets.
 | `scripts/extract_gar.py` | Local extraction, hashes, XML diagnostics, and script normalization |
 | `scripts/recover_lua.py` | Strict decompilation, recompilation checks, and bytecode comparisons |
 | `scripts/compile_recovered_lua.py` | Build the local recompiled script package |
+| `scripts/package-menu.ps1` | Validate and package a directly runnable local main menu |
 | `scripts/verify_workspace.py` | Check hashes and provenance relationships in local outputs |
 | `tools/bootstrap_ghidra.py` | Download and verify a pinned official Ghidra release |
 
@@ -85,6 +96,37 @@ To start the installed game through this launcher, remove `--dry-run`.
 Keep Steam available. This uses the **original game executable**. Set the
 installation path with `--game-dir` or `FS15_GAME_DIR`; otherwise it defaults
 to Steam's usual installation directory on C:.
+
+### Launch the reconstructed main menu
+
+After script/asset recovery below, run:
+
+```powershell
+.\scripts\setup_lua_tools.ps1
+.\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR -PrepareOnly
+.\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
+.\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
+.\build\FS15Menu\FS15MenuRebuilt.exe
+```
+
+The preparation step copies the installed bitmap fonts locally before the
+build's menu test runs. The menu target is enabled when
+the pinned local LuaJIT static library exists. To build the other components
+without it, use `-DFS15_BUILD_MENU=OFF` in CMake.
+
+The local folder contains its executable, bootstrap, recovered Lua sources,
+assets and LuaJIT copyright notice. A ZIP is generated at
+`build/FS15MenuRebuilt-local.zip`. Both stay excluded from GitHub. Keep the
+folder together; the executable finds resources beside itself regardless of
+the working directory. No original game executable, runtime code snapshot,
+archive cipher oracle or Steam process is required **to run this menu**.
+
+Mouse and arrow/Enter input use the recovered GUI's hit testing, focus and
+callbacks. Credits opens its recovered screen; Back returns; Quit exits.
+Other screens report their requested destination because their engine
+services are not implemented. The full `main.lua` startup, game worlds,
+physics, networking, audio and multiplayer remain outside this milestone.
+See [menu reconstruction notes](docs/MENU_RUNTIME.md).
 
 ## Reproduce the local analysis
 
@@ -179,7 +221,7 @@ playable standalone game. See [Lua recovery notes](docs/LUA_RECOVERY.md).
 
 Investigate the 216 Lua round-trip differences, reconstruct the GAR cipher
 without original-code execution, and continue documenting the Lua/native
-interfaces before rebuilding engine startup.
+interfaces and extending the menu runtime toward game startup.
 
 The RLE routine does not implement the complete GRLE file format, physics,
 rendering, or game simulation. Recovered game assets and Lua sources are
