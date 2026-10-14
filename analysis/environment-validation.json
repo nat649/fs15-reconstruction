@@ -1,0 +1,15 @@
+{
+  "scope": "Original sky mesh/textures, recovered Lua curves and five compiled GE6 shader injections; authored single-map shadow host",
+  "status": "passed",
+  "map": "Map02",
+  "shaderInjections": 5,
+  "originalCurveSamples": 1441,
+  "animatedDraws": 14,
+  "motionChangedPixels": 17978,
+  "nightChangedPixels": 921600,
+  "shadowChangedPixels": 212089,
+  "shadowDepthPixels": 4194304,
+  "shadowResolution": 2048,
+  "dayImageSha256": "910b2b41fe780ccfcc20cd47eca9a1f2ccdec6899650e3342c5be32be8936f8a",
+  "nightImageSha256": "6854ada0bd97683a3fce76fcb378eb3cd0c8096093b05e780e4e807bb3c95888"
+}

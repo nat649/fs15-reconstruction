@@ -26,6 +26,7 @@
 !/analysis/engine-validation.json
 !/analysis/scene-recovery.json
 !/analysis/shapes-native-validation.json
+!/analysis/environment-validation.json
 /logs/
 __pycache__/
 *.pyc

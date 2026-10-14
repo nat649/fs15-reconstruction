@@ -64,10 +64,28 @@ def main():
             copy(name)
         stats.update(map=map_name,originalShapesSha256=sha(original),cacheSha256=sha(cached),cacheBytes=cached.stat().st_size)
         maps.append(stats)
+    sky_rel = Path('data/sky/sky_day_night.i3d')
+    copy(sky_rel)
+    sky_cache = dest/sky_rel.with_suffix('.meshes')
+    subprocess.run(['dotnet',str(bridge),str(base/(str(sky_rel)+'.shapes')),str(sky_cache)],check=True,capture_output=True,text=True)
+    for resource in ('day','sunset','night','sunrise','overcast'):
+        for part in ('TOP','SIDE'):
+            copy(Path('data/sky')/(resource+'_sky_'+part+'.dds'))
+    copy(Path('data/sky/skyShader.xml'))
+    for shader in ('windShader','flagShader','treeBranchShader'):
+        copy(Path('data/maps/shaders')/(shader+'.xml'))
+    subprocess.run([str(ROOT/'tools/LuaJIT/src/luajit.exe'),str(ROOT/'scripts/stage_environment.lua'),str(ROOT),
+                    str(dest/'data/sky/environment.curves')],check=True)
     provenance = dict(upstream='https://github.com/Donkie/I3DShapesTool',
                       upstreamCommit='1a2ecf3125d6754d9100c342419003bf048dbec5',
                       license='MIT',scope='Original binary meshes, no authored replacement objects',
                       maps=maps,files=files,unusedMissingTextureReferences=sorted(missing))
+    provenance['environment'] = dict(
+        sourceLuaSha256={name:sha(ROOT/'recovered/lua/dataS/scripts'/name)
+                         for name in ('shared/class.lua','Utils.lua','AnimCurve.lua','environment/Environment.lua')},
+        originalSkyShapesSha256=sha(base/(str(sky_rel)+'.shapes')),
+        skyCacheSha256=sha(sky_cache),curveCacheSha256=sha(dest/'data/sky/environment.curves'),
+        curveSamples=1441,scope='Original curve-setup source and AnimCurve evaluator executed locally; clear-weather preview')
     (ROOT/'recovered/scene-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
     summary = {k:v for k,v in provenance.items() if k not in ('files',)}
     summary['copiedResourceCount']=len(files)

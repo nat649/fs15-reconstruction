@@ -67,7 +67,7 @@ GAR cipher oracle; that dependency is absent from menu runtime execution.
 `scripts/package-menu.ps1` runs the recovered-menu smoke/input checks, reads
 the source and asset trace, verifies all used recovered-source hashes against
 the recovery manifest, and copies just those dependencies into
-`build/FS15SceneAlpha`. Its manifest records SHA-256 and size for each packaged file.
+`build/FS15EnvironmentAlpha`. Its manifest records SHA-256 and size for each packaged file.
 The LuaJIT copyright notice accompanies the statically linked executable.
 The two authored adapters accompany the bootstrap. Preparation also copies
 the installed base-map preview DDS files and terrain inputs into the local asset tree.

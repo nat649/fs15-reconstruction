@@ -14,6 +14,8 @@ authored. Original meshes and scene placements are the source of map objects.
 | Map hierarchy, camera, dimensions and repeat sizes | Original I3D XML | Parsed without rewriting the installed game |
 | Buildings, trees, roads and props | Original version-3 `.i3d.shapes` containers | Decoded into local, lossless float/index caches; native GPU instancing |
 | Terrain and materials | Original DEM, weight PNGs and diffuse DDS mipmaps | Height geometry, metre-based repeats and simplified material rendering |
+| Sky and environment curves | Original sky I3D/DDS and recovered Environment/AnimCurve Lua | Original dome/textures and locally evaluated minute samples for preview lighting |
+| Sky/wind/flag/foliage shaders | Original XML injection bodies | Compiled unchanged in authored HLSL bindings; original material animation parameters |
 | Mesh decoder | Pinned MIT [I3DShapesTool](https://github.com/Donkie/I3DShapesTool/tree/1a2ecf3125d6754d9100c342419003bf048dbec5) | Existing format implementation reused with an authored .NET stream-range adapter |
 | GE6 mesh cipher | Original native `0x1402b3fa0` | Executed in an isolated comparison process; 128 comparisons pass |
 | GAR cipher | Original native initializer/decoder | Existing local extraction oracle |
@@ -46,6 +48,6 @@ aggregate validation and selected rendered screenshots.
 ## Next reconstruction targets
 
 Recover GIANTS material/shader behavior, terrain detail and crop density
-rendering; restore distance-based LOD, sky and shadows; then recover mission
+rendering; restore distance-based LOD, full shadow cascades and tree skeletons; then recover mission
 startup and the native interfaces required for vehicle/physics simulation.
 Validate placement, rendering and gameplay separately as those components land.

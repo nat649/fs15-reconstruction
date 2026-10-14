@@ -22,12 +22,17 @@
 #include "resources.h"
 #include "scene_render.h"
 #include "terrain_material.h"
+#include "environment.h"
+#include "shadows.h"
+#include "render_shared.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 namespace fs=std::filesystem;
 static constexpr unsigned width=1280,height=720;
 static bool smoke=false,done=false,rmb=false;
+static float environment_hour=8,animation_time=0;
+static bool shadows_enabled=true;
 static std::array<bool,256> keys{};
 static POINT last_mouse{};
 static std::ofstream log_file;
@@ -50,6 +55,7 @@ struct Camera {
         }
     }
     void reset(){position=home;yaw=home_yaw;pitch=home_pitch;}
+    void look_at(const XMFLOAT3& eye,const XMFLOAT3& target){position=eye;float dx=target.x-eye.x,dy=target.y-eye.y,dz=target.z-eye.z;if(dx*dx+dy*dy+dz*dz<0.001f)throw std::runtime_error("Camera target equals position");yaw=std::atan2(dx,dz);pitch=std::atan2(dy,std::sqrt(dx*dx+dz*dz));home=position;home_yaw=yaw;home_pitch=pitch;}
     void move(float forward,float side,float rise,float dt) {
         position.x+=(std::sin(yaw)*std::cos(pitch)*forward-std::cos(yaw)*side)*dt;
         position.y+=(std::sin(pitch)*forward+rise)*dt;
@@ -87,9 +93,8 @@ float4 psMain(Output v):SV_TARGET {
  BLEND_LAYER(0,detail0,unitSize0.x) BLEND_LAYER(1,detail1,unitSize0.y) BLEND_LAYER(2,detail2,unitSize0.z) BLEND_LAYER(3,detail3,unitSize0.w)
  BLEND_LAYER(4,detail4,unitSize1.x) BLEND_LAYER(5,detail5,unitSize1.y) BLEND_LAYER(6,detail6,unitSize1.z) BLEND_LAYER(7,detail7,unitSize1.w)
  albedo=total>0.001?sum/total:detail0.Sample(repeatSampler,v.world.xz/unitSize0.x).rgb;}
- float light=0.50+0.50*saturate(dot(normalize(v.normal),normalize(float3(-0.3,0.8,-0.4))));
- float fog=saturate((distance(v.world,eye.xyz)-2000)/5000);
- return float4(lerp(albedo*light,float3(0.58,0.73,0.87),fog),1);
+ float3 light=ambientColor.xyz+saturate(dot(normalize(v.normal),sunDirection.xyz))*sunDiffuse.xyz*shadowVisibility(v.world);
+ return float4(applyDistanceFog(albedo*light,v.world,eye.xyz),1);
 })hlsl";
 
 class Renderer {
@@ -110,11 +115,20 @@ class Renderer {
     unsigned index_count=0;
     std::unique_ptr<SceneRenderer> scene;
     std::unique_ptr<TerrainMaterial> terrain_material;
+    std::unique_ptr<EnvironmentRenderer> environment;
+    std::unique_ptr<ShadowRenderer> shadows;
+    bool has_shadows=false;
 public:
     D3D_FEATURE_LEVEL feature_level{};
     bool software=false;
     std::uint64_t samples=0;
     std::uint64_t object_samples=0;
+    std::uint64_t shadow_pixels=0;
+    bool environment_ready()const{return environment->ready();}
+    unsigned original_injections()const{return scene->original_injections()+(environment->ready()?2:0);}
+    unsigned animated_draws()const{return scene->animated_draws();}
+    unsigned shadow_resolution()const{return shadows->resolution();}
+    const std::vector<fs::path>& environment_resources()const{return environment->resources();}
     Renderer(HWND window,const fs15world::Terrain& terrain,bool force_warp,const fs::path& root) {
         DXGI_SWAP_CHAIN_DESC desc{};desc.BufferDesc.Width=width;desc.BufferDesc.Height=height;desc.BufferDesc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.SampleDesc.Count=1;desc.BufferUsage=DXGI_USAGE_RENDER_TARGET_OUTPUT;desc.BufferCount=1;desc.OutputWindow=window;desc.Windowed=TRUE;desc.SwapEffect=DXGI_SWAP_EFFECT_DISCARD;
@@ -124,13 +138,14 @@ public:
         if(FAILED(created)){swap.Reset();device.Reset();context.Reset();software=true;created=create(D3D_DRIVER_TYPE_WARP);}
         check(created,"D3D11 device/swap chain");
         log(std::string("DEVICE_READY driver=")+(software?"WARP":"hardware")+" feature="+std::to_string(feature_level));
-        check(swap->GetBuffer(0,IID_PPV_ARGS(&back)),"Back buffer");check(device->CreateRenderTargetView(back.Get(),nullptr,&color_view),"Color view");
+        check(swap->GetBuffer(0,IID_PPV_ARGS(&back)),"Back buffer");D3D11_RENDER_TARGET_VIEW_DESC srgb{};srgb.Format=DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;srgb.ViewDimension=D3D11_RTV_DIMENSION_TEXTURE2D;check(device->CreateRenderTargetView(back.Get(),&srgb,&color_view),"sRGB color view");
         D3D11_TEXTURE2D_DESC depth_desc{};depth_desc.Width=width;depth_desc.Height=height;depth_desc.MipLevels=1;depth_desc.ArraySize=1;
         depth_desc.Format=DXGI_FORMAT_D24_UNORM_S8_UINT;depth_desc.SampleDesc.Count=1;depth_desc.BindFlags=D3D11_BIND_DEPTH_STENCIL;
         check(device->CreateTexture2D(&depth_desc,nullptr,&depth),"Depth buffer");check(device->CreateDepthStencilView(depth.Get(),nullptr,&depth_view),"Depth view");
         ComPtr<ID3DBlob> vs,ps,errors;
         auto compile=[&](const char* entry,const char* profile,ComPtr<ID3DBlob>& bytecode){
-            HRESULT result=D3DCompile(shader,std::strlen(shader),"fs15world/authored-shader",nullptr,nullptr,entry,profile,
+            const auto source=std::string(world_shader_services)+shader;
+            HRESULT result=D3DCompile(source.data(),source.size(),"fs15world/terrain-shader",nullptr,nullptr,entry,profile,
                 D3DCOMPILE_ENABLE_STRICTNESS|D3DCOMPILE_OPTIMIZATION_LEVEL3,0,&bytecode,&errors);
             if(FAILED(result))throw std::runtime_error(errors?std::string(static_cast<const char*>(errors->GetBufferPointer()),errors->GetBufferSize()):"Shader compilation failed");
         };
@@ -152,7 +167,7 @@ public:
         index_count=static_cast<unsigned>(terrain.indices.size());buffer(nullptr,80,D3D11_BIND_CONSTANT_BUFFER,constants);
         auto image=fs15world::load_dds(terrain.texture_file);
         D3D11_TEXTURE2D_DESC texture_desc{};texture_desc.Width=image.width;texture_desc.Height=image.height;texture_desc.MipLevels=static_cast<unsigned>(image.mip_offsets.size());texture_desc.ArraySize=1;
-        texture_desc.Format=image.compression==1?DXGI_FORMAT_BC1_UNORM:image.compression==2?DXGI_FORMAT_BC2_UNORM:DXGI_FORMAT_BC3_UNORM;
+        texture_desc.Format=image.compression==1?DXGI_FORMAT_BC1_UNORM_SRGB:image.compression==2?DXGI_FORMAT_BC2_UNORM_SRGB:DXGI_FORMAT_BC3_UNORM_SRGB;
         texture_desc.SampleDesc.Count=1;texture_desc.Usage=D3D11_USAGE_IMMUTABLE;texture_desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
         std::vector<D3D11_SUBRESOURCE_DATA> pixels(image.mip_offsets.size());
         for(size_t i=0;i<pixels.size();++i){pixels[i].pSysMem=image.bytes.data()+image.mip_offsets[i];pixels[i].SysMemPitch=image.mip_pitches[i];}
@@ -166,23 +181,34 @@ public:
         log("GPU_RESOURCES_READY vertices="+std::to_string(terrain.vertices.size())+" triangles="+std::to_string(index_count/3));
         scene=std::make_unique<SceneRenderer>(device.Get(),context.Get(),terrain,root);
         terrain_material=std::make_unique<TerrainMaterial>(device.Get(),terrain,root);
+        environment=std::make_unique<EnvironmentRenderer>(device.Get(),root);shadows=std::make_unique<ShadowRenderer>(device.Get(),terrain.sun);has_shadows=terrain.sun.shadows;
+        log("ENVIRONMENT_READY recovered_sky="+std::to_string(environment->ready())+" original_injections="+std::to_string(original_injections())+" animated_draws="+std::to_string(animated_draws()));
         log("TERRAIN_LAYERS_READY count="+std::to_string(terrain_material->layer_count()));
         log("SCENE_GPU_READY meshes="+std::to_string(terrain.meshes.size())+" instances="+std::to_string(terrain.rendered_instances)+" textures="+std::to_string(scene->texture_count()));
     }
     void draw(bool measure=false,bool present=true) {
         struct View { XMFLOAT4X4 matrix;XMFLOAT4 eye; } data;
         const auto projection=XMMatrixPerspectiveFovRH(XM_PI/3,float(width)/height,1.0f,10000.0f);
+        XMFLOAT3 forward{std::sin(camera.yaw)*std::cos(camera.pitch),std::sin(camera.pitch),std::cos(camera.yaw)*std::cos(camera.pitch)};
+        const auto lighting=environment->sample(environment_hour);
+        const auto shadow_vp=shadows->update(context.Get(),lighting,camera.position,forward,animation_time,shadows_enabled);
+        auto bind_terrain=[&](){UINT stride=sizeof(fs15world::Vertex),offset=0;auto vb=vertices.Get();context->IASetVertexBuffers(0,1,&vb,&stride,&offset);context->IASetIndexBuffer(indices.Get(),DXGI_FORMAT_R32_UINT,0);context->IASetInputLayout(layout.Get());context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);context->VSSetShader(vertex_shader.Get(),nullptr,0);auto b=constants.Get();context->VSSetConstantBuffers(0,1,&b);};
+        if(shadows_enabled&&has_shadows){
+            shadows->begin(context.Get());XMStoreFloat4x4(&data.matrix,shadow_vp);data.eye={camera.position.x,camera.position.y,camera.position.z,1};context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);bind_terrain();context->PSSetShader(nullptr,nullptr,0);context->DrawIndexed(index_count,0,0);scene->draw(shadow_vp,camera.position,false,true);
+        }
         XMStoreFloat4x4(&data.matrix,camera.view()*projection);data.eye={camera.position.x,camera.position.y,camera.position.z,1};
         context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);
         const float sky[]{0.58f,0.73f,0.87f,1};context->ClearRenderTargetView(color_view.Get(),sky);context->ClearDepthStencilView(depth_view.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1,0);
         auto target=color_view.Get();context->OMSetRenderTargets(1,&target,depth_view.Get());
         D3D11_VIEWPORT viewport{0,0,float(width),float(height),0,1};context->RSSetViewports(1,&viewport);context->RSSetState(raster.Get());
+        environment->draw(context.Get(),camera.view()*projection,camera.position,environment_hour);
         UINT stride=sizeof(fs15world::Vertex),offset=0;auto vertex_buffer=vertices.Get();context->IASetVertexBuffers(0,1,&vertex_buffer,&stride,&offset);
         context->IASetIndexBuffer(indices.Get(),DXGI_FORMAT_R32_UINT,0);context->IASetInputLayout(layout.Get());context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         context->VSSetShader(vertex_shader.Get(),nullptr,0);context->PSSetShader(pixel_shader.Get(),nullptr,0);
         auto c=constants.Get();context->VSSetConstantBuffers(0,1,&c);context->PSSetConstantBuffers(0,1,&c);
         auto t=texture_view.Get();auto s=sampler.Get();context->PSSetShaderResources(0,1,&t);context->PSSetSamplers(0,1,&s);
         terrain_material->bind(context.Get());
+        shadows->bind_lighting(context.Get());
         if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());scene->draw(camera.view()*projection,camera.position,measure);
         if(present)check(swap->Present(smoke?0:1,0),"Present 3D frame");
     }
@@ -194,6 +220,8 @@ public:
         check(result,"GPU visibility samples");if(!samples)throw std::runtime_error("No terrain geometry rasterized");
         log("TERRAIN_VISIBLE gpu_samples="+std::to_string(samples));
         object_samples=scene->visible_samples();log("ORIGINAL_MESHES_VISIBLE gpu_samples="+std::to_string(object_samples));
+        shadow_pixels=shadows->depth_pixels(device.Get(),context.Get());if(shadows_enabled&&has_shadows&&!shadow_pixels)throw std::runtime_error("Shadow depth map is empty");
+        log("SHADOW_DEPTH_READY pixels="+std::to_string(shadow_pixels));
     }
     void capture(const fs::path& filename) {
         D3D11_TEXTURE2D_DESC d{};back->GetDesc(&d);d.BindFlags=0;d.Usage=D3D11_USAGE_STAGING;d.CPUAccessFlags=D3D11_CPU_ACCESS_READ;d.MiscFlags=0;
@@ -207,7 +235,7 @@ public:
 
 static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
     switch(message) {
-    case WM_KEYDOWN:if(wparam<keys.size())keys[wparam]=true;if(wparam==VK_ESCAPE)DestroyWindow(window);if(wparam==VK_HOME)camera.reset();return 0;
+    case WM_KEYDOWN:if(wparam<keys.size())keys[wparam]=true;if(wparam==VK_ESCAPE)DestroyWindow(window);if(wparam==VK_HOME)camera.reset();if(!(lparam&(1L<<30))){if(wparam==VK_F5)environment_hour=std::fmod(environment_hour+1,24.0f);if(wparam==VK_F6)environment_hour=std::fmod(environment_hour+23,24.0f);if(wparam==VK_F7)shadows_enabled=!shadows_enabled;}return 0;
     case WM_KEYUP:if(wparam<keys.size())keys[wparam]=false;return 0;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:rmb=true;last_mouse={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);return 0;
@@ -225,11 +253,15 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     try {
         check(com,"Engine COM initialization");auto root=exe_directory();if(!fs::exists(root/"assets/data/maps/map01.i3d")&&!fs::exists(root/"recovered/gar/data/maps/map01.i3d"))root=root.parent_path().parent_path();
         std::string map="Map01";fs::path capture,report;bool warp=false,original_view=true;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
+        XMFLOAT3 explicit_camera{},explicit_target{};bool has_camera=false,has_target=false;
         for(int i=1;i<argc;++i){std::wstring arg=argv[i];
             if(arg==L"--root"&&i+1<argc)root=fs::absolute(argv[++i]);
             else if(arg==L"--map"&&i+1<argc){std::wstring m=argv[++i];if(m!=L"Map01"&&m!=L"Map02")throw std::runtime_error("Only Map01/Map02 are supported");map=m==L"Map01"?"Map01":"Map02";}
             else if(arg==L"--smoke")smoke=true;
             else if(arg==L"--warp")warp=true;
+            else if(arg==L"--no-shadows")shadows_enabled=false;
+            else if((arg==L"--hour"||arg==L"--time")&&i+1<argc){size_t end;std::wstring text=argv[++i];float value=std::stof(text,&end);if(end!=text.size()||!std::isfinite(value)||value<0||(arg==L"--hour"&&value>=24))throw std::runtime_error("Invalid environment time");if(arg==L"--hour")environment_hour=value;else animation_time=value;}
+            else if((arg==L"--camera"||arg==L"--look-at")&&i+3<argc){float values[3];for(float& v:values){size_t end;std::wstring text=argv[++i];v=std::stof(text,&end);if(end!=text.size()||!std::isfinite(v))throw std::runtime_error("Invalid camera coordinates");}if(arg==L"--camera"){explicit_camera={values[0],values[1],values[2]};has_camera=true;}else{explicit_target={values[0],values[1],values[2]};has_target=true;}}
             else if(arg==L"--view"&&i+1<argc){std::wstring view=argv[++i];if(view!=L"original"&&view!=L"overview")throw std::runtime_error("Expected --view original|overview");original_view=view==L"original";}
             else if(arg==L"--capture"&&i+1<argc)capture=fs::absolute(argv[++i]);
             else if(arg==L"--report"&&i+1<argc)report=fs::absolute(argv[++i]);
@@ -240,7 +272,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         log("ENGINE_BOOT authored Win32/D3D11 runtime; original engine not loaded");
         auto terrain=fs15world::load_terrain(root,map);
         log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" shape_nodes="+std::to_string(terrain.shape_nodes));
-        camera.initialize(terrain,original_view);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
+        camera.initialize(terrain,original_view);if(has_camera!=has_target)throw std::runtime_error("Use --camera and --look-at together");if(has_camera)camera.look_at(explicit_camera,explicit_target);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
         if(!camera_test)throw std::runtime_error("Camera movement check failed");
         WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
         if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
@@ -260,6 +292,8 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             <<"\"scene_nodes\":"<<terrain.nodes.size()<<",\n\"source_shape_nodes\":"<<terrain.shape_nodes<<",\n\"skipped_shape_nodes\":"<<terrain.skipped_instances<<",\n"
             <<"\"decoded_meshes\":"<<terrain.meshes.size()<<",\n\"rendered_instances\":"<<terrain.rendered_instances<<",\n\"object_triangles\":"<<terrain.object_triangles<<",\n"
             <<"\"terrain_layers\":"<<terrain.layers.size()<<",\n"
+            <<"\"environment_ready\":"<<(render.environment_ready()?"true":"false")<<",\n\"original_shader_injections\":"<<render.original_injections()<<",\n\"animated_draws\":"<<render.animated_draws()<<",\n"
+            <<"\"environment_hour\":"<<environment_hour<<",\n\"animation_time\":"<<animation_time<<",\n\"shadow_depth_pixels\":"<<render.shadow_pixels<<",\n\"shadow_resolution\":"<<render.shadow_resolution()<<",\n"
             <<"\"road_alignment_samples\":"<<terrain.road_alignment_samples<<",\n\"road_median_height_error\":"<<terrain.road_median_error<<",\n\"road_flipped_z_error\":"<<terrain.road_flipped_z_error<<",\n"
             <<"\"source_width\":"<<terrain.source_width<<",\n\"source_height\":"<<terrain.source_height<<",\n"
             <<"\"world_width\":"<<terrain.width<<",\n\"world_depth\":"<<terrain.depth<<",\n"
@@ -267,7 +301,8 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             <<"\"vertices\":"<<terrain.vertices.size()<<",\n\"triangles\":"<<terrain.indices.size()/3<<",\n"
             <<"\"visible_gpu_samples\":"<<render.samples<<",\n\"visible_object_gpu_samples\":"<<render.object_samples<<",\n\"camera_math_check\":true,\n\"first_instance_world\":[";
         if(!terrain.groups.empty())for(unsigned i=0;i<16;++i){if(i)metadata<<',';metadata<<terrain.groups[0].instances[0].value[i];}
-        metadata<<"],\n\"resources\":[";for(size_t i=0;i<terrain.used_resources.size();++i){if(i)metadata<<',';metadata<<std::quoted(terrain.used_resources[i].generic_u8string());}
+        auto resources=terrain.used_resources;resources.insert(resources.end(),render.environment_resources().begin(),render.environment_resources().end());std::sort(resources.begin(),resources.end());resources.erase(std::unique(resources.begin(),resources.end()),resources.end());
+        metadata<<"],\n\"resources\":[";for(size_t i=0;i<resources.size();++i){if(i)metadata<<',';metadata<<std::quoted(resources[i].generic_u8string());}
         metadata<<"]\n}\n";metadata.close();
         log("ENGINE_READY terrain geometry and texture rendered; free camera initialized");
         if(smoke){for(int frame=0;frame<8;++frame)render.draw();log("ENGINE_SMOKE_OK frames=9");}
@@ -275,7 +310,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             auto previous=std::chrono::steady_clock::now();MSG message{};
             while(!done){while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}if(done)break;
                 auto now=std::chrono::steady_clock::now();float dt=std::min(0.1f,std::chrono::duration<float>(now-previous).count());previous=now;
-                if(IsIconic(window)){Sleep(25);continue;}camera.update(dt);render.draw();
+                if(IsIconic(window)){Sleep(25);continue;}camera.update(dt);animation_time+=dt;render.draw();
             }
         }
     }catch(const std::exception& error){log(std::string("FATAL ")+error.what());if(!smoke)MessageBoxW(window,wide(error.what()).c_str(),L"Reconstructed engine error",MB_OK|MB_ICONERROR);result=1;}

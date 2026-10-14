@@ -18,7 +18,7 @@ struct TerrainMaterial::Impl {
         for(const auto& layer:terrain.layers){
             weights.push_back(fs15world::load_weight(resolve(layer.weight)));auto image=fs15world::load_dds(resolve(layer.detail));data.sizes[count]=layer.unit_size;
             D3D11_TEXTURE2D_DESC desc{};desc.Width=image.width;desc.Height=image.height;desc.MipLevels=static_cast<UINT>(image.mip_offsets.size());desc.ArraySize=1;desc.SampleDesc.Count=1;desc.Usage=D3D11_USAGE_IMMUTABLE;desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
-            desc.Format=image.compression==1?DXGI_FORMAT_BC1_UNORM:image.compression==2?DXGI_FORMAT_BC2_UNORM:DXGI_FORMAT_BC3_UNORM;
+            desc.Format=image.compression==1?DXGI_FORMAT_BC1_UNORM_SRGB:image.compression==2?DXGI_FORMAT_BC2_UNORM_SRGB:DXGI_FORMAT_BC3_UNORM_SRGB;
             std::vector<D3D11_SUBRESOURCE_DATA> pixels;for(size_t m=0;m<image.mip_offsets.size();++m)pixels.push_back({image.bytes.data()+image.mip_offsets[m],image.mip_pitches[m],0});
             ComPtr<ID3D11Texture2D> texture;checked(device->CreateTexture2D(&desc,pixels.data(),&texture));checked(device->CreateShaderResourceView(texture.Get(),nullptr,&views[1+count]));++count;
         }

@@ -7,6 +7,8 @@ or execution evidence. They do not represent a percentage of the full game.
 compiled Direct3D 11 scene host for either base map. It renders original
 height data, decoded buildings/trees/props, diffuse textures and terrain layers
 at their original hierarchical transforms, with a free camera.
+Original sky/shader resources, recovered hourly environment curves and a local
+shadow service are also running; mission simulation remains incomplete.
 Full gameplay is still unimplemented. See [engine validation](analysis/engine-validation.json),
 [menu validation](analysis/menu-validation.json) and
 [detailed status](analysis/STATUS.md).
@@ -83,13 +85,21 @@ Full gameplay is still unimplemented. See [engine validation](analysis/engine-va
 - [x] Check Bjornholm relief alignment against 272 sampled original road vertices (0.05 m median error).
 - [x] Start at the camera stored in each original I3D and support an overview camera.
 - [x] Observe the packaged Westbridge Hills scene launching from the live frontend, with mouse look and reset.
+- [x] Load the original sky dome mesh and day/sunrise/sunset/night/cloudy texture sets.
+- [x] Execute recovered Environment curve initialization and AnimCurve sampling locally.
+- [x] Compile original sky, wind, flag and foliage-lighting injection bodies with host bindings.
+- [x] Apply original animation parameters and animate flags/bushes using elapsed time.
+- [x] Preview recovered hourly sky, sunlight and fog, with sRGB texture/output handling.
+- [x] Render a local shadow map using original sun settings and object shadow flags.
+- [x] Compare rendered motion, night brightness and visible shadow casting in fixed image tests.
+- [x] Observe packaged Map01 sky/hour changes and shadow toggling in a live native window.
 - [x] Support free-camera keyboard movement, mouse look and reset.
 - [x] Launch the terrain engine from a new Career selection through Start.
 - [x] Observe native Start launch, mouse camera rotation and Home reset in the live window.
 - [x] Validate visible GPU output for both maps and identical packaged renders.
 - [x] Exercise software-rendered authored fixtures and invalid-resource rejection.
 - [ ] Reconstruct scene graph and complete I3D resource loading.
-- [ ] Recover full GIANTS terrain/object shaders, shadows, sky and animated foliage.
+- [ ] Recover remaining GIANTS terrain/object shaders, shadow cascades and animated tree skeletons.
 - [ ] Restore distance-based LOD, culling, crop density and terrain detail rendering.
 - [ ] Execute the complete mission startup and game-world services.
 - [ ] Reconstruct physics and vehicle simulation.

@@ -17,6 +17,7 @@
 #include <DirectXMath.h>
 #include <cctype>
 #include <set>
+#include <tuple>
 
 namespace fs15world {
 using Microsoft::WRL::ComPtr;
@@ -70,7 +71,21 @@ static std::filesystem::path resource(const std::filesystem::path& root,const st
     }
     throw std::runtime_error("Missing prepared engine resource: "+relative.generic_u8string());
 }
-static std::vector<Mesh> mesh_cache(const std::filesystem::path& root,const std::filesystem::path& relative) {
+std::filesystem::path resolve_resource(const std::filesystem::path& root,const std::filesystem::path& relative){return resource(root,relative);}
+std::string shader_injection(const std::filesystem::path& root,const std::filesystem::path& relative,const std::string& position){
+    const auto path=resource(root,relative);if(std::filesystem::file_size(path)>1024*1024)throw std::runtime_error("Shader XML exceeds limit");
+    ComPtr<IStream> input;ComPtr<IXmlReader> xml;
+    check(SHCreateStreamOnFileEx(path.c_str(),STGM_READ|STGM_SHARE_DENY_WRITE,FILE_ATTRIBUTE_NORMAL,FALSE,nullptr,&input),"Shader input");
+    check(CreateXmlReader(__uuidof(IXmlReader),reinterpret_cast<void**>(xml.GetAddressOf()),nullptr),"Shader XML");check(xml->SetProperty(XmlReaderProperty_DtdProcessing,DtdProcessing_Prohibit),"Shader DTD rejection");check(xml->SetInput(input.Get()),"Shader stream");
+    bool active=false;std::string code;XmlNodeType kind;HRESULT result;
+    while((result=xml->Read(&kind))==S_OK){
+        if(kind==XmlNodeType_Element&&name(xml.Get())=="CodeInjection")active=value(attributes(xml.Get()),"position")==position;
+        else if(kind==XmlNodeType_EndElement&&name(xml.Get())=="CodeInjection")active=false;
+        else if(active&&(kind==XmlNodeType_Text||kind==XmlNodeType_CDATA||kind==XmlNodeType_Whitespace)){const wchar_t* text;UINT count;check(xml->GetValue(&text,&count),"Shader text");code+=utf8(text,count);}
+    }
+    check(result,"Shader parse");if(code.empty())throw std::runtime_error("Missing original shader injection: "+position);return code;
+}
+std::vector<Mesh> load_meshes(const std::filesystem::path& root,const std::filesystem::path& relative) {
     std::filesystem::path path;
     for(auto& prefix:{root/"assets",root/"recovered/gar"})if(std::filesystem::is_regular_file(prefix/relative))path=prefix/relative;
     if(path.empty())return {}; // Terrain-only packages and authored terrain fixtures.
@@ -134,9 +149,9 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
     const auto stem=map_id=="Map01"?"map01":"map02";
     const auto relative=std::filesystem::path("data/maps")/(std::string(stem)+".i3d");
     out.scene_file=resource(root,relative);
-    out.meshes=mesh_cache(root,relative.parent_path()/(std::string(stem)+".meshes"));
+    out.meshes=load_meshes(root,relative.parent_path()/(std::string(stem)+".meshes"));
     std::map<unsigned,unsigned> mesh_ids;for(unsigned i=0;i<out.meshes.size();++i)if(!mesh_ids.emplace(out.meshes[i].id,i).second)throw std::runtime_error("Duplicate mesh ID");
-    std::map<std::pair<unsigned,std::vector<int>>,unsigned> group_ids;
+    std::map<std::tuple<unsigned,std::vector<int>,bool,bool>,unsigned> group_ids;
     ComPtr<IStream> input;ComPtr<IXmlReader> xml;
     check(SHCreateStreamOnFileEx(out.scene_file.c_str(),STGM_READ|STGM_SHARE_DENY_WRITE,FILE_ATTRIBUTE_NORMAL,FALSE,nullptr,&input),"Open I3D");
     check(CreateXmlReader(__uuidof(IXmlReader),reinterpret_cast<void**>(xml.GetAddressOf()),nullptr),"I3D reader");
@@ -165,6 +180,11 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
             material.alpha=value(a,"alphaBlending")=="true"||value(a,"alphaTest")=="true";
             auto shader_file=files.find(std::stoi(value(a,"customShaderId","0")));
             material.water=shader_file!=files.end()&&(shader_file->second.find("oceanShader")!=std::string::npos||shader_file->second.find("waterShader")!=std::string::npos);
+            if(shader_file!=files.end()){
+                auto path=(relative.parent_path()/std::filesystem::u8path(shader_file->second)).lexically_normal();auto leaf=path.filename().u8string();
+                material.effect=leaf=="windShader.xml"?1:leaf=="flagShader.xml"?2:leaf=="treeBranchShader.xml"?3:0;
+                if(material.effect)material.original_shader=path;
+            }
             out.materials.emplace(current_material,std::move(material));if(xml->IsEmptyElement())current_material=-1;continue;
         }
         if(tag=="Texture"&&current_material!=-1&&depth==material_depth+1) {
@@ -178,6 +198,9 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
             }continue;
         }
         if(tag=="CustomParameter"&&current_material!=-1){auto a=attributes(xml.Get());
+            if(value(a,"name")=="directionAndFrequency"||value(a,"name")=="displacementSpeedFrequencyAndTexOff"){
+                std::istringstream stream(value(a,"value"));for(float& v:out.materials[current_material].effect_params)if(!(stream>>v)||!std::isfinite(v))throw std::runtime_error("Invalid original animation parameters");
+            }
             if(out.materials[current_material].water&&value(a,"name")=="underwaterFogColor"){
                 auto color=vector3(a,"value");std::copy(color.begin(),color.end(),out.materials[current_material].color);
             }continue;
@@ -195,6 +218,11 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
         if(out.nodes.size()>=500000)throw std::runtime_error("I3D scene exceeds node limit");
         while(!parents.empty()&&parents.back().first>=depth)parents.pop_back();
         auto a=attributes(xml.Get());Node node;node.name=value(a,"name");node.type=tag;
+        if(tag=="Light"&&value(a,"type")=="directional"){
+            out.sun.shadows=value(a,"castShadowMap")=="true";out.sun.resolution=static_cast<unsigned>(number(a,"depthMapResolution",512));
+            out.sun.distance=number(a,"shadowFarDistance",80);out.sun.bias=number(a,"depthMapBias",0.0012f);out.sun.slope=number(a,"depthMapSlopeScaleBias",0.0005f);out.sun.extrusion=number(a,"shadowExtrusionDistance",200);
+            if(out.sun.resolution<64||out.sun.resolution>4096||out.sun.distance<=0||out.sun.extrusion<=0)throw std::runtime_error("Unsupported original sun shadow settings");
+        }
         node.id=std::stoi(value(a,"nodeId","0"));node.parent=parents.empty()?-1:parents.back().second;
         auto translation=vector3(a,"translation");std::copy(translation.begin(),translation.end(),node.translation);
         auto rotation=vector3(a,"rotation"),scale=vector3(a,"scale",{1,1,1});
@@ -210,8 +238,9 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
             if(mesh!=mesh_ids.end())out.nodes.back().mesh=static_cast<int>(mesh->second);
             if(mesh!=mesh_ids.end()&&out.nodes.back().visible&&value(a,"nonRenderable")!="true"&&value(a,"trigger")!="true"&&!value(a,"materialIds").empty()){
                 std::istringstream stream(value(a,"materialIds"));std::vector<int> material_ids;int id;while(stream>>id)material_ids.push_back(id);
-                const auto key=std::make_pair(mesh->second,material_ids);auto group=group_ids.find(key);unsigned group_index;
-                if(group==group_ids.end()){group_index=static_cast<unsigned>(out.groups.size());group_ids.emplace(key,group_index);out.groups.push_back({mesh->second,material_ids,{}});}else group_index=group->second;
+                bool casts=value(a,"castsShadows","false")=="true",receives=value(a,"receiveShadows","true")!="false";
+                const auto key=std::make_tuple(mesh->second,material_ids,casts,receives);auto group=group_ids.find(key);unsigned group_index;
+                if(group==group_ids.end()){group_index=static_cast<unsigned>(out.groups.size());group_ids.emplace(key,group_index);out.groups.push_back({mesh->second,material_ids,{},casts,receives});}else group_index=group->second;
                 Matrix matrix;std::copy(out.nodes.back().world,out.nodes.back().world+16,matrix.value);out.groups[group_index].instances.push_back(matrix);
                 ++out.rendered_instances;out.object_triangles+=out.meshes[mesh->second].indices.size()/3;
             }else ++out.skipped_instances;
@@ -263,7 +292,7 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
     }
     std::set<std::filesystem::path> used{relative,(relative.parent_path()/std::filesystem::u8path(files.at(height_id))).lexically_normal(),relative.parent_path()/stem/"pda_map_H.dds"};
     if(!out.meshes.empty())used.insert(relative.parent_path()/(std::string(stem)+".meshes"));
-    for(const auto& group:out.groups)for(int id:group.materials){auto found=out.materials.find(id);if(found!=out.materials.end()&&!found->second.texture.empty())used.insert(found->second.texture);}
+    for(const auto& group:out.groups)for(int id:group.materials){auto found=out.materials.find(id);if(found!=out.materials.end()){if(!found->second.texture.empty())used.insert(found->second.texture);if(!found->second.original_shader.empty())used.insert(found->second.original_shader);}}
     for(const auto& layer:out.layers){used.insert(layer.detail);used.insert(layer.weight);}
     out.used_resources.assign(used.begin(),used.end());
     return out;

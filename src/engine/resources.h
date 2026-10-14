@@ -18,10 +18,11 @@ struct Node {
 struct Matrix { float value[16]; };
 struct Subset { unsigned first=0,count=0; };
 struct Mesh { unsigned id=0; std::vector<Vertex> vertices; std::vector<std::uint32_t> indices; std::vector<Subset> subsets; };
-struct Material { std::filesystem::path texture; float color[4]{1,1,1,1}; bool alpha=false; bool water=false; };
-struct MeshGroup { unsigned mesh=0; std::vector<int> materials; std::vector<Matrix> instances; };
+struct Material { std::filesystem::path texture,original_shader; float color[4]{1,1,1,1}; bool alpha=false; bool water=false; unsigned effect=0; float effect_params[4]{}; };
+struct MeshGroup { unsigned mesh=0; std::vector<int> materials; std::vector<Matrix> instances; bool casts_shadow=false,receives_shadow=true; };
 struct Layer { std::filesystem::path detail,weight; float unit_size=1; };
 struct WeightImage { unsigned width=0,height=0; std::vector<std::uint8_t> pixels; };
+struct Sun { bool shadows=false; unsigned resolution=512; float distance=80,bias=0.0012f,slope=0.0005f,extrusion=200; };
 struct Terrain {
     std::string map_id;
     std::filesystem::path scene_file, height_file, texture_file;
@@ -39,6 +40,7 @@ struct Terrain {
     std::vector<std::filesystem::path> used_resources;
     unsigned road_alignment_samples=0;
     float road_median_error=0,road_flipped_z_error=0;
+    Sun sun;
 };
 struct Texture {
     unsigned width=0,height=0,row_pitch=0;
@@ -48,6 +50,9 @@ struct Texture {
 };
 Terrain load_terrain(const std::filesystem::path& resource_root,const std::string& map_id);
 Texture load_dds(const std::filesystem::path& filename);
+std::vector<Mesh> load_meshes(const std::filesystem::path& root,const std::filesystem::path& relative);
+std::filesystem::path resolve_resource(const std::filesystem::path& root,const std::filesystem::path& relative);
+std::string shader_injection(const std::filesystem::path& root,const std::filesystem::path& relative,const std::string& position);
 WeightImage load_weight(const std::filesystem::path& filename);
 void save_png(const std::filesystem::path& filename,unsigned width,unsigned height,
               const std::uint8_t* bgra,unsigned row_pitch);

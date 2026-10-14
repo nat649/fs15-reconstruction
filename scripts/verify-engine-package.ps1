@@ -18,6 +18,8 @@ foreach ($map in @('Map01','Map02')) {
             throw "Native engine $variant $map did not render terrain" }
         if ($data.decoded_meshes -gt 0 -and ($data.rendered_instances -le 0 -or $data.visible_object_gpu_samples -le 0)) {
             throw "Native engine $variant $map did not rasterize original objects" }
+        if ($data.decoded_meshes -gt 0 -and (-not $data.environment_ready -or $data.original_shader_injections -ne 5 -or $data.shadow_depth_pixels -le 0)) {
+            throw "Recovered environment/shader/shadow startup failed for $variant $map" }
         if ($data.road_alignment_samples -gt 0 -and $data.road_median_height_error -gt 0.25) {
             throw "Original road meshes and height map no longer align for $map" }
         $reports += $data
@@ -34,12 +36,14 @@ foreach ($map in @('Map01','Map02')) {
         decodedMeshes=$reports[0].decoded_meshes; renderedInstances=$reports[0].rendered_instances
         objectTriangles=$reports[0].object_triangles; terrainLayers=$reports[0].terrain_layers
         visibleObjectGpuSamples=$reports[0].visible_object_gpu_samples
+        recoveredEnvironment=$reports[0].environment_ready; originalShaderInjections=$reports[0].original_shader_injections
+        animatedDraws=$reports[0].animated_draws; shadowDepthPixels=$reports[0].shadow_depth_pixels; shadowResolution=$reports[0].shadow_resolution
         roadAlignmentSamples=$reports[0].road_alignment_samples
         roadMedianHeightError=$reports[0].road_median_height_error; roadFlippedZError=$reports[0].road_flipped_z_error
         identicalPackageRender=$true; imageSha256=$images[0]
     }
 }
-@{ scope='Original GE6 I3D terrain and object meshes; diffuse/weight layers and hierarchical transforms; simplified shaders, no physics'
+@{ scope='Original GE6 map/sky resources and shader injections; recovered environment curves, local shadows; no physics'
    originalEngineLoaded=$false; maps=$results; syntheticWarpFixture='tests/engine_fixture.py'
 } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $projectRoot 'analysis\engine-validation.json') -Encoding utf8
 Write-Output 'Native engine startup and identical packaged terrain rendering verified for both maps.'

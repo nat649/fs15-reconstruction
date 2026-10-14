@@ -50,13 +50,16 @@ Instances include individual leaf/branch attachments; these are not tree or
 building counts. Nonrenderable/trigger nodes, inherited hidden nodes and named
 lower-LOD variants are filtered. LOD0 selection uses a static name rule;
 distance-based LOD, clip distances and frustum culling remain incomplete.
-The grid has no terrain LOD or collision. Wind, shadows, sky rendering, crop
-density, simulation and audio remain incomplete.
+The grid has no terrain LOD or collision. Original sky resources and shader
+injections now provide sky blending, flags/bush wind and foliage lighting;
+the native host provides a local shadow map. See [environment scope](ENVIRONMENT_RUNTIME.md).
+Full cascades, tree skeletons, crop density, simulation and audio remain incomplete.
 
 ## Build and launch
 
-The engine target needs Windows, MSVC, CMake and a Windows SDK; LuaJIT is only
-required by the separate frontend. Mesh staging additionally needs Git and the
+The engine target needs Windows, MSVC, CMake and a Windows SDK. The frontend
+uses LuaJIT; environment preparation also uses the local LuaJIT CLI and recovered
+Lua sources. Mesh staging additionally needs Git and the
 .NET 10 SDK/ASP.NET reference pack. Prepare inputs from your own game:
 
 ```powershell
@@ -69,7 +72,7 @@ required by the separate frontend. Mesh staging additionally needs Git and the
 .\FS15EngineRebuilt.exe --map Map01 --view overview
 ```
 
-The complete local package is `build/FS15SceneAlpha`. Launch its
+The complete local package is `build/FS15EnvironmentAlpha`. Launch its
 `FS15MenuRebuilt.exe`, select Career, an empty slot, difficulty, map and Start.
 Start creates the terrain process. Difficulty and slot are retained by the
 frontend but do not configure simulation yet. Existing saved simulations
@@ -79,6 +82,7 @@ Controls: WASD/ZQSD or arrows to move, Shift for speed, Space/Page Up to rise,
 Ctrl/Page Down to descend, left or right mouse drag to look, Home to reset,
 Escape to close. The initial view uses the camera saved in the original I3D.
 `--view overview` selects the whole-map view. The packaged runtime needs no .NET.
+F5/F6 change the preview hour; F7 toggles local shadows.
 
 Resources resolve beside the executable or under a supplied `--root PATH`.
 Logs and JSON reports go to `logs/`. No original executable, Steam, code snapshot
@@ -87,7 +91,7 @@ remain excluded from GitHub.
 
 ## Validation
 
-The local build passes ten CTest suites when native comparison inputs are present.
+The local build passes eleven CTest suites when native comparison inputs are present.
 Two original-map suites initialize
 Direct3D 11, render nine frames, require positive GPU occlusion-query samples,
 and capture the actual color buffer before presentation. Separate queries require

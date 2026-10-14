@@ -34,5 +34,18 @@
   "unusedMissingTextureReferences": [
     "data/maps/textures/foliage/ground_diffuse.dds"
   ],
-  "copiedResourceCount": 308
+  "environment": {
+    "sourceLuaSha256": {
+      "shared/class.lua": "dcf0bb21467219fc4e3c8a5d945f8777b4e156ff5d1a886d31bcb76e78dae694",
+      "Utils.lua": "2ddd0e15e578b01898713a4ea9fdb48a3115e82433f38ee22ee4209a955f9bf0",
+      "AnimCurve.lua": "cf53460e225ed0c65a5074901d9a99be65a11bdd3bb18578e77c16d60ef668c0",
+      "environment/Environment.lua": "44e5bdaf805511d9f00b897a3c4d9c386b469580ced90cc97c3b4f20b502845b"
+    },
+    "originalSkyShapesSha256": "c30cc5e90322ec3cab0fb42490db4773e88a39d64f9e1679f588d8c9cebf28f0",
+    "skyCacheSha256": "bd1c3aa58ae77d4da2a43339415c017bc06796ad96e8f81e763b86f7b95df682",
+    "curveCacheSha256": "bc1e37b43aa6212a89ac2a8c6ba95e3c6fd704432732ad6dd85958bdf18906e0",
+    "curveSamples": 1441,
+    "scope": "Original curve-setup source and AnimCurve evaluator executed locally; clear-weather preview"
+  },
+  "copiedResourceCount": 323
 }

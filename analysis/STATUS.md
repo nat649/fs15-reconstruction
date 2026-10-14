@@ -25,7 +25,7 @@ The smoke check renders 120 main-menu frames plus input-path screen captures,
 exercises wheel scrolling to slot twenty, metadata display, new-game choices,
 Back navigation, Credits and Quit. The package passes from a different working
 directory with matching frontend PNGs. Source hashes are checked against the
-recovery manifest. The build now has ten CTest
+recovery manifest. The build now has eleven CTest
 suites when all local inputs/tools are present.
 
 This is an independently implemented GUI host with a subset bootstrap.
@@ -53,6 +53,16 @@ Original diffuse textures and eight / six terrain layers are loaded. A 272-point
 Bjornholm road/DEM check has 0.05 m median height difference (21.64 m for reversed Z).
 See [engine scope](../docs/ENGINE_BOOTSTRAP.md)
 and [engine validation](engine-validation.json).
+
+The original sky dome/textures, Environment curve setup and AnimCurve evaluator
+are now reused. Five original XML shader injections compile inside the native
+host: sky depth/blending, wind, flags and two-sided foliage lighting. A local
+2,048-square shadow map uses original sun settings and object shadow flags.
+Fixed Map02 comparisons verify animation (17,978 changed pixels), night
+brightness and visible shadows (212,089 changed pixels). Full GIANTS cascades,
+skeletal trees, weather scheduling and mission simulation remain incomplete.
+See [environment notes](../docs/ENVIRONMENT_RUNTIME.md) and
+[validation](environment-validation.json).
 
 The RLE reconstruction comes from **0x14028f430**, reached through references
 to `src/base/util/RLEUtil.cpp`. Its descriptive name is inferred from code

@@ -1,19 +1,19 @@
 {
-  "sourceHashesVerified": true,
-  "workspaceSmokePassed": true,
-  "packageSha256": "024aa75f960efd748542f97d0d2093c4475e049f701fe1428826d0dc39cec653",
-  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
-  "packageSmokePassed": true,
+  "identicalRender": true,
   "nativeEngineDependency": false,
+  "scope": "Recovered frontend and original map/sky/shader resources; local shadows and environment preview, no mission simulation",
+  "recoveredAssets": 325,
+  "saveMetadataReadOnly": true,
   "recoveredSources": 36,
+  "workspaceSmokePassed": true,
+  "packageSha256": "56296c5ed4312c928da90892332b2e85cefeb7fb08f5066a67024c080311d754",
+  "sourceHashesVerified": true,
+  "packageSmokePassed": true,
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
   "matchingScreenCaptures": [
     "CareerScreen",
     "CreditsScreen",
     "DifficultyScreen",
     "MapSelectionScreen"
-  ],
-  "identicalRender": true,
-  "scope": "Recovered frontend and original I3D terrain/object scene; simplified native renderer, no mission simulation",
-  "recoveredAssets": 308,
-  "saveMetadataReadOnly": true
+  ]
 }

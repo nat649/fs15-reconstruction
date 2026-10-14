@@ -1,4 +1,4 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15SceneAlpha')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15EnvironmentAlpha')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 & (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir
@@ -111,12 +111,17 @@ scene reconstruction with simplified shaders, not a
 complete game session. Existing saved simulations still cannot be loaded.
 Credits/Back and Quit work. Other unimplemented screens report their destination.
 Vehicles, physics, mission simulation and multiplayer are not implemented.
-Shadows, animated foliage, crop density rendering and full GIANTS materials remain incomplete.
+Full GIANTS shadow cascades, moving tree skeletons, crop density rendering and
+complete terrain/object material behavior remain incomplete.
 Original main.lua is not executed. Save deletion/writes are disabled.
 
 WASD/ZQSD or arrows move; mouse drag looks; Shift is faster; Space/Ctrl change
 height; Home resets; Escape closes the map window. --view overview selects the
 whole-map camera; default --view original uses the camera stored in the I3D.
+F5/F6 step the environment hour forward/back. F7 toggles the local shadow map.
+Original sky textures, sky mesh, sampled Environment curves and sky/wind/flag/
+foliage-lighting shader injections are used. The D3D shadow service is a single
+local map; GIANTS cascades, weather simulation and moving tree skeletons remain incomplete.
 
 The default local Documents/My Games/FarmingSimulator2015 profile is read only.
 Use --save-dir "PATH" for another profile, or --empty-saves for empty slots.
@@ -127,7 +132,7 @@ $readmePath = Join-Path $packageRoot 'README.txt'
 $readme | Set-Content -LiteralPath $readmePath -Encoding utf8
 $manifestFiles.Add(@{ path='README.txt'; sha256=(Get-FileHash -LiteralPath $readmePath).Hash.ToLower(); bytes=(Get-Item -LiteralPath $readmePath).Length })
 $manifest = @{
-    scope='Recovered frontend and original I3D terrain/object scene; simplified native renderer, no mission simulation'
+    scope='Recovered frontend and original map/sky/shader resources; local shadows and environment preview, no mission simulation'
     originalEngineLoaded=$false
     originalMainExecuted=$false
     recoveredSources=$sourceNames.Count

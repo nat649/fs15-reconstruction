@@ -30,6 +30,12 @@ routines are reused or examined where practical. See the
   incomplete. See [engine notes](docs/ENGINE_BOOTSTRAP.md).
 - **Native GE6 mesh-cipher validation:** **128 comparisons / 74,848 bytes**
   against the isolated original routine, including partial blocks and counter carry.
+- **Recovered environment/shaders:** the original sky dome/textures, sampled
+  Lua environment curves and five original shader injection bodies now run in
+  the host. Flags and bushes animate, the hour changes sky/light/fog, and a local
+  shadow map casts building/vegetation shadows. Eleven CTest suites pass,
+  including fixed-image motion/night/shadow comparisons. Full GIANTS cascades
+  and mission weather remain incomplete. See [environment notes](docs/ENVIRONMENT_RUNTIME.md).
 - **Reconstructed C++ launcher:** reads the game's startup XML, chooses the
   x86 or x64 executable, and forwards command-line arguments. It still runs
   the original installed game engine.
@@ -61,8 +67,9 @@ Track completed work and remaining milestones in the
 
 Captured directly from the reconstructed scene runtime. Buildings, trees,
 roads and props use recovered original meshes, placements and diffuse textures.
-Terrain uses original height and weight maps. Lighting, water and materials
-are simplified; these are scene-viewer captures, not gameplay.
+Terrain uses original height and weight maps. Sky textures and shader injection
+bodies are recovered; lighting and shadows use the implemented host services.
+Water/materials remain simplified. These are scene-viewer captures, not gameplay.
 
 ### Bjornholm
 
@@ -71,6 +78,14 @@ are simplified; these are scene-viewer captures, not gameplay.
 ### Westbridge Hills
 
 ![Westbridge Hills reconstructed original scene](docs/screenshots/scene-map02.png)
+
+### Night preview using recovered environment curves
+
+![Westbridge Hills at 22:00](docs/screenshots/environment-night-map02.png)
+
+### Local shadow casting
+
+![Original farm objects casting shadows](docs/screenshots/environment-shadow-map02.png)
 
 Earlier terrain-only captures remain available for comparison:
 [Bjornholm](docs/screenshots/terrain-map01.png),
@@ -100,6 +115,7 @@ Earlier terrain-only captures remain available for comparison:
 | `scripts/prepare-engine-assets.ps1` | Copy original terrain inputs and material layers |
 | `scripts/setup_shapes_tools.ps1` | Fetch/build the pinned upstream mesh decoder with a .NET stream adapter |
 | `scripts/prepare_scene.py` | Stage both original mesh caches and textures with local provenance |
+| `scripts/stage_environment.lua` | Execute recovered environment curve initialization and AnimCurve locally |
 | `scripts/check_shapes_native.py` | Compare the decoder cipher with the isolated original GE6 routine |
 | `scripts/verify-engine-package.ps1` | Verify native rendering and package parity for both maps |
 | `src/menu/savegames.cpp` | Read-only save metadata snapshots and explicit mutation rejection |
@@ -151,7 +167,7 @@ After script/asset recovery below, run:
 & 'C:\path\to\python.exe' scripts\prepare_scene.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15SceneAlpha\FS15MenuRebuilt.exe
+.\build\FS15EnvironmentAlpha\FS15MenuRebuilt.exe
 ```
 
 The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
@@ -177,6 +193,7 @@ with original buildings and trees, without creating a save or starting simulatio
 Credits/Back and Quit also work.
 Use WASD/ZQSD or arrows to move, mouse drag to look, Space/Ctrl for height,
 Shift for speed and Home to reset the view.
+F5/F6 step the preview hour; F7 toggles local shadows.
 
 Interactive runs read the local Windows Documents/My Games/FarmingSimulator2015
 profile. Override it with `--save-dir PATH`, or use `--empty-saves` for empty
@@ -184,7 +201,7 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15SceneAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15EnvironmentAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,
