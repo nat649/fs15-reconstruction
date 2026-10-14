@@ -1,6 +1,6 @@
 # Project status — October 14, 2026
 
-**An initial reconstruction milestone is complete. The full game is not rebuilt.**
+**The native analysis and Lua recovery milestones are complete. The full game is not rebuilt.**
 
 The reference is Farming Simulator 15 for Windows **1.4.2.0**. Its original
 executables were checked after analysis and remain unchanged. Original files
@@ -34,6 +34,43 @@ Validation metadata: [reference](rle8-reference.json),
 reference bytes are generated locally and excluded from Git.
 
 ## Decompilation results
+
+### Script layer recovery
+
+The native `source` call chain and archive provider have now been traced.
+Both local GAR archives have been extracted:
+
+| Archive | Files | Relevant validation |
+|---|---:|---|
+| `dataS.gar` | 619 | 470 LuaJIT v2 chunks; 114 strict XML/I3D checks passed; seven original description XML files have missing attribute whitespace |
+| `dataS2.gar` | 502 | 20 strict XML/I3D checks passed; asset headers and PNG CRCs checked |
+
+All **1,121** extracted file sizes and hashes were rechecked against their
+manifests. Independent checks passed for **374 DDS headers, 81 PNG CRC sets,
+21 WAV headers, and 470 LuaJIT headers**. Seven strict XML diagnostics remain
+recorded without changing the original extracted bytes.
+
+The original native cipher is still used as a version-pinned oracle.
+It is not a reconstructed, independent cipher implementation. The GAR
+header/index parser and extraction checks are new code. The installed
+game files were not replaced and no DLC path was used for this extraction.
+
+All **470 Lua sources recompile** after a repeated-literal adapter fixes an
+LJD AST identity issue. Comparison against the original compiled chunks:
+
+- **254 exact stripped-bytecode round trips**.
+- **216 syntax-only results**, with behavioral equivalence still unverified.
+- **Zero remaining syntax failures** in this recovery pass.
+
+The rebuilt script package contains 470 recompiled chunks and a per-file
+manifest. Chunks use portable game-relative names. The package was not
+installed into the game, and game scripts were not executed by validation.
+It is available locally at `build/FS15ScriptsRebuilt.zip`.
+
+Public summaries: [recovery](lua-recovery-summary.json),
+[script build](lua-build-summary.json), [file verification](recovered-files-verification.json).
+
+### Native analysis
 
 | Analysis | Functions catalogued | Pseudocode exports | Export failures |
 |---|---:|---:|---:|
@@ -75,7 +112,7 @@ Virtual addresses use the x64 image's preferred base `0x140000000`.
 | Address | Observation |
 |---|---|
 | `0x140011a30` | Lua registration routine; 112 observed name/implementation/wrapper associations indexed locally |
-| `0x14000e200` | Native implementation registered as Lua `source`; next decompilation target |
+| `0x14000e200` | Native implementation registered as Lua `source`; traced into resource loading |
 | `0x1400149d0` | Lua adapter associated with `source` |
 | `0x14001ea90` | Reference to `dataS.gar` and initialization checks; full role undetermined |
 | `0x14002b8c0` | Resource opening through a provider list under a critical section |
@@ -83,22 +120,25 @@ Virtual addresses use the x64 image's preferred base `0x140000000`.
 | `0x14028e3d0` | Selects decoding variants for one- or two-byte input elements |
 | `0x14028f430` | RLE8 decoder reconstructed and compared with the original |
 | `0x14028f770` | Two-byte input variant; pseudocode available, not reconstructed |
+| `0x14027d5f0` | Archive factory; GAR is attempted before other formats |
+| `0x1402a6d70` | GAR header/index loading and original cipher setup |
+| `0x1402e6e60`, `0x1402e7500` | Original cipher initializer and buffer decoder used by the local oracle |
+| `0x140280060` | Lua resource load; prefers `.luc` and handles the custom version-3 chunk transform |
 
 Lua adapter signatures are partly inferred. Ghidra `undefined8` parameters
 must not be treated as established source types.
 
 ## Remaining work
 
-1. Follow `source` and file providers to identify the GAR reader and recover
-   scripts from this exact version.
-2. Document native structures and interfaces exposed to Lua.
+1. Investigate the 216 non-identical Lua round trips and validate behavior.
+2. Reconstruct the GAR cipher independently and document native Lua interfaces.
 3. Reconstruct RLE/GRLE variants and other isolated modules using differential
    comparisons with the original code.
 4. Reconstruct engine startup, rendering, resources, audio, input, physics,
    and game behavior.
 5. Validate a complete rebuilt executable through actual launches and play.
 
-`dataS.gar` and `dataS2.gar` are not ZIP files and have not been extracted.
-The locally recovered SDK Lua example is not the full game's Lua source.
+The recovered game scripts and assets remain local and excluded from Git.
 Current validation establishes the analysis pipeline, launcher behavior,
-and one native routine; it does not establish a rebuilt engine startup.
+one native routine, archive recovery, and a recompiled Lua layer. It does
+not establish a rebuilt engine startup or full gameplay equivalence.

@@ -1,0 +1,11 @@
+{
+  "total": 470,
+  "counts": {
+    "exact_match": 254,
+    "syntax_only": 216
+  },
+  "mode": "strict LJD with distinct-literal adapter; unsafe pass disabled; no catch_asserts",
+  "executed_game_scripts": false,
+  "validation": "load/compile without execution; exact_match compares string.dump(chunk, true)",
+  "note": "syntax_only is not proof of behavioral equivalence; exact_match is a stripped-bytecode round trip"
+}

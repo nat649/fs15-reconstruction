@@ -1,0 +1,12 @@
+{
+  "decompiler": {
+    "adapter": "scripts/ljd_driver.py; distinct literal AST nodes",
+    "commit": "e4552fda8bece1aa7b9ca12025179eb1b11dac1e",
+    "repository": "https://github.com/Dr-MTN/luajit-decompiler.git"
+  },
+  "luajit": {
+    "build": "Windows x64, nogc64 static",
+    "commit": "2a8e017ef1ece6a95b983ffca073d30609dce7c4",
+    "repository": "https://github.com/LuaJIT/LuaJIT.git"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "archive": "dataS.gar",
+  "archive_sha256": "a39d2226a0a3c5e53d3acf5b82ce898c007a2595fc4f688a56807bb917fbed18",
+  "archive_version": "0x00050003",
+  "header_counts": [
+    5,
+    614
+  ],
+  "cipher": "original native reference; not reconstructed",
+  "counts": {
+    ".xml": 116,
+    "validated_xml": 114,
+    ".i3d": 5,
+    ".shapes": 2,
+    "xml_parse_errors": 7,
+    ".dds": 26,
+    ".luc": 470,
+    "scripts_passthrough": 470
+  },
+  "file_count": 619
+}

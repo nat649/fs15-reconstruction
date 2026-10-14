@@ -6,6 +6,7 @@ param(
     [string[]]$Addresses = @(),
     [string]$ExportName = '',
     [string]$LeafReference = '',
+    [string[]]$Inspect = @(),
     [string]$JavaHome = $env:JAVA_HOME
 )
 $ErrorActionPreference = 'Stop'
@@ -41,7 +42,10 @@ if ($Existing) {
     $arguments += @('-import', $binary)
 }
 $arguments += @('-analysisTimeoutPerFile', "$TimeoutSeconds", '-max-cpu', '4', '-scriptPath', (Join-Path $PSScriptRoot 'ghidra'))
-if ($LeafReference) {
+if ($Inspect.Count) {
+    $arguments += @('-postScript', 'InspectAddresses.java', (Join-Path $projectRoot "analysis\inspection\$ExportName"))
+    $arguments += $Inspect
+} elseif ($LeafReference) {
     $arguments += @('-postScript', 'ExportLeafReference.java', $LeafReference, (Join-Path $projectRoot 'inputs\reference'))
 } else {
     $arguments += @('-postScript', 'ExportAnalysis.java', $out, "$Limit")

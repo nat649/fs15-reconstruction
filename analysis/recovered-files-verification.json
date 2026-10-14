@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "counts": {
+    "files_hash_verified": 1121,
+    "dds_headers_valid": 374,
+    "luajit_v2_headers_valid": 470,
+    "wav_headers_valid": 21,
+    "png_crc_valid": 81
+  },
+  "archives": [
+    {
+      "archive": "dataS.gar",
+      "file_count": 619
+    },
+    {
+      "archive": "dataS2.gar",
+      "file_count": 502
+    }
+  ],
+  "note": "File hashes match extraction manifests; PNG CRCs and selected format headers checked independently"
+}

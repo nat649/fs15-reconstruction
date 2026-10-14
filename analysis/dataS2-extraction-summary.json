@@ -1,0 +1,23 @@
+{
+  "archive": "dataS2.gar",
+  "archive_sha256": "64348d90a4c4b288696469faab646d45812d8a114965b70482f51cb4ce061abd",
+  "archive_version": "0x00050003",
+  "header_counts": [
+    5,
+    497
+  ],
+  "cipher": "original native reference; not reconstructed",
+  "counts": {
+    ".i3d": 18,
+    "validated_xml": 20,
+    ".anim": 5,
+    ".xml": 2,
+    ".dds": 348,
+    ".shapes": 18,
+    ".wav": 21,
+    ".png": 81,
+    ".ogg": 1,
+    ".ogv": 8
+  },
+  "file_count": 502
+}

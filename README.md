@@ -22,6 +22,12 @@ be compiled from this repository yet.**
   exports in an initial selection and 44 in an overlapping focused selection.
 - **Lua interface mapping:** 112 observed name/implementation/wrapper
   associations from one registration routine.
+- **GAR extraction:** 1,121 local files recovered from `dataS.gar` and
+  `dataS2.gar`, including all 470 LuaJIT chunks found in these archives.
+- **Lua recovery and rebuild:** all 470 recovered Lua sources compile.
+  **254** reproduce the original stripped bytecode exactly; **216** pass
+  syntax checks but still need behavioral validation. A local rebuilt
+  script package is generated without replacing installed game files.
 
 Function counts include runtime and third-party library code. They are not
 a measure of game reconstruction completeness. See [the project status](analysis/STATUS.md)
@@ -39,6 +45,11 @@ for evidence, limitations, and the next targets.
 | `scripts/ghidra/` | Function, reference, and pseudocode export scripts |
 | `scripts/check_rle.py` | Differential tests against a locally recovered native reference |
 | `scripts/map_bindings.py` | Index observed Lua registrations |
+| `scripts/gar.py` | Reconstructed GAR 5.3 header/index parser and script transform |
+| `scripts/native_gar.py` | Version-pinned original cipher oracle; still depends on a local game code snapshot |
+| `scripts/extract_gar.py` | Local extraction, hashes, XML diagnostics, and script normalization |
+| `scripts/recover_lua.py` | Strict decompilation, recompilation checks, and bytecode comparisons |
+| `scripts/compile_recovered_lua.py` | Build the local recompiled script package |
 | `scripts/verify_workspace.py` | Check hashes and provenance relationships in local outputs |
 | `tools/bootstrap_ghidra.py` | Download and verify a pinned official Ghidra release |
 
@@ -122,12 +133,54 @@ they are not original source files and do not compile directly. Preserve
 binary hashes, addresses, and raw exports separately from each reconstructed
 implementation. Local inputs and generated reports are excluded by `.gitignore`.
 
+## Recover and rebuild the script layer
+
+After creating the verified native image above, place local copies of
+`dataS.gar` and `dataS2.gar` in `inputs/archives/`. Then run:
+
+```powershell
+py -3 scripts\extract_gar.py inputs\archives\dataS.gar --decode-luajit --validate-xml
+py -3 scripts\extract_gar.py inputs\archives\dataS2.gar --decode-luajit --validate-xml
+py -3 scripts\verify_recovered_files.py
+.\scripts\setup_lua_tools.ps1
+py -3 scripts\recover_lua.py
+py -3 scripts\compile_recovered_lua.py
+```
+
+The tool setup uses pinned revisions of [LuaJIT](https://github.com/LuaJIT/LuaJIT)
+and [LJD](https://github.com/Dr-MTN/luajit-decompiler), retained locally with
+their upstream licenses. LuaJIT is built for Windows x64 with `nogc64 static`
+to match the observed chunk architecture. See `analysis/lua-toolchain.json`.
+The authored adapter `scripts/ljd_driver.py` fixes repeated literal AST nodes
+without modifying the third-party checkout. A synthetic regression fixture
+round trips to identical bytecode.
+
+Outputs remain local:
+
+- `recovered/gar/`: extracted assets and original compiled scripts.
+- `recovered/luajit/`: normalized chunks; all 470 observed chunks already
+  used the standard version-2 header and required no transformation.
+- `recovered/lua/dataS/`: recovered, compilable Lua source.
+- `build/recompiled/dataS/`: recompiled chunks with portable source names.
+- `build/FS15ScriptsRebuilt.zip`: 470 rebuilt chunks and validation metadata.
+
+**The GAR cipher has not been independently reconstructed.** Extraction
+currently calls two routines from the exact hash-pinned original code image
+inside the extraction process. Header/index parsing, bounds/path checks, and
+the extraction pipeline are reconstructed code. See [GAR notes](docs/GAR.md).
+
+Lua validation loads/compiles chunks without executing their top-level game
+code. `exact_match` compares `string.dump(chunk, true)` from the original
+and rebuilt chunks. `syntax_only` proves compilation, not equivalence.
+The package is a rebuilt script layer, not a rebuilt native engine or a
+playable standalone game. See [Lua recovery notes](docs/LUA_RECOVERY.md).
+
 ## Next work
 
-Trace the native Lua `source` implementation and file providers to identify
-the GAR reader, recover the version-specific scripts, and document the
-interfaces between Lua and native code. Reconstruct isolated modules with
-direct comparisons against the original before rebuilding engine startup.
+Investigate the 216 Lua round-trip differences, reconstruct the GAR cipher
+without original-code execution, and continue documenting the Lua/native
+interfaces before rebuilding engine startup.
 
-The GAR archives have not been extracted. The RLE routine does not implement
-the complete GRLE file format, physics, rendering, or game simulation.
+The RLE routine does not implement the complete GRLE file format, physics,
+rendering, or game simulation. Recovered game assets and Lua sources are
+excluded from Git; the repository publishes tools and selected metadata.

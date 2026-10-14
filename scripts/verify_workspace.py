@@ -36,8 +36,10 @@ def main():
     if reference.read_bytes() != captured[offset:offset + reference_metadata["length"]]:
         raise ValueError("Native RLE reference differs from the captured game code")
     checks.append("RLE reference matches exactly the original captured native function")
-    for target in ("launcher", "game-runtime", "game-focus"):
-        out = ROOT / "recovered/decompiled" / target
+    for out in sorted((ROOT / "recovered/decompiled").iterdir()):
+        if not (out / "functions.csv").is_file():
+            continue
+        target = out.name
         with (out / "functions.csv").open(encoding="utf-8", newline="") as stream:
             functions = {row["entry"] for row in csv.DictReader(stream)}
         with (out / "decompiled-index.csv").open(encoding="utf-8", newline="") as stream:
