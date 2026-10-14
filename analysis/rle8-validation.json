@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "native_reference_sha256": "b0a14bc2a8764b6cb979ff372730c6fab11339645fc284fa0fb09e5d75c7c83c",
+  "original_function": "0x14028f430",
+  "differential_cases": 266,
+  "decoded_samples": 853086,
+  "added_capacity_check": "passed",
+  "scope": "Valid RLE8, 1..8-bit values, strides up to 16 in these tests; native 64 KiB segment boundaries included"
+}
