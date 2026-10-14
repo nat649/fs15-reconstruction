@@ -48,6 +48,25 @@ for evidence, limitations, and the next targets.
 Track completed work and remaining milestones in the
 [project checklist](PROJECT_CHECKLIST.md).
 
+## Current 3D renders
+
+Captured directly from the rebuilt Direct3D 11 runtime. This milestone shows
+the original terrain relief with the overview image as a temporary texture;
+buildings and trees in these images are not separate 3D objects yet.
+
+### Bjornholm
+
+![Bjornholm terrain bootstrap](docs/screenshots/terrain-map01.png)
+
+### Westbridge Hills
+
+![Westbridge Hills terrain bootstrap](docs/screenshots/terrain-map02.png)
+
+The next reconstruction work follows original GIANTS Engine 6 resources and
+native behavior: map coordinates, scene hierarchy, binary meshes and materials.
+Original components may be used locally as references or runtime bridges where
+practical; authored replacement code is identified separately.
+
 ## Repository contents
 
 | Path | Purpose |
