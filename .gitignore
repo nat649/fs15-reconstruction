@@ -34,6 +34,7 @@
 !/analysis/vehicle-animation-validation.json
 !/analysis/native-export-summary.json
 !/analysis/tire-forces-validation.json
+!/analysis/native-engine-validation.json
 /logs/
 __pycache__/
 *.pyc

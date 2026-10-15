@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from prepare_native_engine import MOD_NAME, WHEELS, prepare
+from verify_native_engine import inspect_log, verify
 
 
 class NativeEnginePreparation(unittest.TestCase):
@@ -69,6 +70,39 @@ class NativeEnginePreparation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'stay inside'):
             prepare(self.root, self.game)
         self.assertFalse((self.game / 'profile').exists())
+
+    def native_log(self):
+        return ('GIANTS Engine Runtime 6.0.2 64bit (authored fixture)\n'
+                'OpenGL initialization successful\n'
+                'Load mod: FS15_ReconstructionProbe\n'
+                'FS15_NATIVE_PROBE_BEGIN\n'
+                'FS15_NATIVE_RECOVERED_LUA_OK comparisons=104\n')
+
+    def test_descriptor_discovery_is_not_script_execution(self):
+        text = self.native_log().split('FS15_NATIVE_PROBE_BEGIN')[0]
+        report = inspect_log(text)
+        self.assertTrue(report['native_boot_verified'])
+        self.assertFalse(report['recovered_script_execution_verified'])
+
+    def test_order_and_comparison_count_are_required(self):
+        for text in (self.native_log().replace('comparisons=104', 'comparisons=103'),
+                     self.native_log().replace('FS15_NATIVE_PROBE_BEGIN\n', '') + 'FS15_NATIVE_PROBE_BEGIN\n',
+                     self.native_log().replace('GIANTS Engine Runtime', 'Authored test host')):
+            self.assertFalse(inspect_log(text)['recovered_script_execution_verified'])
+
+    def test_stale_log_cannot_validate_new_launch(self):
+        manifest = prepare(self.root, self.game)
+        (Path(manifest['profile']) / 'log.txt').write_text(self.native_log())
+        manifest['launch_requested_utc'] = '2099-01-01T00:00:00+00:00'
+        (self.root / 'build/native-engine/manifest.json').write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, 'predates'):
+            verify(self.root)
+
+    def test_lua_failure_prevents_validation(self):
+        manifest = prepare(self.root, self.game)
+        (Path(manifest['profile']) / 'log.txt').write_text(self.native_log() + 'Error: Running LUA method loadMap\n')
+        with self.assertRaisesRegex(ValueError, 'Lua errors'):
+            verify(self.root)
 
 
 if __name__ == '__main__':

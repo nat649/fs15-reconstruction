@@ -6,9 +6,11 @@ authored probes are staged locally. Preparation is not proof of a native boot.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +20,24 @@ WHEELS = 'scripts/vehicles/WheelsUtil.luc'
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def restart_safe_profile(profile, alias_root):
+    """Use a checked junction alias: GE6 restartApplication loses argv quotes."""
+    profile = Path(profile).resolve(strict=True)
+    if ' ' not in str(profile):
+        return profile
+    alias = Path(alias_root) / ('FS15Native-' + hashlib.sha256(str(profile).encode()).hexdigest()[:16])
+    if ' ' in str(alias):
+        raise ValueError('The native restart-safe profile alias must have a path without spaces')
+    if not alias.exists() and not alias.is_symlink():
+        if os.name != 'nt':
+            raise ValueError('Native profile junctions require Windows')
+        import _winapi
+        _winapi.CreateJunction(str(profile), str(alias))
+    if alias.resolve(strict=True) != profile:
+        raise ValueError('Native profile alias already points to a different directory')
+    return alias
 
 
 def prepare(root, game):
@@ -69,6 +89,7 @@ def prepare(root, game):
     launcher = root / 'FS15LauncherRebuilt.exe'
     command = [str(launcher), '--game-dir', str(game), '--arch', 'x64', '--', '-profile', profile.as_posix()]
     manifest = dict(scope='Actual GIANTS Engine 6 entry point with an isolated profile and recovered-source probe',
+                    game_directory=str(game),
                     native_boot_verified=False, recovered_script_execution_verified=False,
                     original_executable_sha256=digest(game / 'x64/FarmingSimulator2015Game.exe'),
                     recovered_wheels_source_sha256=digest(source), profile=str(profile), command=command,
@@ -82,12 +103,35 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--game-dir', type=Path, required=True)
     parser.add_argument('--launch', action='store_true', help='Start the installed original engine, using the isolated profile')
+    parser.add_argument('--dry-run', action='store_true', help='With --launch, print/check the launch command without starting a process')
+    parser.add_argument('--steam', type=Path, help='Installed Steam client; defaults to the standard Steam path for Steam installations')
+    parser.add_argument('--direct', action='store_true', help='Launch the installed executable directly (for non-Steam copies)')
     args = parser.parse_args()
+    if args.launch and not args.dry_run and os.name == 'nt':
+        from runtime_snapshot import processes
+        if list(processes()):
+            parser.error('FS15 is already running. Close that session before launching the isolated runtime again.')
     manifest = prepare(ROOT, args.game_dir)
-    print(json.dumps(manifest, indent=2))
     if args.launch:
         if not Path(manifest['command'][0]).is_file():
             parser.error('Build FS15LauncherRebuilt before launching the original engine')
+        profile_arg = restart_safe_profile(manifest['profile'], tempfile.gettempdir())
+        manifest['command'][-1] = profile_arg.as_posix()
+        steam = args.steam
+        if not args.direct and steam is None and args.game_dir.parent.name.lower() == 'common':
+            steam = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Steam/steam.exe'
+        if steam is not None and not args.direct:
+            steam = steam.resolve(strict=True)
+            manifest['command'][1:1] = ['--steam', str(steam)]
+        if args.dry_run:
+            manifest['command'].insert(1, '--dry-run')
+        else:
+            from datetime import datetime, timezone
+            manifest['launch_requested_utc'] = datetime.now(timezone.utc).isoformat()
+        manifest['profile_argument'] = str(profile_arg)
+        (ROOT / 'build/native-engine/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    print(json.dumps(manifest, indent=2), flush=True)
+    if args.launch:
         subprocess.run(manifest['command'], check=True)
 
 

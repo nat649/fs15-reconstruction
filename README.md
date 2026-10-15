@@ -22,11 +22,26 @@ routines are reused or examined where practical. See the
 [reconstruction strategy](docs/RECONSTRUCTION_STRATEGY.md) for component provenance.
 
 **Runtime target: the actual GIANTS Engine 6.** The Direct3D alpha is an
-experimental viewer/test host. The next integration path runs recovered code
-inside the installed original engine; see the [prepared native entry point](docs/NATIVE_ENGINE_RUNTIME.md).
+experimental viewer/test host. The native entry point has now reached the
+original menu and Bjornholm, with 104 recovered-source helper comparisons
+passing inside GE6. See the [native runtime instructions](docs/NATIVE_ENGINE_RUNTIME.md).
+
+**Launch the actual engine:** double-click `Launch FS15.cmd` after local recovery
+and launcher compilation. On first setup, run
+`scripts/launch-native.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Farming Simulator 15'`.
+The script remembers the installation in the ignored local manifest, uses Steam
+for Steam installations, and keeps saves under `build/native-engine/profile`.
+The existing `FS15MenuRebuilt.exe` / `FS15EngineRebuilt.exe` packages are the
+separate experimental host; they are not the actual-engine entry point.
 
 ## Current results
 
+- **Actual GE6 execution:** the installed original engine initializes its OpenGL
+  renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
+  profile. The recovered WheelsUtil source executes through the native mod
+  loader and passes all 104 helper comparisons. This probe leaves the original
+  global gameplay classes intact; full recovered-game replacement is pending.
+  See the [bounded log evidence](analysis/native-engine-validation.json).
 - **Native decompilation coverage:** a full pass through the existing Ghidra
   catalogue exported **11,599 / 11,601 eligible functions** as local pseudocode.
   Two functions still time out after retries up to 120 seconds; 565 thunks or

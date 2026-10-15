@@ -3,7 +3,13 @@
 Updated: **2026-10-15**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
-**Current milestone:** the recovered frontend can launch an independently
+**Current native milestone:** the installed GIANTS Engine 6.0.2 opens its menu,
+loads Bjornholm and executes recovered WheelsUtil source with 104 passing helper
+comparisons in an isolated profile. Original global gameplay remains in use;
+this is an integration baseline, not a complete recovered-game rebuild.
+Use `Launch FS15.cmd`; see the [native runtime](docs/NATIVE_ENGINE_RUNTIME.md).
+
+**Experimental host milestone:** the recovered frontend can launch an independently
 compiled Direct3D 11 scene host for either base map. It renders original
 height data, decoded buildings/trees/props, diffuse textures and terrain layers
 at their original hierarchical transforms, with a free camera.
@@ -61,8 +67,12 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Confirm the native `-profile` argument and original mod source-loading path through local analysis.
 - [x] Prepare a separate native profile and a local recovered-source probe without modifying the installation or normal saves.
 - [x] Check the probe's 104 helper comparisons and mod isolation in an authored standalone fixture.
-- [ ] Validate a fresh actual-GE6 boot through the prepared isolated entry point.
-- [ ] Execute and observe the recovered-source probe in the actual engine during mission loading.
+- [x] Validate a fresh actual-GE6 boot with the isolated profile through normal Steam startup.
+- [x] Execute the recovered-source probe during actual-engine mission loading; all 104 comparisons pass.
+- [x] Observe the original menu, successful Bjornholm loading and the in-world player HUD.
+- [x] Add a dedicated native launch command, Steam routing, running-session guard and log evidence verifier.
+- [x] Prepare/check a profile junction without spaces to avoid native restart argument truncation.
+- [ ] Validate a full graphics restart round trip through the new profile alias.
 - [ ] Integrate recovered game behavior into the actual engine and validate complete sessions.
 
 The Direct3D alpha remains an experimental viewer/test host. See the

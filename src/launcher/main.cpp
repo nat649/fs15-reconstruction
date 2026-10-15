@@ -148,11 +148,13 @@ int wmain(int argc, wchar_t** argv) {
             if (length && length < required) { configured.resize(length); root = configured; }
         }
         bool dry_run = false, use_x64 = native_amd64();
+        fs::path steam;
         std::vector<std::wstring> extra;
         for (int i = 1; i < argc; ++i) {
             const std::wstring arg = argv[i];
             if (arg == L"--self-test") { exit_code = self_test(); CoUninitialize(); return exit_code; }
             if (arg == L"--dry-run") dry_run = true;
+            else if (arg == L"--steam" && i + 1 < argc) steam = argv[++i];
             else if (arg == L"--game-dir" && i + 1 < argc) root = argv[++i];
             else if (arg == L"--arch" && i + 1 < argc) {
                 const std::wstring arch = argv[++i];
@@ -162,7 +164,7 @@ int wmain(int argc, wchar_t** argv) {
                 while (++i < argc) extra.emplace_back(argv[i]);
                 break;
             } else if (arg == L"--help") {
-                std::wcout << L"FS15LauncherRebuilt [--game-dir PATH] [--arch x64|x86] [--dry-run] [-- game arguments]\nReconstructed launcher only; uses the original installed game.\n";
+                std::wcout << L"FS15LauncherRebuilt [--game-dir PATH] [--arch x64|x86] [--steam CLIENT] [--dry-run] [-- game arguments]\nReconstructed launcher only; uses the original installed game.\n--steam requests the normal Steam app 313160 launch; architecture is selected by Steam.\n";
                 CoUninitialize(); return 0;
             } else throw std::runtime_error("Unknown/incomplete option; use --help");
         }
@@ -172,15 +174,18 @@ int wmain(int argc, wchar_t** argv) {
         const std::string xml((std::istreambuf_iterator<char>(file)), {});
         const auto plan = make_plan(root, read_cmdline(xml), use_x64);
         if (!fs::is_regular_file(plan.executable)) throw std::runtime_error("Configured game executable does not exist");
-        std::wstring cmdline = quote(plan.executable.wstring());
-        if (!plan.arguments.empty()) cmdline += L" " + plan.arguments;
+        const auto launch_executable = steam.empty() ? plan.executable : fs::absolute(steam);
+        if (!fs::is_regular_file(launch_executable)) throw std::runtime_error("Launch client does not exist");
+        std::wstring cmdline = quote(launch_executable.wstring());
+        if (!steam.empty()) cmdline += L" -applaunch 313160";
+        else if (!plan.arguments.empty()) cmdline += L" " + plan.arguments;
         for (const auto& arg : extra) cmdline += L" " + quote(arg);
         std::wcout << L"Reconstructed launcher; original game executable.\nWorking directory: " << root.wstring() << L"\nCommand: " << cmdline << L"\n";
         if (!dry_run) {
             STARTUPINFOW startup{};
             startup.cb = sizeof(startup);
             PROCESS_INFORMATION process{};
-            if (!CreateProcessW(plan.executable.c_str(), cmdline.data(), nullptr, nullptr, FALSE,
+            if (!CreateProcessW(launch_executable.c_str(), cmdline.data(), nullptr, nullptr, FALSE,
                                 NORMAL_PRIORITY_CLASS, nullptr, root.c_str(), &startup, &process)) {
                 throw std::runtime_error("CreateProcessW failed: " + std::to_string(GetLastError()));
             }
@@ -189,6 +194,7 @@ int wmain(int argc, wchar_t** argv) {
             DWORD child_code = 0;
             GetExitCodeProcess(process.hProcess, &child_code);
             std::wcout << L"PID: " << process.dwProcessId << L"; status after 5s: " << child_code << L"\n";
+            if (!steam.empty()) std::wcout << L"Steam launch request only; verify the native profile log for game startup.\n";
             CloseHandle(process.hProcess);
             if (child_code != STILL_ACTIVE) exit_code = static_cast<int>(child_code);
         }

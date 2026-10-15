@@ -18,6 +18,8 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 
 | Component | Origin | Current use |
 |---|---|---|
+| Native runtime entry point | Installed original GIANTS Engine 6.0.2 executable | Normal Steam boot, original menu and Bjornholm observed with an isolated profile |
+| Native recovered-source integration | Recovered WheelsUtil source plus authored mod probe | 104 helper comparisons pass in the actual engine; original global gameplay remains intact |
 | GUI logic | Recovered FS15 Lua sources | Compiled from source and executed in the frontend |
 | Map hierarchy, camera, dimensions and repeat sizes | Original I3D XML | Parsed without rewriting the installed game |
 | Buildings, trees, roads and props | Original version-3 `.i3d.shapes` containers | Decoded into local, lossless float/index caches; native GPU instancing |
@@ -51,11 +53,12 @@ Native code analysis traced `externalShapesFile` loading through
 already reused directly as a local oracle. The comparison harness uses only
 the pinned analysis image and does not inject into a running game.
 
-The next runtime milestone uses the installed original engine with a separate
-profile and recovered-source loading through its supported script loader.
-This path runs alongside the experimental host rather than extending that host
-into a substitute engine. A successful unmodified-game launch is only a native
-baseline; execution and integration of recovered code need separate evidence.
+The native entry point now uses the installed original engine with a separate
+profile. The recovered WheelsUtil source runs through its supported script
+loader and passes 104 helper comparisons. The original menu and Bjornholm were
+observed in the actual engine. This initial probe does not replace original
+global gameplay classes. Wider code replacement and full session validation
+remain separate milestones. The experimental host remains useful for fixtures.
 
 Original executable/code bytes, decoded geometry, textures and recovered Lua
 stay local. GitHub contains authored code, dependency provenance/licenses,

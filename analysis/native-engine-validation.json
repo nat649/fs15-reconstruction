@@ -1,0 +1,13 @@
+{
+  "native_boot_verified": true,
+  "recovered_script_execution_verified": true,
+  "engine_version": "6.0.2",
+  "probe_comparisons": 104,
+  "lua_error_lines": [],
+  "scope": "Original GIANTS Engine 6 with an isolated recovered WheelsUtil helper probe; not a complete game rebuild",
+  "log_sha256": "901be90123182d89bc40ca9be405f34451c2911eaf908930782fbcc31ea6dca9",
+  "original_executable_sha256": "21ce6fa0f776ad69f5a707a8c391cba6d2b80bdb612ffdf47f109372478b5488",
+  "recovered_wheels_source_sha256": "1d563cab78ab3643c3518f944a427c6df168d66b2afbde75dd165b93d71a4b7c",
+  "mission_visual_check": "Not inferred from the log; requires separate observation",
+  "original_global_gameplay_replaced": false
+}
