@@ -1,4 +1,4 @@
-# Project status — October 15, 2026
+# Project status — October 16, 2026
 
 **Additional local GE6 milestone:** a separate modified original runtime now
 reaches the original menu and Bjornholm with the native HUD/vehicles visible,
@@ -27,9 +27,25 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 19 bounded reconstructed entries from 11,612 pseudocode-only entries. This is host component
+separates 30 bounded reconstructed entries from 11,601 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
+
+The latest scene component reconstructs six affine/quaternion math entries,
+hierarchical world-transform caching and four coordinate script adapters.
+36,000 math outputs, 5,999 complete node arenas and 4,799 complete frames match
+original code bit for bit. ReFarm uses recovered local/world conversions through
+an authored matrix bridge; its scene ownership remains authored. Both maps pass
+the 24-run gameplay reliability suite after this change. The portable build now
+has two asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. Six native differential suites also pass.
+
+A new static [portability audit](native-portability-summary.json) records
+31,391 known call edges. The observed scripting roots reach 2,878 eligible
+functions, including 939 with computed calls. Types, virtual/dynamic dispatch
+and full linking remain unresolved. ARM64 Linux/QEMU core CI is configured as
+an intermediate CPU check; no full ARM64 GE6 or Switch build is available.
+See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
 
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the
 home runtime, original GE6 baseline or GE6 with three recovered wheel helpers.
@@ -47,8 +63,8 @@ starting-fleet resources through the existing tools, with progress/cancellation.
 The real GUI worker completed local preparation and recorded 1,609 file hashes;
 fresh archive extraction still requires the pinned original native GAR oracle.
 See [preparation instructions](../docs/LAUNCHER.md). Latest validation passes all
-24 Windows CTest checks, the portable-core test and 56 Python fixtures (two
-directory-symlink checks skipped on the local Windows account).
+the earlier 24 Windows CTest checks. Latest component and Python checks are
+listed above; directory-symlink checks require extra local Windows privileges.
 
 The new [gameplay alpha](../docs/GAMEPLAY_RUNTIME.md) loads original starting
 fleets and field/crop data, executes recovered motor/wheel and farm-transfer

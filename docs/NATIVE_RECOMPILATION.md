@@ -21,9 +21,12 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Seven wheel-read adapters | Axle speed, contact object/point/normal/force, position and slip | 11,760 complete script-frame comparisons |
 | Seven 32-bit scripting operations | AND, OR, NOT, XOR, masked left/right shift and highest set bit | 21,763 complete script-frame comparisons |
 | Affine point transform | `0x1400bfec0`, also used by wheel force-point updates | 12,000 bit-exact four-float results; integrated into host Lua point transforms |
+| Affine multiplication/inversion, rigid inverse point, quaternion conversion, scale extraction | Six native math entries | 36,000 complete bit-exact output comparisons, including singular failures and partial writes |
+| Cached hierarchical world transforms | `0x1400b1a50` | 1,200 complete node-arena comparisons across dirty/cached parent chains |
+| Four Lua local/world point/direction adapters | `0x1400e5330`, `0x1400e5410`, `0x1400e54e0`, `0x1400e55f0` | 4,799 complete script frames and their 4,799 node arenas; integrated into ReFarm through an authored world-matrix bridge |
 
-Those are **19 native entries with bounded reconstructed paths**. They are not
-19 completely proven engine functions or a percentage of GE6 completion.
+Those are **30 native entries with bounded reconstructed paths**. They are not
+30 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -60,6 +63,45 @@ The Windows DLL remains available for original-code differential comparisons.
 No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
 the selected future route; no console SDK contents are included.
 
+The workflow also defines an **ARM64 Linux cross-build with QEMU user-mode
+execution**. On a Linux host with `g++-aarch64-linux-gnu` and `qemu-user` installed:
+
+```sh
+cmake -S . -B build/arm64-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-linux-gnu.cmake
+cmake --build build/arm64-core --parallel 2
+ctest --test-dir build/arm64-core --output-on-failure
+```
+
+This checks a different CPU architecture with authored asset-free invariants.
+It is not a libnx build, `.nro`, console execution or a second architecture's
+original-code differential comparison. See [portability status](PORTABILITY_STATUS.md).
+
+## Recovered scene component boundaries
+
+`scene_math.h` documents the original affine lane order and **WXYZ** quaternion
+order. Quaternion-to-matrix preserves translation and padding; scale extraction
+retains the native near-unit snapping interval. Matrix inversion retains its
+`1e-36f` determinant threshold. Instruction inspection corrected a pseudocode
+addition-order ambiguity in the quaternion trace before validation passed.
+
+`scene_graph.h` exposes a caller-owned native-layout node arena: parent pointer
+at `+0x28`, flags at `+0x50`, local matrix at `+0x98` and cached world at `+0xd8`.
+Only traversed dirty nodes update, clearing bit `0x40`. Parent pointers must
+resolve to records in that arena. Cycle, truncated buffer and nonfinite guards
+are authored additions; no original object allocator, dirty propagation, scene
+loader, vtable callbacks or ownership lifecycle is reconstructed by this API.
+
+The four Lua adapters retain numeric tag/value locations and unrelated frame
+bytes. The original inverse adapters ignore an inversion failure and can read
+uninitialized stack data; one singular generated chain was excluded rather than
+executing that undefined path. The bounded API rejects it and preserves the frame.
+
+ReFarm supplies its existing world matrices through a cached synthetic-node
+bridge. This exercises recovered coordinate conversions without claiming native
+scene lifecycle integration. Both original-map gameplay fixtures still match
+source/bytecode, frame partitions and pause/resume in 24 host runs. See
+[component evidence](../analysis/scene-core-validation.json).
+
 ## Discovery and recovery ledger
 
 Auditing the 32 scripting references previously emitted as code labels found
@@ -75,6 +117,8 @@ scripts/analyze.ps1 -Target game-runtime -Existing -RecoverBindings -ExportName 
 scripts/analyze.ps1 -Target game-runtime -Existing -FullExport -ExportName game-full -FunctionTimeoutSeconds 300 -JavaHome 'C:\path\to\jdk-21'
 python scripts/index_native_exports.py
 python scripts/index_recompilation.py
+scripts/analyze.ps1 -Target game-runtime -Existing -Dependencies -ExportName native-dependencies -JavaHome 'C:\path\to\jdk-21'
+python scripts/index_portability.py
 ```
 
 The recompilation index checks source hashes against successful component

@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-15**. Checked items have supporting local build, analysis
+Updated: **2026-10-16**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Current native milestone:** the installed GIANTS Engine 6.0.2 opens its menu,
@@ -36,6 +36,8 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
 - [x] Audit 32 code-label references, identify 30 distinct uncovered executable functions and decompile all 30.
 - [ ] Audit function discovery and code labels beyond this catalogue.
+- [x] Export the catalogue's 31,391 known static call edges and count computed calls/import boundaries separately.
+- [x] Audit known scripting and CRT dependency closures without describing them as a complete link graph.
 - [ ] Recover compilable native source, types, globals and subsystem initialization from the exported pseudocode.
 - [x] Map 112 observed Lua/native registrations from one routine.
 - [ ] Recover signatures and behavior for the wider engine interface.
@@ -54,7 +56,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Reconstruct seven 32-bit scripting bit operations and compare 21,763 complete native script frames.
 - [x] Build these recovered components as a static portable C++17 core without the Windows frontend or original payloads.
 - [x] Recover the native affine point-transform leaf and compare 12,000 complete vectors bit for bit; use it in the host Lua transform service.
-- [x] Track 19 bounded reconstructed native entries separately from 11,612 pseudocode-only entries, with source-pinned evidence.
+- [x] Recover affine composition/inversion, rigid inverse points, WXYZ quaternion conversions and scale extraction; pass 36,000 bit-exact native comparisons.
+- [x] Recover cached hierarchical world transforms and four script-frame conversions; pass 5,999 complete node arenas and 4,799 complete frames.
+- [x] Connect recovered local/world coordinate adapters to ReFarm's existing world matrices and repeat 24 two-map gameplay reliability runs.
+- [x] Track 30 bounded reconstructed native entries separately from 11,601 pseudocode-only entries, with source-pinned evidence.
+- [ ] Recover native scene object allocation, ownership, dirty propagation, vtables and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
@@ -66,6 +72,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Isolate Windows symbol exports and add a portable-only build path.
 - [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
 - [x] Choose Switch homebrew `.nro` as the future packaging route; console work is deferred.
+- [x] Configure a separate ARM64 Linux cross-compilation and QEMU test job for the asset-free recovered core.
 - [ ] Configure the console toolchain and packaging target.
 - [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
 - [ ] Recover/link the complete native engine and its platform/middleware interfaces.

@@ -7,6 +7,8 @@ param(
     [string]$ExportName = '',
     [string]$LeafReference = '',
     [string[]]$Inspect = @(),
+    [string[]]$Instructions = @(),
+    [switch]$Dependencies,
     [switch]$FullExport,
     [switch]$RecoverBindings,
     [ValidateRange(1,600)][int]$FunctionTimeoutSeconds = 10,
@@ -54,6 +56,19 @@ if ($RecoverBindings) {
 } elseif ($FullExport) {
     if (-not $Existing) { throw 'Full export requires -Existing: use the previously analyzed, verified program.' }
     $arguments += @('-postScript', 'ExportFullProgram.java', $out, "$FunctionTimeoutSeconds")
+} elseif ($Dependencies) {
+    if (-not $Existing -or $Target -ne 'game-runtime') { throw 'Dependency export requires the existing game-runtime analysis.' }
+    $dependencyMarker = Join-Path $projectRoot "analysis\native-dependencies\dependencies-complete.txt"
+    if (Test-Path -LiteralPath $dependencyMarker) { Remove-Item -LiteralPath $dependencyMarker }
+    $arguments += @('-postScript', 'ExportDependencies.java', (Join-Path $projectRoot 'analysis/native-dependencies'))
+} elseif ($Instructions.Count) {
+    foreach ($instructionAddress in $Instructions) {
+        if ($instructionAddress -notmatch '^(0x)?[0-9a-fA-F]+$') { throw "Invalid instruction address: $instructionAddress (quote hexadecimal addresses)." }
+    }
+    $instructionMarker = Join-Path $projectRoot "analysis\inspection\$ExportName\instructions-complete.txt"
+    if (Test-Path -LiteralPath $instructionMarker) { Remove-Item -LiteralPath $instructionMarker }
+    $arguments += @('-postScript', 'ExportInstructions.java', (Join-Path $projectRoot "analysis\inspection\$ExportName"))
+    $arguments += $Instructions
 } elseif ($Inspect.Count) {
     $arguments += @('-postScript', 'InspectAddresses.java', (Join-Path $projectRoot "analysis\inspection\$ExportName"))
     $arguments += $Inspect
@@ -73,6 +88,8 @@ $javaArguments = @('-Xmx2G', '-XX:ParallelGCThreads=2', '-XX:CICompilerCount=2',
     'ghidra.Ghidra', 'ghidra.app.util.headless.AnalyzeHeadless') + $arguments
 & (Join-Path $jdk 'bin\java.exe') @javaArguments
 if ($LASTEXITCODE -ne 0) { throw "Ghidra failed with exit code $LASTEXITCODE" }
+if ($Instructions.Count -and -not (Test-Path -LiteralPath $instructionMarker)) { throw 'Ghidra returned without completing the instruction export; inspect the script log.' }
+if ($Dependencies -and -not (Test-Path -LiteralPath $dependencyMarker)) { throw 'Ghidra returned without completing the dependency export; inspect the script log.' }
 if ($FullExport) {
     $exportProgress = Get-Content -LiteralPath (Join-Path $out 'progress.json') -Raw | ConvertFrom-Json
     if (-not $exportProgress.complete_pass) { throw 'Ghidra returned without completing the catalogue export; inspect the script log and resume.' }

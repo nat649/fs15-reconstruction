@@ -70,6 +70,6 @@
   "gameplay_assertions_per_map": 43,
   "input_manifest_sha256": "9e30b541d926a419c72806e133b90547d2494a3b2145c618f76a1c3be4eb48e4",
   "authored_host_script_sha256": "ab7c8bab74ebc9b87a3eca0b9fc48f0056cd4c9c575e0f7c64dfb56e0558cb7c",
-  "native_host_sha256": "eea3345d8775e089f811fbfe316f11380c7311b249268889a6da8bd6e0bf41a5",
+  "native_host_sha256": "80c4f03d87b7ce58c316d639e40fa99957b8050592e62de8ce38dc7d7b141587",
   "scope": "Whole original Lua chunks versus recovered sources in the same authored native host; source slices remain shared; no full GE6/PhysX parity"
 }

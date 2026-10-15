@@ -48,10 +48,15 @@ as code labels now resolve to 30 distinct newly catalogued functions. General sc
 of these descriptors; the count is not a unique total of engine subsystems.
 
 The [native recompilation report](NATIVE_RECOMPILATION.md) distinguishes the
-expanded pseudocode catalogue from 18 entries with compiled, bounded recovered
+expanded pseudocode catalogue from 30 entries with compiled, bounded recovered
 paths. It documents the newly recovered wheel-record layout/read adapters,
 32-bit scripting operations and portable-core build. Full native engine
 recompilation and Switch execution remain unverified.
+
+The latest scene recovery adds six affine/quaternion math entries, cached world
+transforms and four script-frame adapters with bit-exact native comparisons.
+The [portability audit](PORTABILITY_STATUS.md) now records known static call
+dependencies separately from computed calls, imports and missing concrete types.
 
 Selected wheel paths traced from those descriptors:
 

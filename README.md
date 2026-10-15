@@ -56,10 +56,19 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   were identified as functions and decompiled. The enlarged catalogue has
   **11,631 eligible exports**. A separate portable C++ core now builds the RLE
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
-  native affine point transform. These cover **19 native entries on bounded
-  tested paths**. The transform passes 12,000 bit-exact native comparisons and
-  runs in the host Lua service. Full GE6 linking remains pending; the future
+  native affine point transform. Recovered affine/quaternion math, hierarchical
+  world-transform caching and four Lua coordinate adapters bring this to
+  **30 native entries on bounded tested paths**. The new component passes
+  36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
+  complete script-frame comparisons against original code, bit for bit.
+  ReFarm uses the recovered local/world adapters through an authored matrix bridge.
+  Full GE6 linking remains pending; the future
   Switch homebrew target is deferred. See [recompilation scope](docs/NATIVE_RECOMPILATION.md).
+- **Portability audit:** the current static catalogue has 31,391 known call
+  edges. Its scripting roots reach 2,878 eligible functions, including 939 with
+  computed calls. Those targets and concrete types still need recovery before
+  full linking. An asset-free ARM64 Linux/QEMU core check is configured separately
+  from the future Switch target. See [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
   profile. The recovered WheelsUtil source executes through the native mod

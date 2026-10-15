@@ -1,0 +1,119 @@
+{
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "dependency_export_sha256": "cfb9228450448fd7fc0f5ef2e8db689979fd0926e9dd56239fe127a523baa5b3",
+  "catalogued_entries": 12196,
+  "known_distinct_call_edges": 31391,
+  "eligible_functions_with_undefined_prototypes": 11307,
+  "native_import_libraries": [
+    {
+      "library": "VERSION.dll",
+      "imports": 3
+    },
+    {
+      "library": "IMM32.dll",
+      "imports": 8
+    },
+    {
+      "library": "steam_api64.dll",
+      "imports": 13
+    },
+    {
+      "library": "KERNEL32.dll",
+      "imports": 143
+    },
+    {
+      "library": "USER32.dll",
+      "imports": 83
+    },
+    {
+      "library": "GDI32.dll",
+      "imports": 22
+    },
+    {
+      "library": "SHELL32.dll",
+      "imports": 7
+    },
+    {
+      "library": "ole32.dll",
+      "imports": 4
+    },
+    {
+      "library": "OLEAUT32.dll",
+      "imports": 2
+    },
+    {
+      "library": "IPHLPAPI.DLL",
+      "imports": 3
+    },
+    {
+      "library": "WINMM.dll",
+      "imports": 15
+    },
+    {
+      "library": "WS2_32.dll",
+      "imports": 29
+    },
+    {
+      "library": "OPENGL32.dll",
+      "imports": 42
+    },
+    {
+      "library": "OpenAL32.dll",
+      "imports": 32
+    },
+    {
+      "library": "d3d9.dll",
+      "imports": 1
+    },
+    {
+      "library": "d3dx9_43.dll",
+      "imports": 4
+    },
+    {
+      "library": "XINPUT1_3.dll",
+      "imports": 2
+    },
+    {
+      "library": "DINPUT8.dll",
+      "imports": 1
+    },
+    {
+      "library": "X3DAudio1_7.dll",
+      "imports": 2
+    },
+    {
+      "library": "ADVAPI32.dll",
+      "imports": 8
+    }
+  ],
+  "root_audits": {
+    "script_descriptors": {
+      "seed_entries": 491,
+      "known_reachable_entries": 2904,
+      "eligible_reachable_entries": 2878,
+      "bounded_recovered_entries": 30,
+      "remaining_entries_without_validated_components": 2848,
+      "functions_with_computed_calls": 939,
+      "computed_call_sites": 2495,
+      "external_targets_outside_function_catalogue": 124,
+      "uncatalogued_native_target_entries": 0,
+      "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
+    },
+    "native_crt_startup": {
+      "seed_entries": 1,
+      "known_reachable_entries": 1513,
+      "eligible_reachable_entries": 1488,
+      "bounded_recovered_entries": 1,
+      "remaining_entries_without_validated_components": 1487,
+      "functions_with_computed_calls": 531,
+      "computed_call_sites": 1750,
+      "external_targets_outside_function_catalogue": 160,
+      "uncatalogued_native_target_entries": 0,
+      "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
+    }
+  },
+  "full_link_graph_recovered": false,
+  "full_native_rebuild_verified": false,
+  "switch_build_verified": false,
+  "scope": "Static dependency inventory from the current catalogue. Undefined prototypes are decompiler observations, not recovered types. Static CRT roots do not include all dynamic/virtual engine initialization. Counts are not engine completion percentages."
+}

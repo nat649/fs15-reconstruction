@@ -33,3 +33,21 @@ jobs:
           cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
+
+  portable-arm64-checks:
+    name: Recovered core on emulated ARM64 Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the cross-compiler and user-mode CPU emulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu qemu-user
+      - name: Cross-compile and execute asset-free recovered-core checks
+        run: |
+          cmake -S . -B build/ci-arm64-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-linux-gnu.cmake
+          cmake --build build/ci-arm64-core --parallel 2
+          ctest --test-dir build/ci-arm64-core --output-on-failure

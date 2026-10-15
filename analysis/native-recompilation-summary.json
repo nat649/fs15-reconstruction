@@ -1,9 +1,14 @@
 {
   "catalogued": 12196,
   "eligible": 11631,
-  "pseudocode_only": 11612,
-  "validated_component_path_entries": 19,
+  "pseudocode_only": 11601,
+  "validated_component_path_entries": 30,
   "components": [
+    {
+      "name": "scene_math_and_transforms",
+      "entries": 11,
+      "evidence": "analysis/scene-core-validation.json"
+    },
     {
       "name": "point_transform",
       "entries": 1,

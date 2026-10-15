@@ -47,6 +47,8 @@
 !/analysis/launcher-design-validation.json
 !/analysis/local-engine-validation.json
 !/analysis/local-engine-script-validation.json
+!/analysis/scene-core-validation.json
+!/analysis/native-portability-summary.json
 /logs/
 __pycache__/
 *.pyc

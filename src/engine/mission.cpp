@@ -4,6 +4,7 @@
 #include "collision.h"
 #include "simulation_clock.h"
 #include "../core/transform.h"
+#include "../core/scene_graph.h"
 #include "../menu/xml_bridge.h"
 #include <lua.hpp>
 #include <DirectXCollision.h>
@@ -99,7 +100,21 @@ struct MissionRuntime::Impl {
         if(!fs15_transform_point(object,sizeof(object),point,point,4))throw std::runtime_error("Recovered point transform rejected its input");
         for(unsigned i=0;i<3;++i)lua_pushnumber(l,point[i]);return 3;
     }
-    static int direction(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));XMFLOAT4X4 w;std::copy(r.scene->nodes[r.index].world,r.scene->nodes[r.index].world+16,&w._11);XMFLOAT3 p;XMStoreFloat3(&p,XMVector3TransformNormal(XMVectorSet(float(luaL_checknumber(l,2)),float(luaL_checknumber(l,3)),float(luaL_checknumber(l,4)),0),XMLoadFloat4x4(&w)));lua_pushnumber(l,p.x);lua_pushnumber(l,p.y);lua_pushnumber(l,p.z);return 3;}
+    static int scene_transform(lua_State* l,unsigned operation){
+        auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));
+        // Authored bridge: the existing host world matrix has the same affine
+        // lane order as GE6. A cached synthetic node avoids claiming that the
+        // host's object ownership/hierarchy is the original scene lifecycle.
+        unsigned char node_bytes[0x118]{},frame[0x120]{};
+        std::memcpy(node_bytes+0xd8,r.scene->nodes[r.index].world,64);
+        for(unsigned i=0;i<3;++i){const float value=float(luaL_checknumber(l,i+2));std::memcpy(frame+i*16,&value,4);}
+        if(!fs15_scene_transform_frame(operation,node_bytes,sizeof(node_bytes),sizeof(node_bytes),0,frame,sizeof(frame)))throw std::runtime_error("Recovered scene transform rejected a nonfinite or singular input");
+        for(unsigned i=0;i<3;++i){float value=0;std::memcpy(&value,frame+0xf0+i*16,4);lua_pushnumber(l,value);}return 3;
+    }
+    static int local_to_world(lua_State* l){return scene_transform(l,FS15_LOCAL_TO_WORLD);}
+    static int direction(lua_State* l){return scene_transform(l,FS15_LOCAL_DIRECTION_TO_WORLD);}
+    static int world_to_local(lua_State* l){return scene_transform(l,FS15_WORLD_TO_LOCAL);}
+    static int world_direction_to_local(lua_State* l){return scene_transform(l,FS15_WORLD_DIRECTION_TO_LOCAL);}
     static int attribute(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));const auto& node=r.scene->nodes[r.index];const std::string key=luaL_checkstring(l,2);auto at=node.attributes.find(key);if(at==node.attributes.end()){lua_pushnil(l);return 1;}
         auto type=node.attribute_types.find(key);const std::string kind=type==node.attribute_types.end()?"string":type->second;
         if(kind=="boolean"){if(at->second!="true"&&at->second!="false")throw std::runtime_error("Invalid original boolean user attribute");lua_pushboolean(l,at->second=="true");}
@@ -161,7 +176,7 @@ struct MissionRuntime::Impl {
     Impl(const fs::path& r,const fs15world::Terrain& t,int difficulty,bool reference):root(r),terrain(t),reference_bytecode(reference){
         bodies.reserve(64);lua=luaL_newstate();if(!lua)throw std::runtime_error("Cannot create mission Lua VM");luaL_openlibs(lua);
         fs15menu::register_xml(lua,[this](const std::string& name){return resolve(name);});
-        bind("source",safe<source>);bind("worldReadSource",safe<read_source>);bind("delete",safe<destroy_xml>);bind("worldLoadVehicle",safe<load_vehicle>);bind("getNumOfChildren",safe<children>);bind("getChildAt",safe<child>);bind("getTranslation",safe<translation>);bind("getRotation",safe<rotation>);bind("setRotation",safe<set_rotation>);bind("getWorldTranslation",safe<transform>);bind("localToWorld",safe<transform>);bind("localDirectionToWorld",safe<direction>);bind("getUserAttribute",safe<attribute>);bind("worldHeight",safe<height>);bind("worldSetPose",safe<pose>);bind("worldFindCallbacks",safe<find_callbacks>);bind("worldOverlap",safe<overlap>);bind("worldSelect",safe<select>);
+        bind("source",safe<source>);bind("worldReadSource",safe<read_source>);bind("delete",safe<destroy_xml>);bind("worldLoadVehicle",safe<load_vehicle>);bind("getNumOfChildren",safe<children>);bind("getChildAt",safe<child>);bind("getTranslation",safe<translation>);bind("getRotation",safe<rotation>);bind("setRotation",safe<set_rotation>);bind("getWorldTranslation",safe<transform>);bind("localToWorld",safe<local_to_world>);bind("localDirectionToWorld",safe<direction>);bind("worldToLocal",safe<world_to_local>);bind("worldDirectionToLocal",safe<world_direction_to_local>);bind("getUserAttribute",safe<attribute>);bind("worldHeight",safe<height>);bind("worldSetPose",safe<pose>);bind("worldFindCallbacks",safe<find_callbacks>);bind("worldOverlap",safe<overlap>);bind("worldSelect",safe<select>);
         collision=std::make_unique<CollisionWorld>(t);bind("raycastAll",safe<raycast>);bind("worldMove",safe<move>);bind("worldBounds",safe<bounds>);bind("getParent",safe<parent>);bind("getName",safe<name>);bind("setTranslation",safe<set_translation>);
         bind("getScale",safe<scale>);bind("setScale",safe<set_scale>);bind("getVisibility",safe<visibility>);bind("setVisibility",safe<set_visibility>);
         auto map_dir=fs::path("data/maps")/(t.map_id=="Map01"?"map01":"map02");fruit=fs15world::load_grle(resolve((map_dir/"fruit_density.grle").generic_u8string()));soil=fs15world::load_grle(resolve((map_dir/"cultivator_density.grle").generic_u8string()));density_views[1].grid=&soil;
