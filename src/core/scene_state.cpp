@@ -4,6 +4,7 @@
 #include "scene_graph.h"
 #include "scene_trs.h"
 #include <cmath>
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #include <stdexcept>
@@ -25,6 +26,7 @@ struct State {
     size_t count;
     std::vector<FS15SceneStateRecord> nodes;
     std::vector<FS15SceneNotification> events;
+    std::vector<uintptr_t> child_storage;
     State(const FS15SceneStateArena& v,size_t index):view(v),count(v.node_stride?v.node_bytes/v.node_stride:0) {
         if(v.node_stride<sizeof(FS15SceneStateRecord)||index>=count||
             !range(v.nodes,v.node_bytes,1)||!range(v.children,v.child_count,sizeof(uintptr_t))||
@@ -41,16 +43,17 @@ struct State {
     }
     size_t source_index(uintptr_t p)const{return offset(p,view.nodes,count,view.node_stride);}
     size_t parent(size_t i)const{return nodes[i].parent?offset(nodes[i].parent,nodes.data(),count,sizeof(nodes[0])):none;}
-    std::vector<uintptr_t> span(uintptr_t begin,uintptr_t end,const uintptr_t* data,size_t size)const {
+    std::vector<uintptr_t> span(uintptr_t begin,uintptr_t end,const uintptr_t* data,size_t size,const uintptr_t* staged=nullptr)const {
         if(begin==end)return {};
         if(end<begin||(end-begin)%sizeof(uintptr_t))throw std::runtime_error("Invalid scene vector");
         const size_t first=offset(begin,data,size,sizeof(uintptr_t)),length=(end-begin)/sizeof(uintptr_t);
         if(length>size-first||length>0x7fffffff)throw std::runtime_error("Scene vector outside supplied view");
-        return {data+first,data+first+length};
+        const auto* source=staged?staged:data;
+        return {source+first,source+first+length};
     }
     std::vector<size_t> children(size_t i)const {
         const auto& n=nodes[i];std::vector<size_t> result;
-        for(uintptr_t p:span(n.children_begin,n.children_end,view.children,view.child_count)) {
+        for(uintptr_t p:span(n.children_begin,n.children_end,view.children,view.child_count,child_storage.empty()?nullptr:child_storage.data())) {
             const size_t child=source_index(p);
             if(parent(child)!=i)throw std::runtime_error("Inconsistent parent/child link");
             result.push_back(child);
@@ -168,6 +171,106 @@ struct State {
         nodes[i].flags|=8;
         for(size_t child:children(i))mark(child,visited,depth+1);
     }
+    struct ChildWindow {size_t first,size,capacity;};
+    ChildWindow window(size_t i)const {
+        const auto& n=nodes[i];
+        if(!n.children_begin&&!n.children_end&&!n.children_capacity)return {0,0,0};
+        const uintptr_t base=reinterpret_cast<uintptr_t>(view.children);
+        if(n.children_begin<base||n.children_end<n.children_begin||n.children_capacity<n.children_end||
+            (n.children_begin-base)%sizeof(uintptr_t)||(n.children_end-base)%sizeof(uintptr_t)||
+            (n.children_capacity-base)%sizeof(uintptr_t)||
+            n.children_capacity-base>view.child_count*sizeof(uintptr_t))throw std::runtime_error("Invalid reserved child vector");
+        const size_t length=(n.children_end-n.children_begin)/sizeof(uintptr_t);
+        if(length>0x7fffffff)throw std::runtime_error("Child count exceeds native integer range");
+        return {(n.children_begin-base)/sizeof(uintptr_t),length,(n.children_capacity-n.children_begin)/sizeof(uintptr_t)};
+    }
+    void validate_hierarchy()const {
+        std::vector<size_t> owners(view.child_count,none),incoming(count,none);
+        for(size_t i=0;i<count;++i) {
+            const auto w=window(i);
+            for(size_t j=0;j<w.capacity;++j) {
+                if(owners[w.first+j]!=none)throw std::runtime_error("Overlapping child capacities");
+                owners[w.first+j]=i;
+            }
+            for(size_t child:children(i)) {
+                if(incoming[child]!=none)throw std::runtime_error("Duplicate child reference");
+                incoming[child]=i;
+            }
+        }
+        for(size_t i=0;i<count;++i) {
+            if(incoming[i]!=parent(i))throw std::runtime_error("Missing parent/child reference");
+            size_t cursor=i,depth=0;
+            while(cursor!=none) {
+                if(++depth>256)throw std::runtime_error("Cyclic or excessive hierarchy depth");
+                cursor=parent(cursor);
+            }
+        }
+    }
+    void stage_children(uintptr_t* writable) {
+        if(writable!=view.children)throw std::runtime_error("Mismatched mutable child storage");
+        if(view.child_count)child_storage.assign(view.children,view.children+view.child_count);
+        validate_hierarchy();
+    }
+    void unlink(size_t i,uint32_t slot,bool suppress) {
+        const auto w=window(i);
+        if(slot>=w.size)throw std::runtime_error("Invalid child slot");
+        const size_t child=source_index(child_storage[w.first+slot]);
+        nodes[child].parent=0;
+        for(size_t j=slot;j+1<w.size;++j)child_storage[w.first+j]=child_storage[w.first+j+1];
+        // Native erase keeps the now-unused trailing slot and vector capacity.
+        nodes[i].children_end-=sizeof(uintptr_t);
+        if(nodes[child].flags&0x10)rescan(i,1);
+        if(!suppress&&(nodes[child].type_flags&0x20)) {
+            std::vector<bool> visited(count);propagate(child,0x3f,0,visited);
+        }
+    }
+    uint32_t link(size_t i,size_t child,uint32_t position,bool matrix_link) {
+        if(child>=count||child==i)throw std::runtime_error("Invalid linked child");
+        const size_t old=parent(child);
+        // Reject new cycles before any staged propagation can traverse them.
+        for(size_t cursor=i;cursor!=none;cursor=parent(cursor))if(cursor==child)throw std::runtime_error("Link would create cycle");
+        if(old!=none) {
+            const auto previous=children(old);
+            const auto found=std::find(previous.begin(),previous.end(),child);
+            if(found==previous.end())throw std::runtime_error("Old parent lacks child");
+            unlink(old,static_cast<uint32_t>(found-previous.begin()),false);
+        }
+        const auto w=window(i);
+        if(w.size>=w.capacity)throw std::runtime_error("Child storage exhausted; native allocator not recovered");
+        nodes[child].parent=reinterpret_cast<uintptr_t>(&nodes[i]);
+        const uint32_t result=position<w.size?position:static_cast<uint32_t>(w.size);
+        child_storage[w.first+w.size]=reinterpret_cast<uintptr_t>(view.nodes)+child*view.node_stride;
+        // Equivalent to the native pointer-vector rotate after appending.
+        std::rotate(child_storage.begin()+w.first+result,child_storage.begin()+w.first+w.size,
+            child_storage.begin()+w.first+w.size+1);
+        nodes[i].children_end+=sizeof(uintptr_t);
+        if(matrix_link) {
+            if(nodes[child].flags&0x10)rescan(i,1);
+            if(nodes[child].type_flags&0x20) {
+                bool transformed=true;
+                if(old==none&&parent(i)==none) {
+                    world(i);transformed=false;
+                    // The original tests these 12 lanes, excluding affine padding.
+                    constexpr unsigned lanes[]={0,1,2,4,5,6,8,9,10,12,13,14};
+                    for(unsigned lane:lanes) {
+                        const float expected=(lane==0||lane==5||lane==10)?1.0f:0.0f;
+                        if(!(std::fabs(nodes[i].world[lane]-expected)<1e-4f)){transformed=true;break;}
+                    }
+                }
+                const uint32_t flags=nodes[child].flags;
+                uint32_t mask=0x38;
+                if(transformed)mask|=1;
+                if(((nodes[i].flags^flags)&2)&&(flags&1))mask|=2;
+                if((nodes[i].flags|flags)&8)mask|=4;
+                std::vector<bool> visited(count);propagate(child,mask,0,visited);
+            }
+        }
+        return result;
+    }
+    void commit_children(uintptr_t* writable) {
+        validate_hierarchy();commit();
+        if(!child_storage.empty())std::memcpy(writable,child_storage.data(),child_storage.size()*sizeof(uintptr_t));
+    }
 };
 }
 
@@ -232,5 +335,31 @@ extern "C" FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena* ar
         }
         if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
         *scale_warning=warning;return 1;
+    }catch(...){return 0;}
+}
+
+extern "C" FS15_CORE_API int fs15_scene_link(const FS15SceneStateArena* arena,uintptr_t* writable,
+    size_t parent,size_t child,uint32_t position,int matrix_link,FS15SceneNotification* events,
+    size_t capacity,size_t* used,uint32_t* attached) {
+    if(!arena||!used||!attached||(matrix_link!=0&&matrix_link!=1)||!range(events,capacity,sizeof(*events)))return 0;
+    try {
+        State state(*arena,parent);state.stage_children(writable);
+        const uint32_t result=state.link(parent,child,position,matrix_link!=0);
+        *used=state.events.size();if(state.events.size()>capacity)return 0;
+        state.commit_children(writable);
+        if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
+        *attached=result;return 1;
+    }catch(...){return 0;}
+}
+
+extern "C" FS15_CORE_API int fs15_scene_unlink(const FS15SceneStateArena* arena,uintptr_t* writable,
+    size_t parent,uint32_t slot,int suppress,FS15SceneNotification* events,size_t capacity,size_t* used) {
+    if(!arena||!used||!range(events,capacity,sizeof(*events)))return 0;
+    try {
+        State state(*arena,parent);state.stage_children(writable);state.unlink(parent,slot,suppress!=0);
+        *used=state.events.size();if(state.events.size()>capacity)return 0;
+        state.commit_children(writable);
+        if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
+        return 1;
     }catch(...){return 0;}
 }

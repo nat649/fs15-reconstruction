@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 46 bounded reconstructed entries from 11,589 pseudocode-only entries. This is host component
+separates 49 bounded reconstructed entries from 11,586 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,8 +37,8 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has four asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. Eight native differential suites also pass.
+has five asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. Native differential suites are run separately.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
 Euler extraction, lazy cache refresh, rebuild propagation and six Lua
@@ -59,11 +59,19 @@ arbitrary derived classes and callback side effects remain unresolved. Two
 constructor-observed vtables expose 16 audited slots and four newly catalogued
 functions. See [state scope](../docs/SCENE_STATE_RECOVERY.md).
 
+Three hierarchy entries now recover ordered attachment, reparenting and removal
+with their observer/state effects. 19,200 successive complete node arenas and
+child buffers match original code, including 18,726 ordered notifications.
+The native root-identity threshold is `1e-4f`. Storage remains preallocated;
+native vector growth, constructors/destructors, registries and object/resource
+ownership are not recovered. ReFarm's ownership remains authored. See
+[hierarchy scope](../docs/SCENE_HIERARCHY_RECOVERY.md).
+
 A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all four asset-free tests under QEMU in CI. This is an intermediate
+Linux and executes asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).

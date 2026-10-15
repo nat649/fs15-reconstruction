@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11589,
-  "validated_component_path_entries": 46,
+  "pseudocode_only": 11586,
+  "validated_component_path_entries": 49,
   "components": [
+    {
+      "name": "scene_hierarchy",
+      "entries": 3,
+      "evidence": "analysis/scene-hierarchy-validation.json"
+    },
     {
       "name": "scene_trs_and_lua_updates",
       "entries": 11,

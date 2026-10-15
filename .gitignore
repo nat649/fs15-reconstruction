@@ -53,6 +53,7 @@
 !/analysis/scene-state-validation.json
 !/analysis/scene-vtables-summary.json
 !/analysis/scene-trs-validation.json
+!/analysis/scene-hierarchy-validation.json
 /logs/
 __pycache__/
 *.pyc

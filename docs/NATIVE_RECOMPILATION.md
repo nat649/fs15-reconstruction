@@ -26,9 +26,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Four Lua local/world point/direction adapters | `0x1400e5330`, `0x1400e5410`, `0x1400e54e0`, `0x1400e55f0` | 4,799 complete script frames and their 4,799 node arenas; integrated into ReFarm through an authored world-matrix bridge |
 | Scene state, observer tracking, inherited flag and base/TRS matrix setters | Five native entries; two constructor-observed vtables | 12,000 complete node arenas and 7,200 side-effect-free notification traces; includes 185 world-preserving child matrix changes |
 | TRS math/cache/rebuild and six Lua getters/setters | Eleven native entries | 18,000 math results, 7,200 complete node arenas and notification traces; all recorded Windows floats bit-identical, with explicit platform-libm boundary |
+| Ordered scene link/reparent/unlink | Three native entries, preallocated vectors only | 19,200 successive complete node arenas/child buffers and notification traces, including same-parent reorder and suppressed removal |
 
-Those are **46 native entries with bounded reconstructed paths**. They are not
-46 completely proven engine functions or a percentage of GE6 completion.
+Those are **49 native entries with bounded reconstructed paths**. They are not
+49 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -66,8 +67,8 @@ No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
 the selected future route; no console SDK contents are included.
 
 The workflow also defines an **ARM64 Linux cross-build with QEMU user-mode
-execution**. All four asset-free core tests pass there, as well as on Windows x64
-and Linux x64; see [platform evidence](../analysis/portable-core-platform-validation.json).
+execution**. See the tested source revision, test counts and platform scope in
+[platform evidence](../analysis/portable-core-platform-validation.json).
 On a Linux host with `g++-aarch64-linux-gnu` and `qemu-user` installed:
 
 ```sh
@@ -118,6 +119,11 @@ matrix rebuilding, the original origin-zero propagation call, and six complete
 Lua setter/getter frames. Its matrix/Euler flow is recovered; trig and square-root
 functions use platform libm, with a recorded numeric gate. ReFarm now uses these
 recovered composition/affine routines for I3D node transforms and vehicle poses.
+
+The [hierarchy component](SCENE_HIERARCHY_RECOVERY.md) recovers ordered scene
+membership changes and their state/observer updates. Child vectors are bounded
+caller-owned storage; native allocation/growth, constructors/destructors and
+registry/resource ownership remain unresolved.
 
 ## Discovery and recovery ledger
 

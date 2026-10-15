@@ -73,6 +73,23 @@ enum FS15SceneTRSOperation {
  * unrecovered native logger. Math uses the platform libm; see scene_trs.h. */
 FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena*,size_t,unsigned,
     void*,size_t,FS15SceneNotification*,size_t,size_t*,int*);
+/* Recovered hierarchy paths: raw ordered reparent (0x1401363d0), matrix-node
+ * link (0x1400b17b0), and unlink (0x1400b19c0). writable_children must equal
+ * arena.children and cover its entire child_count, including reserved slots.
+ * Each node's begin/end/capacity must describe a disjoint reserved subrange.
+ * No native allocator is used: insufficient child/event capacity rejects the
+ * entire update. Link position is clamped after removal from the old parent;
+ * UINT32_MAX appends. matrix_link=0 selects raw reparent, =1 also updates
+ * observer/inherited/transform state. Unlink removes the given child slot;
+ * suppress_update!=0 preserves its cached state, as during native destruction.
+ * Ordered notifications are returned for later delivery, with origin 0.
+ * Nodes, child storage, events and scalar outputs must not overlap. */
+FS15_CORE_API int fs15_scene_link(const FS15SceneStateArena*,uintptr_t* writable_children,
+    size_t parent,size_t child,uint32_t position,int matrix_link,
+    FS15SceneNotification*,size_t,size_t*,uint32_t* attached_index);
+FS15_CORE_API int fs15_scene_unlink(const FS15SceneStateArena*,uintptr_t* writable_children,
+    size_t parent,uint32_t child_slot,int suppress_update,
+    FS15SceneNotification*,size_t,size_t*);
 #ifdef __cplusplus
 }
 static_assert(sizeof(void*)==8,"Observed scene layout requires 64-bit pointers");
