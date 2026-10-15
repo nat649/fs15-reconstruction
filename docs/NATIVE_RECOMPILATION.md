@@ -65,7 +65,7 @@ No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
 the selected future route; no console SDK contents are included.
 
 The workflow also defines an **ARM64 Linux cross-build with QEMU user-mode
-execution**. Both asset-free core tests pass there, as well as on Windows x64
+execution**. All three asset-free core tests pass there, as well as on Windows x64
 and Linux x64; see [platform evidence](../analysis/portable-core-platform-validation.json).
 On a Linux host with `g++-aarch64-linux-gnu` and `qemu-user` installed:
 

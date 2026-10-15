@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "date": "2026-10-16",
-  "tested_source_commit": "623b311b1466d7550459e398188f4235ddcec7d2",
+  "tested_source_commit": "71e8f04fe265a197bcddce0af539a2432d084d78",
   "source_sha256": {
     "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
     "src/core/bit_operations.cpp": "0adb266f9fc5f10e15ab085309a001d59763b43a3bc0373611916dd91658eac9",
@@ -13,6 +13,8 @@
     "src/core/scene_graph.h": "34f3b03e4e41ea249c94f9df1b0e86ac9b0c76464dab9ffc5b48eb0a132100f6",
     "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
     "src/core/scene_math.h": "d7e02e5aef957afb70ba31c68bb779ca44ed016b03df0b3091a70eebd9872408",
+    "src/core/scene_state.cpp": "f57f1b4ad0d0ea1db7181f3448f9a490f6bce97d6ac3760d09fc4ff2ba5e392d",
+    "src/core/scene_state.h": "6104305713344ea6a2b63a0abe60b49312004d7fed3a7590fc8a81893233e546",
     "src/core/tire_forces.cpp": "92e5539f00aeaee39c12a2aedf4282d235eac009b9f584c05fe53103c02cde81",
     "src/core/tire_forces.h": "5e28bca9cdd22987ef857f74d87ca780c225d08b40d5b56a832a3e7df893732e",
     "src/core/transform.cpp": "3d3e14ba48dcc8704b48e1569de8e319ce5389a08ec7639b5685593f5b1c79b2",
@@ -22,29 +24,30 @@
   },
   "tests": [
     "portable_native_core",
-    "portable_scene_core"
+    "portable_scene_core",
+    "portable_scene_state"
   ],
   "platforms": [
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 2
+      "tests_passed": 3
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 2,
-      "job_id": 116703559840
+      "tests_passed": 3,
+      "job_id": 116711810714
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 2,
-      "job_id": 116703559751
+      "tests_passed": 3,
+      "job_id": 116711810544
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38816843983",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38819344280",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,

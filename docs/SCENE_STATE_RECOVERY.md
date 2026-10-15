@@ -55,6 +55,8 @@ child. This validates the matrix branch, not a real rigid-body solver.
   reflected bases, non-transform child filtering and signed-zero clip values.
 - A third asset-free portable CTest checks propagation invariants, event-capacity
   atomicity, invalid pointers/cycles, matrix setters and singular parents.
+- All three portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+  under QEMU. This does not validate a Switch executable or console hardware.
 
 Only pointer-bearing fields that differ because the two synthetic arenas have
 different addresses are canonicalized for complete-arena comparison. Original
