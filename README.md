@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **49 native entries on bounded tested paths**. The affine component passes
+  **62 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -69,7 +69,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   clip-distance/mask propagation, observer-presence tracking and base/TRS matrix
   setters. 12,000 complete synthetic node arenas and 7,200 notification traces
   match original code, including 185 world-preserving child matrix changes.
-  This is a portable component; allocators, object destruction and arbitrary
+  This is a portable component; native allocators, complete object destruction and arbitrary
   observer side effects are not reconstructed. See [scope](docs/SCENE_STATE_RECOVERY.md).
 - **TRS update recovery:** eleven additional entries cover native rotation and
   composition/decomposition, lazy caches and six Lua setters/getters. 18,000 math
@@ -82,10 +82,17 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   arenas/child buffers and notification traces match the original code. Native
   allocation, object destruction and callback side effects remain open. See
   [hierarchy scope and evidence](docs/SCENE_HIERARCHY_RECOVERY.md).
+- **Object lifecycle recovery:** thirteen additional paths initialize base,
+  scene, matrix and TRS objects, rename them and destroy supported owned forests.
+  Comparisons cover 2,500 constructors, 7,500 renames and 250 recursive forests
+  containing 2,470 deleting destructions. Platform allocation, ID/registry and
+  known dispatch services are explicit authored boundaries. Nonempty attributes,
+  shared resources and active triggers remain open. See
+  [lifetime scope and evidence](docs/SCENE_LIFECYCLE_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All five asset-free core tests pass on Windows x64, Linux x64
+  full linking. Asset-free core tests run on Windows x64, Linux x64
   and ARM64 Linux under QEMU, separately from the future Switch target. See
   [platform evidence](analysis/portable-core-platform-validation.json) and
   [porting blockers](docs/PORTABILITY_STATUS.md).

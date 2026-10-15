@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x14004d640",
+    "0x14004d760",
+    "0x14004d7a0",
+    "0x1400b5ec0",
+    "0x1400b15e0",
+    "0x14010fa90",
+    "0x14010fb40",
+    "0x1400b1710",
+    "0x1401362a0",
+    "0x14010fbb0",
+    "0x1400b5f90",
+    "0x1400b16e0",
+    "0x14010fb10"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/scene_lifecycle.cpp": "fd497cfecd191b89b4235de62375e9f12ec8a47c377f4c0c979bc7a9ce14af0c",
+    "src/core/scene_lifecycle.h": "3cf011a16fd30afb3d652aecebebff5c349c01351962499353e9a2728d2fd6af",
+    "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d"
+  },
+  "tested_dll_sha256": "4845be29d6b546be7b1ffd5f99950210e3fc9aaa727b16e6a35d835b8fb05b75",
+  "cases": {
+    "registry_snapshots": 4970,
+    "constructors": 2500,
+    "renames": 7500,
+    "nondeleting_destructors": 2500,
+    "auxiliary_allocations_compared": 3500,
+    "deletion_order_traces": 250,
+    "recursively_deleted_objects": 2470,
+    "recursive_forests": 250
+  },
+  "original_results_sha256": "6c64728f3bea9dae4df2763718b9d064363f189859b55f3a61b13d951a46180e",
+  "native_reference_services": "Private Windows heap, five rebound inspected kernel imports, explicit already-initialized singleton; original CRT and registry/tree bodies execute unchanged",
+  "portable_services": "Authored allocator, wrapping-ID sequence, registry and known unlink/deleting-dispatch callbacks",
+  "scope": "Supported base/node/matrix/TRS constructors, bounded names, empty attribute maps, no shared resource or active trigger, normal allocation success. Complete record/auxiliary bytes and recursive owned-object cleanup. OS/CRT/container internals, arbitrary derived classes, failures/exceptions, singleton startup and concurrent registry semantics are not recovered by these paths. No full engine or console execution."
+}

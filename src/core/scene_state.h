@@ -9,17 +9,22 @@ extern "C" {
  * remain opaque. Pointers describe caller-owned, bounded views below. */
 typedef struct FS15SceneStateRecord {
     uint64_t vtable;
-    uint8_t unknown08[0x14];
+    uint8_t registered,unknown09[7];
+    uintptr_t name;
+    uint32_t identifier;
     uint32_t type_flags;
-    uint8_t unknown20[8];
+    uint32_t class_tag,unknown24;
     uintptr_t parent,children_begin,children_end,children_capacity;
     uint8_t unknown48[8];
     uint32_t flags,unknown54;
     uintptr_t observers_begin,observers_end,observers_capacity;
-    uint8_t unknown70[0x28];
+    uint8_t unknown70[8];
+    uintptr_t attribute_unknown,attribute_head;
+    size_t attribute_count;
+    uint8_t unknown90[8];
     float local[16],world[16];
     uintptr_t properties;
-    uint8_t unknown120[8];
+    uintptr_t shared_resource;
     float local_clip[2];
     uint32_t local_masks[2];
     float world_clip[2];
@@ -93,6 +98,9 @@ FS15_CORE_API int fs15_scene_unlink(const FS15SceneStateArena*,uintptr_t* writab
 #ifdef __cplusplus
 }
 static_assert(sizeof(void*)==8,"Observed scene layout requires 64-bit pointers");
+static_assert(offsetof(FS15SceneStateRecord,name)==0x10);
+static_assert(offsetof(FS15SceneStateRecord,identifier)==0x18);
+static_assert(offsetof(FS15SceneStateRecord,attribute_head)==0x80);
 static_assert(offsetof(FS15SceneStateRecord,type_flags)==0x1c);
 static_assert(offsetof(FS15SceneStateRecord,parent)==0x28);
 static_assert(offsetof(FS15SceneStateRecord,flags)==0x50);

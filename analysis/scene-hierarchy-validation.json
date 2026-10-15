@@ -8,7 +8,7 @@
   ],
   "rebuilt_source_sha256": {
     "src/core/scene_state.cpp": "5a611b6f80900828c91e7f105a29aa3d7969232731e413883c97a9411eefed4b",
-    "src/core/scene_state.h": "90edd0903e957d1f3ce3e7d856ec492c63f955dd49dac3a11204bc18b3477e18",
+    "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_graph.cpp": "56ff291513dd3a7632afebc80baf756fb940e300a56a0c981a5827b1116c3851",
     "src/core/scene_graph.h": "34f3b03e4e41ea249c94f9df1b0e86ac9b0c76464dab9ffc5b48eb0a132100f6",
     "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
@@ -16,7 +16,7 @@
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4"
   },
-  "tested_dll_sha256": "c4cf8e2316f352d507f5f79f8954a2b87c0c86067d600f1cfe07b6af106b0460",
+  "tested_dll_sha256": "080c9dffde78d987a318f701f44c1ae9d42b71920fb88df86bfbc910dac28be1",
   "cases": {
     "raw_links": 4800,
     "reparents": 7335,
@@ -29,7 +29,7 @@
     "root_attachments": 2602,
     "suppressed_unlinks": 4463
   },
-  "original_results_sha256": "80b86a6db329b6364bb098451e5f14312c4c0730ca343a0bca749b517d09e22a",
+  "original_results_sha256": "913ca0b26a9e45c9bf72523c4c9a867996b5688977dc2754dc332003a0e3c505",
   "native_identity_epsilon": 9.999999747378752e-05,
   "scope": "Preallocated synthetic scene forests, three bounded hierarchy paths, exact node bytes, parent/child order, unused vector slots and side-effect-free notification order/origin. No native vector allocation/growth, object constructor/destructor, registry, arbitrary derived callbacks, full engine startup or console execution."
 }

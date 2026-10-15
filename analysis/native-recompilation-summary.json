@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11586,
-  "validated_component_path_entries": 49,
+  "pseudocode_only": 11573,
+  "validated_component_path_entries": 62,
   "components": [
+    {
+      "name": "scene_object_lifecycle",
+      "entries": 13,
+      "evidence": "analysis/scene-lifecycle-validation.json"
+    },
     {
       "name": "scene_hierarchy",
       "entries": 3,
