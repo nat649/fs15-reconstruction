@@ -10,5 +10,5 @@ else
 end
 assert(chunk, err)
 local output = assert(io.open(arg[2], "wb"))
-output:write(string.dump(chunk))
+output:write(string.dump(chunk, "d"))
 output:close()

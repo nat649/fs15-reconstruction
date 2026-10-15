@@ -7,7 +7,7 @@ full GE6 startup or provide original PhysX behavior.
 ## Launch and controls
 
 Build, prepare the original resources, and package as described in the README.
-The current local package is `build/FS15GameplayAlpha2/FS15MenuRebuilt.exe`.
+The current local package is `build/FS15GameplayAlpha3/FS15MenuRebuilt.exe`.
 Choose an empty Career slot, difficulty, map, and Start. Existing saved games
 remain read-only and cannot resume a simulation. The original installation and
 profile are never written.

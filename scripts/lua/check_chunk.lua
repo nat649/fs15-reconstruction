@@ -9,6 +9,9 @@ if not reconstructed then
     io.stderr:write("Reconstructed source: " .. tostring(reconstructedError) .. "\n")
     os.exit(3)
 end
-local referenceDump = string.dump(original, true)
-local rebuiltDump = string.dump(reconstructed, true)
+-- The pinned LuaJIT writer's d mode sorts constant-table hash entries.
+-- Without it, VM hash randomization can change a result across processes even
+-- when source hashes are unchanged. All instructions/constants remain compared.
+local referenceDump = string.dump(original, "sd")
+local rebuiltDump = string.dump(reconstructed, "sd")
 io.write(referenceDump == rebuiltDump and "exact_match\n" or "syntax_only\n")

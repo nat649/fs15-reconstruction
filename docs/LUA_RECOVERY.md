@@ -25,12 +25,42 @@ substitution. It leaves the third-party checkout unchanged. The authored
 fixture `tests/fixtures/repeated_literals.lua` is compiled, decompiled through
 the adapter, and recompiled; its stripped bytecode matches exactly.
 
-After this correction, all 470 outputs compile:
+## Empty-table initialization adapter
+
+LJD also folded later field assignments into empty-table constructors. For
+example, `Probe = {}; Probe.value = observe()` became
+`Probe = {value = observe()}`. The callback then ran before the global table
+existed. This is a behavioral error, not just different bytecode formatting.
+
+The adapter marks original `TNEW` instructions with a zero allocation hint,
+keeps their table references during slot substitution, and prevents the later
+constructor-filling pass from merging subsequent stores. Sized constructors
+and `TDUP` templates keep their existing handling. The authored table fixture
+checks global initialization order, local/nested fields and genuine templates.
+It failed with the previous adapter and now matches the original bytecode.
+
+This adds **54 exact matches**, including WheelsUtil, SpecializationUtil,
+Plough, Mower, MixerWagon and TreePlanter. All 254 previous matches are retained.
+These are script recovery results, not proof of complete native vehicle or
+farming simulation in the gameplay host.
+
+## Deterministic comparison
+
+The pinned LuaJIT writer supports `string.dump(chunk, "sd")`: `s` strips debug
+data and `d` writes template-table hash entries in deterministic order. The old
+`true` argument stripped debug data but could randomly change a comparison
+result across processes with the same source hash. Deterministic mode still
+compares all instructions, constants, prototype ordering and upvalue metadata.
+It does not normalize register allocation or control flow. Negative controls
+reject changed constants, calls and allocation instructions, and ensure that
+comparison never executes a chunk's top-level code.
+
+All 470 outputs compile:
 
 | Result | Files | Meaning |
 |---|---:|---|
-| `exact_match` | 254 | Original and rebuilt chunks produce identical `string.dump(chunk, true)` output under the verification runtime |
-| `syntax_only` | 216 | Source compiles and its bytecode loads, but the stripped dump differs; behavior remains unverified |
+| `exact_match` | 308 | Original and rebuilt chunks produce identical deterministic `string.dump(chunk, "sd")` output under the verification runtime |
+| `syntax_only` | 162 | Source compiles and its bytecode loads, but the deterministic stripped dump differs; behavior remains unverified |
 
 An exact match is a strong check for that chunk. A syntax-only result must
 not be presented as behavioral equivalence. Differences may involve code
@@ -40,8 +70,8 @@ generation or actual reconstruction errors and require investigation.
 
 `scripts/compile_recovered_lua.py` checks each recovered source hash against
 the recovery manifest, compiles it without executing its code, assigns a
-portable `@dataS/...` chunk name, and rechecks the compiled chunk's comparison
-status. It creates:
+portable `@dataS/...` chunk name, writes deterministic bytecode and rechecks the
+compiled chunk's comparison status. It creates:
 
 - `build/recompiled/dataS/`: 470 rebuilt chunks.
 - `build/FS15ScriptsRebuilt.zip`: those chunks, a per-file build manifest,

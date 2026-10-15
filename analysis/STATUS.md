@@ -128,12 +128,18 @@ It is not a reconstructed, independent cipher implementation. The GAR
 header/index parser and extraction checks are new code. The installed
 game files were not replaced and no DLC path was used for this extraction.
 
-All **470 Lua sources recompile** after a repeated-literal adapter fixes an
-LJD AST identity issue. Comparison against the original compiled chunks:
+All **470 Lua sources recompile** after authored adapters fix repeated literals
+and prevent empty-table initialization from absorbing later stores. Comparison
+against the original compiled chunks uses deterministic stripped dumps:
 
-- **254 exact stripped-bytecode round trips**.
-- **216 syntax-only results**, with behavioral equivalence still unverified.
+- **308 exact deterministic stripped-bytecode round trips**, 54 more than before.
+- **162 syntax-only results**, with behavioral equivalence still unverified.
 - **Zero remaining syntax failures** in this recovery pass.
+
+All 254 earlier matches are retained under the deterministic check. The authored
+table regression also verifies that a global table exists before a later field's
+callback executes. Deterministic mode sorts template-table hash entries only;
+it does not remove instructions, change constants or ignore control flow.
 
 The rebuilt script package contains 470 recompiled chunks and a per-file
 manifest. Chunks use portable game-relative names. The package was not
@@ -206,7 +212,7 @@ must not be treated as established source types.
 
 ## Remaining work
 
-1. Investigate the 216 non-identical Lua round trips and validate behavior.
+1. Investigate the 162 non-identical Lua round trips and validate behavior.
 2. Reconstruct the GAR cipher independently and document native Lua interfaces.
 3. Reconstruct RLE/GRLE variants and other isolated modules using differential
    comparisons with the original code.

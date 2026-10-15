@@ -46,6 +46,7 @@ def main():
     counts = Counter(row["status"] for row in compiled)
     metadata = dict(scope="Recompiled Lua script layer only; native engine is not rebuilt",
                     scripts=len(compiled), counts=dict(counts), installed_into_game=False,
+                    validation='Deterministic stripped-bytecode comparison with string.dump(chunk, "sd")',
                     executed_game_scripts=False,
                     note="syntax_only files compile but behavioral equivalence remains unverified", files=compiled)
     write_json(ROOT / "analysis/lua-build.json", metadata)
@@ -58,6 +59,7 @@ def main():
                           "The manifest separates exact stripped-bytecode round trips from syntax-only results.\n"
                           "Do not treat syntax-only results as verified behavior. No installed game files were replaced.\n")
     summary = dict(scope=metadata["scope"], scripts=len(compiled), counts=dict(counts),
+                   validation=metadata["validation"],
                    package="build/FS15ScriptsRebuilt.zip", package_sha256=sha256(package),
                    package_bytes=package.stat().st_size, installed_into_game=False, executed_game_scripts=False)
     write_json(ROOT / "analysis/lua-build-summary.json", summary)

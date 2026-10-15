@@ -89,9 +89,9 @@ def main():
                 print(f"Processed {len(rows)}/{len(files)}: {dict(counts)}", flush=True)
     rows.sort(key=lambda row: row["path"])
     summary = dict(total=len(files), counts=dict(sorted(counts.items())),
-                   mode="strict LJD with distinct-literal adapter; unsafe pass disabled; no catch_asserts", executed_game_scripts=False,
-                   validation="load/compile without execution; exact_match compares string.dump(chunk, true)",
-                   note="syntax_only is not proof of behavioral equivalence; exact_match is a stripped-bytecode round trip")
+                   mode="strict LJD with distinct literals and empty-table preservation; unsafe pass disabled; no catch_asserts", executed_game_scripts=False,
+                   validation='load/compile without execution; exact_match compares deterministic string.dump(chunk, "sd")',
+                   note="Deterministic mode sorts constant-table hash entries only; syntax_only is not proof of behavioral equivalence")
     write_json(ROOT / "analysis/lua-recovery.json", dict(**summary, files=rows))
     write_json(ROOT / "analysis/lua-recovery-summary.json", summary)
     print(summary, flush=True)

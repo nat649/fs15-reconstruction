@@ -2,12 +2,13 @@
   "scope": "Recompiled Lua script layer only; native engine is not rebuilt",
   "scripts": 470,
   "counts": {
-    "syntax_only": 216,
-    "exact_match": 254
+    "syntax_only": 162,
+    "exact_match": 308
   },
+  "validation": "Deterministic stripped-bytecode comparison with string.dump(chunk, \"sd\")",
   "package": "build/FS15ScriptsRebuilt.zip",
-  "package_sha256": "27c63d03027998a44c382b73229c719417a4efbb67827232b1ca890db8cd5e2c",
-  "package_bytes": 1530203,
+  "package_sha256": "147c1ebcd806e121b9378d9fbb67681ff2cb63b204a5d520d15a5dd505ea836c",
+  "package_bytes": 1530330,
   "installed_into_game": false,
   "executed_game_scripts": false
 }

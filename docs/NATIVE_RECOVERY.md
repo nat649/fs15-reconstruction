@@ -97,9 +97,11 @@ The complete traces match in **777 samples across seven scenarios**: forward
 chained parts, double-speed reverse, stop time, forward/reverse seeking,
 joint-limit callbacks, looping and tipping/door/discharge/automatic closure.
 See [hashes and scope](../analysis/vehicle-animation-validation.json). This
-validates those exercised paths in three previously syntax-only files; it does
-not validate every branch or change the 254 exact-bytecode / 216 syntax-only
-round-trip classification.
+validates those exercised paths in three files that were syntax-only at that
+milestone; it does not validate every branch. The later empty-table recovery
+fix gives SpecializationUtil a complete bytecode match; AnimatedVehicle and
+Trailer still require further validation. The current script-wide classification
+is 308 exact deterministic bytecode matches / 162 syntax-only results.
 
 The joint-limit fixture checks callback values against bytecode. It is not
 evidence of real component joints or suspension in the playable host. Effects,

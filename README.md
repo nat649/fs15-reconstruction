@@ -85,7 +85,7 @@ routines are reused or examined where practical. See the
 - **GAR extraction:** 1,121 local files recovered from `dataS.gar` and
   `dataS2.gar`, including all 470 LuaJIT chunks found in these archives.
 - **Lua recovery and rebuild:** all 470 recovered Lua sources compile.
-  **254** reproduce the original stripped bytecode exactly; **216** pass
+  **308** reproduce the original deterministic stripped bytecode exactly; **162** pass
   syntax checks but still need behavioral validation. A local rebuilt
   script package is generated without replacing installed game files.
 
@@ -241,7 +241,7 @@ After script/asset recovery below, run:
 & 'C:\path\to\python.exe' scripts\prepare_mission.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15GameplayAlpha2\FS15MenuRebuilt.exe
+.\build\FS15GameplayAlpha3\FS15MenuRebuilt.exe
 ```
 
 The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
@@ -277,7 +277,7 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15GameplayAlpha2\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15GameplayAlpha3\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,
@@ -350,8 +350,10 @@ and [LJD](https://github.com/Dr-MTN/luajit-decompiler), retained locally with
 their upstream licenses. LuaJIT is built for Windows x64 with `nogc64 static`
 to match the observed chunk architecture. See `analysis/lua-toolchain.json`.
 The authored adapter `scripts/ljd_driver.py` fixes repeated literal AST nodes
-without modifying the third-party checkout. A synthetic regression fixture
-round trips to identical bytecode.
+and preserves empty-table allocation before subsequent field assignments,
+without modifying the third-party checkout. Authored regression fixtures
+check evaluation order and round trip to identical bytecode. The table fix
+adds 54 exact matches with no loss of the previous 254.
 
 Outputs remain local:
 
@@ -368,14 +370,16 @@ inside the extraction process. Header/index parsing, bounds/path checks, and
 the extraction pipeline are reconstructed code. See [GAR notes](docs/GAR.md).
 
 Lua validation loads/compiles chunks without executing their top-level game
-code. `exact_match` compares `string.dump(chunk, true)` from the original
-and rebuilt chunks. `syntax_only` proves compilation, not equivalence.
+code. `exact_match` compares deterministic `string.dump(chunk, "sd")` from the
+original and rebuilt chunks. This sorts template-table hash entries while
+retaining all instructions, constants, prototype order and upvalue metadata.
+`syntax_only` proves compilation, not equivalence.
 The package is a rebuilt script layer, not a rebuilt native engine or a
 playable standalone game. See [Lua recovery notes](docs/LUA_RECOVERY.md).
 
 ## Next work
 
-Investigate the 216 Lua round-trip differences, reconstruct the GAR cipher
+Investigate the 162 Lua round-trip differences, reconstruct the GAR cipher
 without original-code execution, and continue documenting the Lua/native
 interfaces, original physics/component joints, complete farming behavior and
 persistent sessions. The current native gameplay bridge is documented above.

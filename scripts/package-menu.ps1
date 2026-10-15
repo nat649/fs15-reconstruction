@@ -1,4 +1,4 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15GameplayAlpha2')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15GameplayAlpha3')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 & (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir

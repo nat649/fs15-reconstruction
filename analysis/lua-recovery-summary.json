@@ -1,11 +1,11 @@
 {
   "total": 470,
   "counts": {
-    "exact_match": 254,
-    "syntax_only": 216
+    "exact_match": 308,
+    "syntax_only": 162
   },
-  "mode": "strict LJD with distinct-literal adapter; unsafe pass disabled; no catch_asserts",
+  "mode": "strict LJD with distinct literals and empty-table preservation; unsafe pass disabled; no catch_asserts",
   "executed_game_scripts": false,
-  "validation": "load/compile without execution; exact_match compares string.dump(chunk, true)",
-  "note": "syntax_only is not proof of behavioral equivalence; exact_match is a stripped-bytecode round trip"
+  "validation": "load/compile without execution; exact_match compares deterministic string.dump(chunk, \"sd\")",
+  "note": "Deterministic mode sorts constant-table hash entries only; syntax_only is not proof of behavioral equivalence"
 }

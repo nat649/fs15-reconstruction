@@ -50,9 +50,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Verify extracted file hashes and selected binary format signatures.
 - [x] Recover all 470 observed LuaJIT scripts as compilable Lua source.
 - [x] Fix the decompiler's repeated-literal issue with an authored adapter.
+- [x] Preserve empty-table initialization and later field assignments; verify evaluation order in an authored regression.
+- [x] Use deterministic LuaJIT dumps to remove hash-order variation from bytecode checks.
 - [x] Recompile 470 scripts and generate a local script package.
-- [x] Establish exact stripped-bytecode matches for 254 scripts.
-- [ ] Fully validate the remaining 216 syntax-only scripts.
+- [x] Establish exact deterministic stripped-bytecode matches for 308 scripts, including 54 additional matches with no previous matches lost.
+- [ ] Fully validate the remaining 162 syntax-only scripts.
 
 ## Main-menu milestone
 

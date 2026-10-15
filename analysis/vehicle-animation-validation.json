@@ -15,17 +15,17 @@
   "files": [
     {
       "path": "scripts/SpecializationUtil",
-      "source_sha256": "c6a5b6da765703dc1ba8c97d4c6d6bc582aa7d8f0a88ab0400ad1f49b3291b4a",
+      "source_sha256": "7a23e5d5218e145137156a74243ce993ef3d0e7391ee2e4ee85fa3b80253bafc",
       "bytecode_sha256": "561d74b5c4b511888ef44cf4fec1d3e3b166ea07eb1497afb5e0546787608f95"
     },
     {
       "path": "scripts/vehicles/specializations/AnimatedVehicle",
-      "source_sha256": "169d3640a38ede0167bc934df3066126a9a86e96959b88588658eead2ed4f548",
+      "source_sha256": "c5a69fe71db179ae2acd1786d30cfbe0f63b51fe2ffe26c966a75e8471f6ef8e",
       "bytecode_sha256": "02874a105f5ee647442be20907d4999c8b73d9346bcaafc46ec9be06201d2e3e"
     },
     {
       "path": "scripts/vehicles/specializations/Trailer",
-      "source_sha256": "ff0d9b260ac741db569aecf48fc5e502df7d7d5ed3df271a6feb79bd0791e6b0",
+      "source_sha256": "2a80a2c26933f1e666c1e04717a332beb11087e8b7d2602ee26e0b6db838d428",
       "bytecode_sha256": "82e3efe53830c479f48cabda6c0d8a2a1a9f74fcabcde6c63e7756f79efc9036"
     }
   ]
