@@ -68,7 +68,8 @@ No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
 the selected future route; no console SDK contents are included.
 
 The workflow also defines an **ARM64 Linux cross-build with QEMU user-mode
-execution**. See the tested source revision, test counts and platform scope in
+execution**. All six tests pass there and on Windows x64 and Linux x64. See
+the tested source revision and platform scope in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 On a Linux host with `g++-aarch64-linux-gnu` and `qemu-user` installed:
 

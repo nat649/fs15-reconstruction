@@ -46,7 +46,7 @@ not validated by this component.
 - 2,700 getter vectors and 351 exercised dynamic-scale diagnostic conditions.
 - A fourth asset-free portable CTest checks rotation conventions, decomposition,
   gimbal behavior, lazy caches, getters/setters and invalid-input atomicity.
-- All five portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+- All six portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
   under QEMU. Only the Windows differential run executes original native code;
   cross-platform invariant checks do not prove universal bit identity.
 
