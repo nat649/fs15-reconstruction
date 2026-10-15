@@ -63,7 +63,7 @@ A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all three asset-free tests under QEMU in CI. This is an intermediate
+Linux and passes all four asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
