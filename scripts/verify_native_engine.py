@@ -27,12 +27,13 @@ def inspect_log(text):
                                  if 'Error: Running LUA method' in line or 'Error: LUA' in line])
 
 
-def verify(root):
+def verify(root,local=False):
     root = Path(root)
-    manifest_path = root / 'build/native-engine/manifest.json'
+    runtime='ge6-local' if local else 'native-engine'
+    manifest_path = root / 'build' / runtime / 'manifest.json'
     manifest = json.loads(manifest_path.read_text())
     profile = Path(manifest['profile']).resolve(strict=True)
-    if profile != (root / 'build/native-engine/profile').resolve(strict=True):
+    if profile != (root / 'build' / runtime / 'profile').resolve(strict=True):
         raise ValueError('Only the isolated workspace profile can be verified')
     log = profile / 'log.txt'
     raw = log.read_bytes()
@@ -55,11 +56,17 @@ def verify(root):
     manifest.update({key: report[key] for key in ('native_boot_verified', 'recovered_script_execution_verified')})
     manifest['verified_log_sha256'] = report['log_sha256']
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
-    output = root / 'analysis/native-engine-validation.json'
+    if local:
+        report.update(runtime_transport='local',local_executable_sha256=manifest['local_executable_sha256'],
+                      local_adapter_sha256=manifest['local_adapter_sha256'],
+                      scope='Modified original GE6 with an authored local platform adapter and recovered helper integration; original code is not fully recompiled')
+    output = root / 'analysis' / ('local-engine-script-validation.json' if local else 'native-engine-validation.json')
     output.write_text(json.dumps(report, indent=2) + '\n')
     return report
 
 
 if __name__ == '__main__':
-    argparse.ArgumentParser(description=__doc__).parse_args()
-    print(json.dumps(verify(ROOT), indent=2))
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--local',action='store_true')
+    args=parser.parse_args()
+    print(json.dumps(verify(ROOT,args.local), indent=2))

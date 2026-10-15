@@ -1,5 +1,11 @@
 # Actual GIANTS Engine 6 runtime path
 
+An additional **Local GE6 (experimental)** startup mode now reaches the original
+menu and Bjornholm through an isolated modified native image and authored local
+platform adapter, with no Steam library loaded by the game. The installed engine
+remains intact. See [local startup evidence and limits](LOCAL_ENGINE_RUNTIME.md),
+including the still-pending test with the Steam client completely closed.
+
 The target is to run recovered/reconstructed game code on **the actual GIANTS
 Engine 6**, retaining native rendering, physics, scene loading and lifecycle.
 The authored Direct3D alpha is an experimental viewer/test host, not the final

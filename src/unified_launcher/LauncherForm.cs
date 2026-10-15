@@ -16,7 +16,7 @@ internal sealed partial class LauncherForm : Form
         game.Text = settings.GameDirectory.Length > 0 ? settings.GameDirectory : Environment.GetEnvironmentVariable("FS15_GAME_DIR") ?? "";
         string bundled = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "codex-runtimes", "codex-primary-runtime", "dependencies", "python", "python.exe");
         python.Text = settings.Python.Length > 0 ? settings.Python : File.Exists(bundled) ? bundled : "python.exe"; steam.Text = settings.Steam;
-        mode.SelectedIndex = Math.Clamp(settings.Mode, 0, 2); transport.SelectedIndex = Math.Clamp(settings.Transport, 0, 2); map.SelectedIndex = Math.Clamp(settings.Map, 0, 1); difficulty.SelectedIndex = Math.Clamp(settings.Difficulty, 0, 2);
+        mode.SelectedIndex = Math.Clamp(settings.Mode, 0, 2); transport.SelectedIndex = Math.Clamp(settings.Transport, 0, 3); map.SelectedIndex = Math.Clamp(settings.Map, 0, 1); difficulty.SelectedIndex = Math.Clamp(settings.Difficulty, 0, 2);
     }
     private void SaveSettings()
     {
@@ -27,6 +27,7 @@ internal sealed partial class LauncherForm : Form
     {
         bool home = mode.SelectedIndex == 1; transport.Enabled = steam.Enabled = !busy && !home; map.Enabled = difficulty.Enabled = !busy && home;
         description.Text = home ? "Experimental gameplay · local assets" : mode.SelectedIndex == 0 ? "Original GE6 + recovered helpers" : "Original GE6 · comparison baseline";
+        if (!home && transport.SelectedIndex == 3) description.Text = "Local GE6 · Steam services / licensed DLC unavailable";
         nativeCard.Selected = !home; homeCard.Selected = home; nativeCard.Invalidate(); homeCard.Invalidate();
     }
     private void Append(string line)
@@ -90,21 +91,25 @@ internal sealed partial class LauncherForm : Form
     {
         SaveSettings(); return Operation("Preparing original resources...", () => Worker("launcher_assets.py", ["prepare", "--game-dir", game.Text.Trim()]), "Resources prepared and recorded locally. You can now check the launch plan.");
     }
+    private Task PrepareLocal()
+    {
+        SaveSettings(); return Operation("Preparing the local GE6 runtime...", () => Worker("prepare_local_engine.py", ["--game-dir", game.Text.Trim(), "--activate-recovered"]), "Local GE6 prepared. Select Local GE6 (experimental) under Native startup.");
+    }
     private Task Run(bool dryRun)
     {
-        SaveSettings(); var args = new List<string> { "--mode", new[] { "hybrid", "refarm", "ge6" }[mode.SelectedIndex], "--transport", new[] { "auto", "direct", "steam" }[transport.SelectedIndex], "--map", map.SelectedIndex == 0 ? "Map01" : "Map02", "--difficulty", (difficulty.SelectedIndex + 1).ToString() };
+        SaveSettings(); var args = new List<string> { "--mode", new[] { "hybrid", "refarm", "ge6" }[mode.SelectedIndex], "--transport", new[] { "auto", "direct", "steam", "local" }[transport.SelectedIndex], "--map", map.SelectedIndex == 0 ? "Map01" : "Map02", "--difficulty", (difficulty.SelectedIndex + 1).ToString() };
         if (game.Text.Trim().Length > 0) args.AddRange(["--game-dir", game.Text.Trim()]); if (steam.Text.Trim().Length > 0) args.AddRange(["--steam", steam.Text.Trim()]); if (dryRun) args.Add("--dry-run");
         return Operation(dryRun ? "Checking launch configuration..." : "Starting runtime...", () => Worker("unified_launcher.py", args), dryRun ? "Launch plan checked. No game process started." : "Runtime started. Inspect its window and session evidence.");
     }
-    private Task Verify() => Operation("Checking native log evidence...", () => Worker("verify_native_engine.py", []), "Native log evidence verified. Visual gameplay checks remain separate.");
+    private Task Verify() => Operation("Checking native log evidence...", () => Worker("verify_native_engine.py", transport.SelectedIndex == 3 ? ["--local"] : []), "Native log evidence verified. Visual gameplay checks remain separate.");
     private void OpenLogs()
-    { string path = mode.SelectedIndex == 1 ? Path.Combine(root, "logs") : Path.Combine(root, "build", "native-engine", "profile"); Directory.CreateDirectory(path); Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true }); }
+    { string path = mode.SelectedIndex == 1 ? Path.Combine(root, "logs") : Path.Combine(root, "build", transport.SelectedIndex == 3 ? "ge6-local" : "native-engine", "profile"); Directory.CreateDirectory(path); Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true }); }
     private void RefreshEvidence()
     {
         try
         {
-            using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "analysis", "native-engine-validation.json"))); var data = report.RootElement;
-            evidence.Text = "SAVED SESSION CHECKS  ·  GE6 boot: " + (data.GetProperty("native_boot_verified").GetBoolean() ? "recorded" : "pending") + "  ·  Recovered source: " + (data.GetProperty("recovered_script_execution_verified").GetBoolean() ? "104 comparisons passed" : "pending") + "\n\n" + (data.TryGetProperty("hybrid_runtime_verified", out var h) && h.GetBoolean() ? "Three recovered wheel helpers were used in a recorded native session." : "Native helper integration is pending verification.") + "\nSaved checks describe earlier sessions. Complete GE6 reconstruction remains in progress.";
+            using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "analysis", transport.SelectedIndex == 3 ? "local-engine-script-validation.json" : "native-engine-validation.json"))); var data = report.RootElement;
+            evidence.Text = (transport.SelectedIndex == 3 ? "SAVED LOCAL GE6 CHECKS" : "SAVED SESSION CHECKS") + "  ·  GE6 boot: " + (data.GetProperty("native_boot_verified").GetBoolean() ? "recorded" : "pending") + "  ·  Recovered source: " + (data.GetProperty("recovered_script_execution_verified").GetBoolean() ? "104 comparisons passed" : "pending") + "\n\n" + (data.TryGetProperty("hybrid_runtime_verified", out var h) && h.GetBoolean() ? "Three recovered wheel helpers were used in a recorded native session." : "Native helper integration is pending verification.") + "\nSaved checks describe earlier sessions. Complete GE6 reconstruction remains in progress.";
         }
         catch (Exception error) when (error is IOException or JsonException or KeyNotFoundException) { evidence.Text = "No saved native session evidence. Start a career inside GE6, then verify the session."; }
     }
@@ -115,7 +120,7 @@ internal sealed partial class LauncherForm : Form
         await Detect(); await CheckResources();
         if (prepare) { await PrepareAssets(); preparedInSmoke = progress.Value == 100; }
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        int originalMode = mode.SelectedIndex, originalMap = map.SelectedIndex;
+        int originalMode = mode.SelectedIndex, originalMap = map.SelectedIndex, originalTransport = transport.SelectedIndex;
         string Suffix(string suffix) => Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + suffix + ".png");
         async Task Capture(string target, int page)
         {
@@ -129,6 +134,8 @@ internal sealed partial class LauncherForm : Form
         nativeCard.PerformClick(); bool nativeSelection = mode.SelectedIndex == 0 && !map.Enabled && !difficulty.Enabled && transport.Enabled;
         var originalSize = ClientSize; ClientSize = new Size(1100, 760); await Capture(Suffix("-compact"), 0); ClientSize = originalSize;
         mode.SelectedIndex = 2; bool baselineAvailable = !map.Enabled && transport.Enabled;
+        transport.SelectedIndex = 3; bool localTransport = transport.Text == "Local GE6 (experimental)" && transport.Enabled;
+        await Capture(Suffix("-local-settings"), 2); SelectPage(0);
         var keyHandler = typeof(LauncherChoice).GetMethod("OnKeyDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         keyHandler.Invoke(mode, [new KeyEventArgs(Keys.Home)]); bool keyboardSelection = mode.SelectedIndex == 0;
         keyHandler.Invoke(mode, [new KeyEventArgs(Keys.End)]); keyboardSelection &= mode.SelectedIndex == 2;
@@ -140,12 +147,13 @@ internal sealed partial class LauncherForm : Form
             using var menuImage = new Bitmap(choices.Width, choices.Height); choices.DrawToBitmap(menuImage, new Rectangle(Point.Empty, choices.Size)); menuImage.Save(Suffix("-profile-menu"));
             choices.Items[0].PerformClick(); popupSelection &= mode.SelectedIndex == 0; choices.Close();
         }
-        mode.SelectedIndex = originalMode; map.SelectedIndex = originalMap; SelectPage(0);
+        mode.SelectedIndex = originalMode; map.SelectedIndex = originalMap; transport.SelectedIndex = originalTransport; SelectPage(0);
         bool visualAssets = GetType().Assembly.GetManifestResourceStream("FS15.Scene.bjornholm") != null && GetType().Assembly.GetManifestResourceStream("FS15.Scene.westbridge") != null;
-        bool verified = homeSelection && nativeSelection && baselineAvailable && visualAssets && keyboardSelection && accessibleSelection && popupSelection;
+        bool verified = homeSelection && nativeSelection && baselineAvailable && visualAssets && keyboardSelection && accessibleSelection && popupSelection && localTransport;
         File.WriteAllText(Path.ChangeExtension(path, ".json"), JsonSerializer.Serialize(new { ui_layout_rendered = true, pages_captured = 3, compact_layout_captured = true,
             embedded_project_scenes = visualAssets, home_selection_verified = homeSelection, native_selection_verified = nativeSelection,
             keyboard_selection_verified = keyboardSelection, accessible_selection_verified = accessibleSelection, popup_selection_verified = popupSelection,
+            local_transport_available = localTransport,
             baseline_available = baselineAvailable, selected_settings_restored = mode.SelectedIndex == originalMode && map.SelectedIndex == originalMap,
             installation_found = game.Text.Length > 0, asset_status_displayed = resources.Text.Contains("LOCAL RESOURCES FOUND"),
             preparation_requested = prepare, preparation_succeeded = preparedInSmoke, game_launched = false, size = new { Width, Height } }, new JsonSerializerOptions { WriteIndented = true }));

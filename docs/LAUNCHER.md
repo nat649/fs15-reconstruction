@@ -10,6 +10,10 @@ Choose **ReFarm (experimental)** for the authored reconstructed engine, or a GE6
 profile for the installed original engine. Map/difficulty are ReFarm settings;
 GE6 careers and maps are still selected inside the native game.
 
+For the experimental native path without a Steam SDK dependency, use **Prepare
+local GE6**, then choose **Local GE6 (experimental)** under Native startup.
+See [the separate local-runtime requirements and limitations](LOCAL_ENGINE_RUNTIME.md).
+
 ![ReFarm selected in the redesigned launcher](screenshots/launcher-refarm.png)
 
 ## Prepare resources

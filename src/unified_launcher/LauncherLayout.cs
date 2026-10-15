@@ -8,7 +8,7 @@ internal sealed partial class LauncherForm
     private readonly Color background = LauncherTheme.Background, surface = LauncherTheme.Surface,
         text = LauncherTheme.Text, muted = LauncherTheme.Muted, green = LauncherTheme.Green;
     private readonly LauncherChoice mode = Choice("GE6 + recovered gameplay", "ReFarm (experimental)", "GE6 original baseline");
-    private readonly LauncherChoice transport = Choice("Automatic", "Direct executable", "Steam client"),
+    private readonly LauncherChoice transport = Choice("Automatic", "Direct executable", "Steam client", "Local GE6 (experimental)"),
         map = Choice("Bjornholm", "Westbridge Hills"), difficulty = Choice("Easy", "Normal", "Hard");
     private readonly TextBox game = new(), python = new(), steam = new();
     private readonly Label description = new(), status = new(), resources = new(), evidence = new(), libraryStatus = new();
@@ -54,6 +54,7 @@ internal sealed partial class LauncherForm
         foreach (var control in new Control[] { mode, transport, map, difficulty, game, python, steam })
         { control.BackColor = surface; control.ForeColor = text; control.Margin = new Padding(0, 5, 0, 5); configuration.Add(control); }
         LoadSettings(); mode.SelectedIndexChanged += (_, _) => UpdateMode(); map.SelectedIndexChanged += (_, _) => hero.SetMap(map.SelectedIndex == 1);
+        transport.SelectedIndexChanged += (_, _) => { UpdateMode(); RefreshEvidence(); };
         mode.AccessibleName = "Launch profile"; map.AccessibleName = "ReFarm map"; difficulty.AccessibleName = "ReFarm difficulty"; transport.AccessibleName = "Native startup";
         hero.SetMap(map.SelectedIndex == 1); SelectPage(0); UpdateMode(); RefreshEvidence();
         Shown += async (_, _) => { if (game.Text.Length == 0) await Detect(); await CheckResources(); };
@@ -154,6 +155,7 @@ internal sealed partial class LauncherForm
         content.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); content.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
         var fields = Fields(1); fields.Padding = new Padding(16, 10, 16, 0); fields.BackColor = surface; Row(fields, 0, "FS15 installation", game, () => BrowseFolder(game)); fields.Height = 65; content.Controls.Add(fields);
         var checks = new FlowLayoutPanel { Dock = DockStyle.Fill, Margin = Padding.Empty }; checks.Controls.Add(ActionButton("Detect installation", Detect)); checks.Controls.Add(ActionButton("Check resources", CheckResources)); content.Controls.Add(checks);
+        checks.Controls.Add(ActionButton("Prepare local GE6", PrepareLocal));
         resources.Dock = DockStyle.Fill; resources.ForeColor = muted; resources.Padding = new Padding(22); resources.BackColor = surface;
         resources.Text = "Checking your local resources..."; resources.AutoEllipsis = true; content.Controls.Add(resources);
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 12, 0, 0), Margin = Padding.Empty };

@@ -1,0 +1,23 @@
+{
+  "native_boot_verified": true,
+  "recovered_script_execution_verified": true,
+  "recovered_helpers_active": true,
+  "recovered_helpers_used": [
+    "getGroundType",
+    "getTireFriction",
+    "getTireType"
+  ],
+  "hybrid_runtime_verified": true,
+  "engine_version": "6.0.2",
+  "probe_comparisons": 104,
+  "lua_error_lines": [],
+  "scope": "Modified original GE6 with an authored local platform adapter and recovered helper integration; original code is not fully recompiled",
+  "log_sha256": "56c0ca18102057ab06c5460fd9e65eafbad0965c22f5cbaa49ea842c01164157",
+  "original_executable_sha256": "21ce6fa0f776ad69f5a707a8c391cba6d2b80bdb612ffdf47f109372478b5488",
+  "recovered_wheels_source_sha256": "1d563cab78ab3643c3518f944a427c6df168d66b2afbde75dd165b93d71a4b7c",
+  "mission_visual_check": "Not inferred from the log; requires separate observation",
+  "full_gameplay_replaced": false,
+  "runtime_transport": "local",
+  "local_executable_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+  "local_adapter_sha256": "20cc73524c0eace4a1e2134b5a8951764628358df22e2ef0ce57ad340cef6062"
+}

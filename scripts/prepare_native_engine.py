@@ -40,11 +40,13 @@ def restart_safe_profile(profile, alias_root):
     return alias
 
 
-def prepare(root, game, activate_recovered=False):
+def prepare(root, game, activate_recovered=False, runtime_name='native-engine'):
     root, game = Path(root).resolve(), Path(game).resolve(strict=True)
     if not (game / 'FarmingSimulator2015.xml').is_file() or not (game / 'x64/FarmingSimulator2015Game.exe').is_file():
         raise ValueError('Expected the installed FS15 game directory')
-    runtime = root / 'build/native-engine'
+    if runtime_name not in ('native-engine','ge6-local'):
+        raise ValueError('Unsupported native runtime directory')
+    runtime = root / 'build' / runtime_name
     profile = runtime / 'profile'
     mod = profile / 'mods' / MOD_NAME
     # Refuse links that could redirect a generated profile/mod into the installed

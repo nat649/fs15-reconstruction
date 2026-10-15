@@ -45,6 +45,8 @@
 !/analysis/transform-validation.json
 !/analysis/launcher-assets-validation.json
 !/analysis/launcher-design-validation.json
+!/analysis/local-engine-validation.json
+!/analysis/local-engine-script-validation.json
 /logs/
 __pycache__/
 *.pyc

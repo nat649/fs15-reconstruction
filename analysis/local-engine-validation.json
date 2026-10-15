@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "date": "2026-10-15",
+  "scope": "Modified original GE6 local runtime and authored bounded platform adapter, not full engine recompilation",
+  "engine_version": "6.0.2",
+  "physics_version": "5.9.4",
+  "menu_observed": true,
+  "bjornholm_hud_and_vehicles_observed": true,
+  "source_probe_comparisons": 104,
+  "hybrid_helpers_used": [
+    "getGroundType",
+    "getTireFriction",
+    "getTireType"
+  ],
+  "steam_libraries_loaded": [],
+  "local_adapter_loaded": true,
+  "steam_client_was_already_running": true,
+  "steam_client_closed_tested": false,
+  "steam_client_modified_or_stopped": false,
+  "original_installation_modified": false,
+  "licensed_dlc_supported": false,
+  "multiplayer_validated": false,
+  "full_save_reload_session_validated": false,
+  "full_native_rebuild_verified": false,
+  "local_executable_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+  "local_adapter_sha256": "20cc73524c0eace4a1e2134b5a8951764628358df22e2ef0ce57ad340cef6062",
+  "adapter_contract": {
+    "status": "passed",
+    "adapter_sha256": "20cc73524c0eace4a1e2134b5a8951764628358df22e2ef0ce57ad340cef6062",
+    "exports_verified": 13,
+    "client_user_apps_stats_unavailable": true,
+    "init_success": false,
+    "restart_requested": false,
+    "network_or_steam_imports": false,
+    "app_identity": 313160,
+    "scope": "Authored local adapter contract, not Steam service/entitlement emulation or a full GE6 reconstruction"
+  },
+  "trace_sha256": "06f2c80900e12dc81df6f3516f2d96e84e334f730a64452b40bb88dafa755364",
+  "source_sha256": {
+    "scripts/prepare_local_engine.py": "5690456572a26893957edffc9985cdc47703ea443eb9bf3bd362d5f4d805fa33",
+    "scripts/prepare_native_engine.py": "675f41a89cfc79dbc34d91b6228aecf625a8d60f46130a75d2ce126db5d538f5",
+    "scripts/unified_launcher.py": "7e278e598b7501cc80c238411e6232f44cbc4c9867b6e157dcbd2770f2ea4576",
+    "scripts/verify_native_engine.py": "93e749b708779cf4714c799a3eac0e170156d87b1f5ad04355caec4b568b88db",
+    "src/local_platform/local_platform.cpp": "28c79d0d3426c12dd44e85d9799e70a30fef60d4d3dc643d3d04687de245436e"
+  },
+  "screenshot": {
+    "path": "docs/screenshots/ge6-local-bjornholm.png",
+    "sha256": "93e73fef66e025de44f66572f84013bc66e7210d2ab71687017c5f43cf0f16d8",
+    "capture": "Original native saveScreenshot service"
+  },
+  "launcher_local_option_verified": true,
+  "launcher_layout_and_selection_checks_passed": true,
+  "authored_python_tests": {
+    "total": 62,
+    "passed": 60,
+    "skipped": 2,
+    "failed": 0
+  },
+  "user_reported_steam_does_not_detect_the_local_game": true
+}

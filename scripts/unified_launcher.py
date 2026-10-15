@@ -1,10 +1,12 @@
 """Shared launcher backend: ReFarm or actual GE6 with recovered helpers.
 
 These are separate renderer/physics processes, not an in-process engine merger.
-Direct mode uses only normal installed-executable startup; no ownership bypass.
+Direct mode uses the installed executable. Local mode uses an explicitly
+experimental modified original GE6 copy and an authored local platform adapter.
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -34,7 +36,7 @@ def home_plan(root, map_id, difficulty):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=('refarm', 'home', 'ge6', 'hybrid'), required=True)
-    parser.add_argument('--transport', choices=('auto', 'direct', 'steam'), default='auto')
+    parser.add_argument('--transport', choices=('auto', 'direct', 'steam', 'local'), default='auto')
     parser.add_argument('--game-dir', type=Path)
     parser.add_argument('--steam', type=Path)
     parser.add_argument('--map', choices=('Map01', 'Map02'), default='Map01')
@@ -62,19 +64,27 @@ def main():
             from runtime_snapshot import processes
             if list(processes()):
                 raise ValueError('FS15 is already running. Close that session before starting another native session.')
-        manifest = prepare(ROOT, args.game_dir, activate_recovered=args.mode == 'hybrid')
+        if args.transport=='local':
+            from prepare_local_engine import prepare_local
+            manifest=prepare_local(ROOT,args.game_dir,activate_recovered=args.mode=='hybrid',dry_run=args.dry_run)
+        else:manifest = prepare(ROOT, args.game_dir, activate_recovered=args.mode == 'hybrid')
         steam = args.steam
         if args.transport == 'steam' and steam is None:
-            import os
             steam = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Steam/steam.exe'
-        configure_launch(manifest, steam, args.transport == 'direct', args.dry_run)
-        (ROOT / 'build/native-engine/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+        if args.transport!='local':
+            configure_launch(manifest, steam, args.transport == 'direct', args.dry_run)
+            (ROOT / 'build/native-engine/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
         print('Runtime: actual GIANTS Engine 6' + (' + recovered wheel helpers' if args.mode == 'hybrid' else ' + source comparison probe'), flush=True)
         print('Profile: isolated workspace profile. Startup: ' + args.transport, flush=True)
-        result = subprocess.run(manifest['command'], cwd=ROOT)
+        environment=None
+        if args.transport=='local' and not args.dry_run:
+            from launcher_assets import checked_output
+            trace=checked_output(ROOT,'build/ge6-local/platform.log');trace.write_text('')
+            environment=dict(os.environ,FS15_LOCAL_TRACE=str(trace))
+        result = subprocess.run(manifest['command'], cwd=ROOT,env=environment)
         if result.returncode:
             raise ValueError('Native startup exited with code ' + str(result.returncode) +
-                             '. Direct mode cannot remove a Steam installation requirement; try normal Steam startup or a supported non-Steam copy.')
+                             ('. Inspect the isolated local GE6 log; licensed DLC and Steam services are unavailable.' if args.transport=='local' else '. Direct mode cannot remove a Steam installation requirement; try normal Steam startup or the experimental local platform mode.'))
         if not args.dry_run:
             from datetime import datetime
             launch_time = datetime.fromisoformat(manifest['launch_requested_utc']).timestamp()
@@ -87,7 +97,7 @@ def main():
                         return
                 time.sleep(0.5)
             raise ValueError('Launch requested, but no fresh native renderer log was observed within 30 seconds. Check the game window and isolated log.')
-    except (OSError, ValueError, KeyError) as error:
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         print('LAUNCH_ERROR: ' + str(error), file=sys.stderr, flush=True)
         sys.exit(1)
 

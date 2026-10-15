@@ -43,9 +43,12 @@ launch. An explicit direct request never silently falls back to Steam.
 The local FS15 1.4.2.0 Steam executable exited with **code 53** during the direct
 test from this GUI. Normal Steam startup reached the native menu and Westbridge
 Hills. This proves that the tested direct path did not work; it does not prove
-support for a different non-Steam distribution. No executable patch, Steam API
-emulation or ownership-check modification is included. A supported independent
-GE6 runtime remains an open milestone.
+support for a different non-Steam distribution. The separate **Local GE6
+(experimental)** option now uses a modified local runtime copy and an authored
+platform adapter. It reached the original menu and Bjornholm without loading a
+Steam library; the Steam client was already running and was not closed for this
+test. Steam services/licensed DLC are unavailable, and full-session validation
+remains open. See [the local runtime scope and instructions](LOCAL_ENGINE_RUNTIME.md).
 
 ## Recovered helpers in native gameplay
 

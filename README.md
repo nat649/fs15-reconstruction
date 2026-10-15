@@ -43,6 +43,13 @@ engine cards, a persistent launch-profile bar and a prominent PLAY button.
 a separate option. Existing executable filenames and the `--mode home` alias are
 kept compatible; `--mode refarm` is also supported.
 
+**Experimental local GE6 startup:** choose **Local GE6 (experimental)** under
+Settings & activity > Native startup. An isolated modified original runtime now
+reaches the original menu and Bjornholm without loading a Steam library. Steam
+was already open during the test; a fully closed-client launch and complete
+save/reload sessions remain unvalidated. Steam services and licensed DLC are
+unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md).
+
 ## Current results
 
 - **Native recompilation:** 30 uncovered binding targets

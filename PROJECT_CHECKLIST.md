@@ -106,7 +106,10 @@ See [native recompilation and console limits](docs/NATIVE_RECOMPILATION.md).
 - [x] Activate three recovered wheel helpers after parity checks and record all three native vehicle call paths.
 - [x] Check custom tire preservation and conditional unload restoration in an authored fixture.
 - [ ] Validate native unload restoration and a complete save/load farming session with recovered helpers.
-- [ ] Establish a supported GE6 launch independent of Steam; the tested Steam executable does not start through the direct path.
+- [x] Add an isolated local-GE6 startup with a pinned modified native image and an authored local platform adapter; retain the unmodified direct/Steam modes.
+- [x] Reach the original menu and Bjornholm HUD without Steam libraries loaded in the local game process; pass 104 comparisons and observe all three recovered wheel helpers.
+- [ ] Validate local-GE6 startup with the Steam client completely closed; the first successful test left the preexisting client untouched.
+- [ ] Validate complete local-GE6 farming, save/reload and graphics-restart sessions; Steam services/licensed DLC remain unavailable.
 - [x] Prepare/check a profile junction without spaces to avoid native restart argument truncation.
 - [ ] Validate a full graphics restart round trip through the new profile alias.
 - [ ] Integrate recovered game behavior into the actual engine and validate complete sessions.

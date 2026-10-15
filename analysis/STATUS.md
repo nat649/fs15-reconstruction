@@ -1,5 +1,15 @@
 # Project status — October 15, 2026
 
+**Additional local GE6 milestone:** a separate modified original runtime now
+reaches the original menu and Bjornholm with the native HUD/vehicles visible,
+using an authored local platform adapter and no Steam library in the game
+process. The source probe passes 104 comparisons and all three hybrid helpers
+are called. The preexisting Steam client was left running; closed-client startup
+and full save/reload remain untested. Steam services/licensed DLC are unavailable.
+See [local runtime evidence](local-engine-validation.json) and
+[launcher instructions](../docs/LOCAL_ENGINE_RUNTIME.md). This is not a fully
+recompiled GE6 engine.
+
 **Recovered scripts, original-map rendering and a gameplay alpha are available. The full game is not rebuilt.**
 
 The reference is Farming Simulator 15 for Windows **1.4.2.0**. Its original
