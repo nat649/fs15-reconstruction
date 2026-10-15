@@ -158,6 +158,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Document public contribution rules, local-only resources and dependency notices.
 - [x] Audit tracked files and reachable history for excluded payloads and common credential patterns.
 - [x] Add asset-free GitHub checks and regression tests for historical credential/path detection.
+- [x] Make the repository public after history review and successful asset-free GitHub checks.
 - [ ] Select a project-wide license for the authored code; public visibility alone does not select one.
 - [ ] Provide a fully reconstructed playable game executable.
 
