@@ -8,6 +8,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from prepare_native_engine import configure_launch
 from unified_launcher import home_plan
+from test_launcher_assets import ready_host
 
 
 class UnifiedLaunchPlans(unittest.TestCase):
@@ -31,10 +32,17 @@ class UnifiedLaunchPlans(unittest.TestCase):
                     command=['launcher.exe', '--game-dir', str(self.root / 'common/FS15'), '--', '-profile', str(self.profile)])
 
     def test_home_forwards_map_and_difficulty_without_steam(self):
+        ready_host(self.root)
         plan = home_plan(self.root, 'Map02', 3)
         self.assertEqual(plan['command'][-5:], ['--map', 'Map02', '--play', '--difficulty', '3'])
         self.assertNotIn('--steam', plan['command'])
         self.assertEqual(plan['command'][2], str(self.root.resolve()))
+
+    def test_home_refuses_an_interrupted_preparation(self):
+        ready_host(self.root)
+        path=self.root/'build/launcher/assets.json';path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text('{"status":"preparing"}')
+        with self.assertRaisesRegex(ValueError,'unfinished'):home_plan(self.root,'Map02',1)
 
     def test_home_rejects_missing_resources_and_invalid_selections(self):
         for map_id, difficulty in [('Map01', 1), ('../Map02', 2), ('Map02', 4)]:

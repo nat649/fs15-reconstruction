@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(FS15PortableCore LANGUAGES CXX)
-add_library(FS15PortableCore STATIC rle8.cpp rle16.cpp tire_forces.cpp wheel_queries.cpp bit_operations.cpp)
+add_library(FS15PortableCore STATIC rle8.cpp rle16.cpp tire_forces.cpp wheel_queries.cpp bit_operations.cpp transform.cpp)
 target_compile_features(FS15PortableCore PUBLIC cxx_std_17)
 target_compile_definitions(FS15PortableCore PUBLIC FS15_CORE_STATIC)
 target_include_directories(FS15PortableCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

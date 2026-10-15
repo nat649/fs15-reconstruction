@@ -11,6 +11,7 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('point_transform', ['0x1400bfec0'], 'analysis/transform-validation.json'),
     ('rle8', ['0x14028f430'], 'analysis/rle8-validation.json'),
     ('rle16', ['0x14028f770'], 'analysis/rle16-validation.json'),
     ('tire_math', ['0x1400c24c0'], 'analysis/tire-forces-validation.json'),

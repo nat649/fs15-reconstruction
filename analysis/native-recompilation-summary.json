@@ -1,9 +1,14 @@
 {
   "catalogued": 12196,
   "eligible": 11631,
-  "pseudocode_only": 11613,
-  "validated_component_path_entries": 18,
+  "pseudocode_only": 11612,
+  "validated_component_path_entries": 19,
   "components": [
+    {
+      "name": "point_transform",
+      "entries": 1,
+      "evidence": "analysis/transform-validation.json"
+    },
     {
       "name": "rle8",
       "entries": 1,

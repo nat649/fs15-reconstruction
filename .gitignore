@@ -42,6 +42,8 @@
 !/analysis/bit-operations-validation.json
 !/analysis/binding-discovery-summary.json
 !/analysis/native-recompilation-summary.json
+!/analysis/transform-validation.json
+!/analysis/launcher-assets-validation.json
 /logs/
 __pycache__/
 *.pyc

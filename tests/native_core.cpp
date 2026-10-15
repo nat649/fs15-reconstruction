@@ -1,5 +1,6 @@
 #include "api.h"
 #include "wheel_record.h"
+#include "transform.h"
 #include <array>
 #include <cstring>
 #include <iostream>
@@ -9,6 +10,14 @@
 static void require(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 int main(){
     try {
+        std::array<unsigned char,0xa0> transform{};
+        const float basis[]={2,0,0,99,0,3,0,99,0,0,4,99,10,20,30,99};
+        std::memcpy(transform.data()+0x60,basis,sizeof(basis));
+        float point[4]={1,2,3,99};
+        require(fs15_transform_point(transform.data(),transform.size(),point,point,4)==1,"Aliased native transform");
+        require(point[0]==12&&point[1]==26&&point[2]==42&&point[3]==0,"Scaled translated point and zero fourth lane");
+        require(!fs15_transform_point(transform.data(),0x9f,point,point,4)&&point[0]==12,"Truncated transform guard preserves output");
+        require(!fs15_transform_point(transform.data(),transform.size(),point,point,3),"Short transform output guard");
         std::array<std::uint8_t,8> output{};
         const std::uint8_t stream8[]={7,7,3,9};
         require(fs15_decode_rle8(stream8,4,8,8,output.data(),output.size())==6,"RLE8 decoded count");

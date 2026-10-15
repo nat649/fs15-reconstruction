@@ -53,7 +53,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Compare wheel registry lookup in 1,440 valid native cases and seven read adapters in 11,760 complete script frames.
 - [x] Reconstruct seven 32-bit scripting bit operations and compare 21,763 complete native script frames.
 - [x] Build these recovered components as a static portable C++17 core without the Windows frontend or original payloads.
-- [x] Track 18 bounded reconstructed native entries separately from 11,613 pseudocode-only entries, with source-pinned evidence.
+- [x] Recover the native affine point-transform leaf and compare 12,000 complete vectors bit for bit; use it in the host Lua transform service.
+- [x] Track 19 bounded reconstructed native entries separately from 11,612 pseudocode-only entries, with source-pinned evidence.
+- [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.
@@ -63,7 +65,8 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Confirm Nintendo Switch as the requested future target.
 - [x] Isolate Windows symbol exports and add a portable-only build path.
 - [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
-- [ ] Choose/configure the console toolchain and packaging route.
+- [x] Choose Switch homebrew `.nro` as the future packaging route; console work is deferred.
+- [ ] Configure the console toolchain and packaging target.
 - [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
 - [ ] Recover/link the complete native engine and its platform/middleware interfaces.
 - [ ] Validate console startup, menu, rendering, input, physics and complete farming/save sessions.
@@ -93,6 +96,10 @@ See [native recompilation and console limits](docs/NATIVE_RECOMPILATION.md).
 - [x] Observe the original menu, successful Bjornholm loading and the in-world player HUD.
 - [x] Add a dedicated native launch command, Steam routing, running-session guard and log evidence verifier.
 - [x] Build/open a graphical launcher for native baseline, GE6 with recovered helpers, and the home runtime.
+- [x] Add Play, Resources and Diagnostics pages, streamed progress, cancellation and locked configuration during preparation.
+- [x] Detect local FS15 through Steam libraries/app manifests, environment and saved workspace paths.
+- [x] Prepare/repair original local resources with the existing recovery pipeline, content hashes, an import lock and interrupted-import launch guards.
+- [ ] Remove the original-native GAR-oracle dependency from fresh-workspace asset extraction.
 - [x] Preserve explicit direct startup without a silent Steam fallback; observe exit code 53 on the local Steam copy.
 - [x] Activate three recovered wheel helpers after parity checks and record all three native vehicle call paths.
 - [x] Check custom tire preservation and conditional unload restoration in an authored fixture.

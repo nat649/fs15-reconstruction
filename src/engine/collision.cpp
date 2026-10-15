@@ -17,7 +17,7 @@ CollisionWorld::CollisionWorld(const fs15world::Terrain& scene){
     }
 }
 bool CollisionWorld::blocked(float x,float z,float base,float radius)const{
-    if(!std::isfinite(x)||!std::isfinite(z)||!std::isfinite(base)||radius<=0||radius>5)throw std::runtime_error("Invalid static collision query");
+    if(!std::isfinite(x)||!std::isfinite(z)||!std::isfinite(base)||!std::isfinite(radius)||radius<=0||radius>5||std::abs(x)>1000000||std::abs(z)>1000000)throw std::runtime_error("Invalid static collision query");
     const int x0=int(std::floor((x-radius)/16)),x1=int(std::floor((x+radius)/16)),z0=int(std::floor((z-radius)/16)),z1=int(std::floor((z+radius)/16));
     for(int zz=z0;zz<=z1;++zz)for(int xx=x0;xx<=x1;++xx){auto cell=cells.find({xx,zz});if(cell==cells.end())continue;
         for(unsigned index:cell->second){const auto& t=triangles[index];

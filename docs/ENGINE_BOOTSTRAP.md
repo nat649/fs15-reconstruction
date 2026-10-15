@@ -3,7 +3,9 @@
 `FS15EngineRebuilt.exe` is an independently authored Win32/Direct3D 11 runtime.
 It opens a native window, creates a device, swap chain, depth buffer and shaders,
 uploads original terrain/object geometry and textures, and runs a free-camera render loop.
-It does not load the original GIANTS executable or recovered native code.
+It does not load the original GIANTS executable. Bounded native routines recovered
+into C++ provide GRLE decoding and Lua affine point transforms; the rest of the
+host is authored and does not constitute a rebuilt GE6 engine.
 Its resource pipeline reuses original GIANTS Engine 6 data and a verified mesh
 decoder. See [component provenance](RECONSTRUCTION_STRATEGY.md). Full engine
 startup and mission simulation remain incomplete.
@@ -59,6 +61,12 @@ the native host provides a local shadow map. See [environment scope](ENVIRONMENT
 Full cascades, tree skeletons, crop density, simulation and audio remain incomplete.
 
 ## Build and launch
+
+The graphical launcher's **Resources > Prepare / repair assets** action now
+orchestrates the existing local recovery/staging tools. See the
+[resource preparation guide](LAUNCHER.md), including the original GAR-oracle
+requirement for a fresh workspace. Interrupted preparation blocks host startup
+until repaired. The manual commands below remain available.
 
 The engine target needs Windows, MSVC, CMake and a Windows SDK. The frontend
 uses LuaJIT; environment preparation also uses the local LuaJIT CLI and recovered

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 from prepare_native_engine import ROOT, prepare, configure_launch
+from launcher_assets import resource_status
 
 
 def home_plan(root, map_id, difficulty):
@@ -21,8 +22,10 @@ def home_plan(root, map_id, difficulty):
         executable = root / 'build/Release/FS15EngineRebuilt.exe'
     if not executable.is_file():
         raise ValueError('Build the home engine before launching it')
-    if not (root / 'recovered/gar/data/maps' / (map_id.lower() + '.i3d')).is_file():
-        raise ValueError('Prepare the original map resources before launching the home engine')
+    status=resource_status(root)
+    if not status['home_launch_ready']:
+        details=', '.join(status['missing'][:5]) or 'unfinished or interrupted asset preparation'
+        raise ValueError('Open Resources > Prepare / repair assets in the launcher: '+details)
     return dict(mode='home', command=[str(executable), '--root', str(root), '--map', map_id,
                                      '--play', '--difficulty', str(difficulty)],
                 scope='Authored Direct3D runtime with recovered Lua; partial physics and gameplay')

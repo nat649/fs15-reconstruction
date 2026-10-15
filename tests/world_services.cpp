@@ -20,5 +20,10 @@ int main(int argc,char** argv){try{
     grid=fs15world::load_grle(make(1,{7,7,2}));require(grid.values==std::vector<std::uint16_t>(4,7),"GRLE8 run changed");
     auto rejects=[&](const std::filesystem::path& path){try{fs15world::load_grle(path);}catch(const std::exception&){return;}throw std::runtime_error("Malformed GRLE accepted");};
     rejects(make(2,{1,0,1,0,255,255}));rejects(make(2,{1,0}));rejects(make(1,{7,7,255}));rejects(make(3,{7,7,2}));rejects(make(1,{7,7,2},5000,2));
+    rejects(make(1,{7,7},2,1));rejects(make(2,{1,0,1,0},2,1));
+    rejects(make(1,{7,7,2,9}));rejects(make(1,{7,7,1}));
+    for(float value:{std::numeric_limits<float>::quiet_NaN(),std::numeric_limits<float>::infinity()}){
+        bool rejected=false;try{wall.blocked(0,0,0,value);}catch(const std::exception&){rejected=true;}require(rejected,"Nonfinite collision radius accepted");
+    }
     std::cout<<"Static wall transforms/heights/triggers and bounded GRLE fixtures passed\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

@@ -1,6 +1,8 @@
 # Native recompilation work and Switch target
 
-The requested future console target is **Nintendo Switch**. The current work
+The requested future console target is **Nintendo Switch homebrew (.nro)**.
+Console work is deferred while native recovery and the Windows runtime advance.
+The current work
 recovers GE6 components from native analysis and prepares them as portable C++.
 There is no complete recovered GE6 executable or verified Switch build yet.
 The existing Windows native mode still executes the installed original engine.
@@ -18,12 +20,18 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Wheel registry lookup | `0x1400c9e50` | 1,440 successful native lookups, including signed IDs, duplicate IDs and unsigned tree keys |
 | Seven wheel-read adapters | Axle speed, contact object/point/normal/force, position and slip | 11,760 complete script-frame comparisons |
 | Seven 32-bit scripting operations | AND, OR, NOT, XOR, masked left/right shift and highest set bit | 21,763 complete script-frame comparisons |
+| Affine point transform | `0x1400bfec0`, also used by wheel force-point updates | 12,000 bit-exact four-float results; integrated into host Lua point transforms |
 
-Those are **18 native entries with bounded reconstructed paths**. They are not
-18 completely proven engine functions or a percentage of GE6 completion.
+Those are **19 native entries with bounded reconstructed paths**. They are not
+19 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
-library. The helpers are not yet connected to playable vehicle physics.
+library. The wheel/tire helpers are not yet connected to playable vehicle physics.
+The point-transform leaf runs in the experimental host's Lua transform service
+through an authored matrix-layout adapter. GRLE8/GRLE16 loading uses recovered
+decoders with authored strict file-envelope/run validation. The transform oracle
+supplies a 16-byte aligned buffer for the original MOVDQA store; the reconstructed
+API also accepts unaligned caller buffers.
 
 Wheel lookup comparisons use valid synthetic native registries. Missing-record
 diagnostics reach CRT imports that the isolated reference does not link, and
@@ -49,8 +57,8 @@ tests are distinct from cross-compilation and execution on the Switch.
 
 The CI workflow builds/tests this target on Linux without original resources.
 The Windows DLL remains available for original-code differential comparisons.
-No Switch toolchain or packaging target is configured yet. Homebrew versus an
-official-SDK port remains a project decision; no console SDK contents are included.
+No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
+the selected future route; no console SDK contents are included.
 
 ## Discovery and recovery ledger
 

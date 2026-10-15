@@ -30,18 +30,23 @@ passing inside GE6. See the [native runtime instructions](docs/NATIVE_ENGINE_RUN
 `Launch FS15.cmd`. The graphical launcher offers GE6 with recovered wheel
 helpers, the home engine, and an original-GE6 baseline. It remembers local
 settings and keeps native saves under `build/native-engine/profile`.
+The **Resources** page detects the local installation and prepares/repairs map,
+texture, mesh, recovered-script and starting-fleet caches with progress and
+cancellation. See [resource preparation and fresh-workspace requirements](docs/LAUNCHER.md).
 See [launcher modes and requirements](docs/UNIFIED_LAUNCHER.md).
 The existing `FS15MenuRebuilt.exe` / `FS15EngineRebuilt.exe` packages are the
 separate experimental host; they are not the actual-engine entry point.
 
 ## Current results
 
-- **Native recompilation / Switch preparation:** 30 uncovered binding targets
+- **Native recompilation:** 30 uncovered binding targets
   were identified as functions and decompiled. The enlarged catalogue has
   **11,631 eligible exports**. A separate portable C++ core now builds the RLE
-  decoders, tire math, wheel lookup/read adapters and seven bit operations.
-  These cover **18 native entries on bounded tested paths**. Full GE6 linking
-  and a Switch build remain pending. See [recompilation scope](docs/NATIVE_RECOMPILATION.md).
+  decoders, tire math, wheel lookup/read adapters, seven bit operations and the
+  native affine point transform. These cover **19 native entries on bounded
+  tested paths**. The transform passes 12,000 bit-exact native comparisons and
+  runs in the host Lua service. Full GE6 linking remains pending; the future
+  Switch homebrew target is deferred. See [recompilation scope](docs/NATIVE_RECOMPILATION.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
   profile. The recovered WheelsUtil source executes through the native mod

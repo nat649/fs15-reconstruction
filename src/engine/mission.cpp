@@ -3,11 +3,13 @@
 #include "foliage.h"
 #include "collision.h"
 #include "simulation_clock.h"
+#include "../core/transform.h"
 #include "../menu/xml_bridge.h"
 #include <lua.hpp>
 #include <DirectXCollision.h>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -88,7 +90,15 @@ struct MissionRuntime::Impl {
     static int name(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));lua_pushstring(l,r.scene->nodes[r.index].name.c_str());return 1;}
     static int set_translation(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));if(r.scene==&s.terrain)throw std::runtime_error("Map transforms are read-only");for(int k=0;k<3;++k)r.scene->nodes[r.index].translation[k]=float(luaL_checknumber(l,k+2));return 0;}
     static int set_rotation(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));if(r.scene==&s.terrain)throw std::runtime_error("Map transforms are read-only");for(int k=0;k<3;++k)r.scene->nodes[r.index].rotation[k]=float(luaL_checknumber(l,k+2));return 0;}
-    static int transform(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));XMFLOAT4X4 w;std::copy(r.scene->nodes[r.index].world,r.scene->nodes[r.index].world+16,&w._11);auto v=XMVectorSet(float(luaL_optnumber(l,2,0)),float(luaL_optnumber(l,3,0)),float(luaL_optnumber(l,4,0)),1);auto result=lua_toboolean(l,lua_upvalueindex(2))?XMVector3TransformNormal(v,XMLoadFloat4x4(&w)):XMVector3TransformCoord(v,XMLoadFloat4x4(&w));XMFLOAT3 p;XMStoreFloat3(&p,result);lua_pushnumber(l,p.x);lua_pushnumber(l,p.y);lua_pushnumber(l,p.z);return 3;}
+    static int transform(lua_State* l){
+        auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));const auto* w=r.scene->nodes[r.index].world;
+        // Authored layout adapter for affine DirectX row-vector world matrices.
+        std::uint8_t object[0xa0]{};float rows[16]={w[0],w[4],w[8],0,w[1],w[5],w[9],0,w[2],w[6],w[10],0,w[12],w[13],w[14],0};
+        if(lua_toboolean(l,lua_upvalueindex(2)))rows[12]=rows[13]=rows[14]=0;
+        std::memcpy(object+0x60,rows,sizeof(rows));float point[4]={float(luaL_optnumber(l,2,0)),float(luaL_optnumber(l,3,0)),float(luaL_optnumber(l,4,0)),0};
+        if(!fs15_transform_point(object,sizeof(object),point,point,4))throw std::runtime_error("Recovered point transform rejected its input");
+        for(unsigned i=0;i<3;++i)lua_pushnumber(l,point[i]);return 3;
+    }
     static int direction(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));XMFLOAT4X4 w;std::copy(r.scene->nodes[r.index].world,r.scene->nodes[r.index].world+16,&w._11);XMFLOAT3 p;XMStoreFloat3(&p,XMVector3TransformNormal(XMVectorSet(float(luaL_checknumber(l,2)),float(luaL_checknumber(l,3)),float(luaL_checknumber(l,4)),0),XMLoadFloat4x4(&w)));lua_pushnumber(l,p.x);lua_pushnumber(l,p.y);lua_pushnumber(l,p.z);return 3;}
     static int attribute(lua_State* l){auto& s=self(l);auto r=s.node(int(luaL_checkinteger(l,1)));const auto& node=r.scene->nodes[r.index];const std::string key=luaL_checkstring(l,2);auto at=node.attributes.find(key);if(at==node.attributes.end()){lua_pushnil(l);return 1;}
         auto type=node.attribute_types.find(key);const std::string kind=type==node.attribute_types.end()?"string":type->second;

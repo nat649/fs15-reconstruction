@@ -14,6 +14,10 @@ The application needs the .NET 10 Windows Desktop runtime and Python 3.11+.
 It discovers the workspace from its installation location. Keep the published
 files together in `build/FS15Launcher`; an explicit `--root PATH` is also supported.
 Choose the installed FS15 folder and Python executable in the interface.
+The interface has **Play**, **Resources** and **Diagnostics** pages. Resources
+detects the local installation and runs the existing asset/recovery preparation
+pipeline with progress and cancellation. See the [preparation guide](LAUNCHER.md)
+for prerequisites, repair behavior and the native GAR-oracle limitation.
 
 ## Modes and component boundaries
 

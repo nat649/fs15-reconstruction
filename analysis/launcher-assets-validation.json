@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-15",
+  "status": "passed",
+  "launcher_source_sha256": {
+    "src/unified_launcher/Program.cs": "18e57aa53056ec30425972b439ff732c8f934f1957f48eb134d5a8bc57c257c9",
+    "src/unified_launcher/LauncherForm.cs": "4ce0b97f9e0a9d1d9cd9c4500a0d737120bc9a4e8773424f68227390c98d018a",
+    "scripts/launcher_assets.py": "e019fc16291471653c7f02ef5367eb326b001d59c8ab371bb1090e69ba6a190d",
+    "scripts/unified_launcher.py": "773bb149a831220d3a2eb60d41f7dd888bad6212968a3b9d72fffc13cbb33714"
+  },
+  "gui_preparation_worker": {
+    "ui_layout_rendered": true,
+    "page": 1,
+    "installation_found": true,
+    "asset_status_displayed": true,
+    "preparation_requested": true,
+    "preparation_succeeded": true,
+    "game_launched": false,
+    "size": {
+      "Width": 1156,
+      "Height": 859
+    }
+  },
+  "asset_preparation": {
+    "status": "complete",
+    "staged_file_count": 1609,
+    "staged_bytes": 635408355,
+    "steps": [
+      "Checking local Lua and mesh tools",
+      "Preparing original terrain and layer textures",
+      "Decoding original map meshes and sky resources",
+      "Preparing original starting fleets and field grids"
+    ],
+    "installation_modified": false,
+    "existing_verified_archive_and_lua_recovery_reused": true,
+    "fresh_workspace_archive_extraction_tested_this_run": false
+  },
+  "windows_ctest": {
+    "passed": 24,
+    "failed": 0
+  },
+  "portable_core_ctest": {
+    "passed": 1,
+    "failed": 0
+  },
+  "authored_python_tests": {
+    "total": 56,
+    "passed": 54,
+    "skipped": 2,
+    "failed": 0,
+    "skip_reason": "Directory symlinks unavailable to the Windows account"
+  },
+  "full_ge6_rebuild_verified": false,
+  "switch_build_attempted": false,
+  "scope": "Real WinForms detection/resource-preparation worker and local asset staging; native/host tests are separate from UI rendering. Fresh GAR extraction remains dependent on the original-code oracle. This is not a complete rebuilt GE6."
+}

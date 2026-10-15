@@ -8,12 +8,16 @@ and machine-specific analysis outputs remain local.
 
 ## Compiled components
 
-The future target is Nintendo Switch. A portable C++ core now compiles without
+The future target is Nintendo Switch homebrew (.nro); console work is deferred.
+A portable C++ core now compiles without
 Windows/Direct3D/LuaJIT or original game payloads. Recovered wheel registry/read
 logic passes 1,440 lookup / 11,760 full-frame comparisons, and seven bit
 operations pass 21,763 full-frame comparisons. RLE/tire checks still pass.
-The [recompilation ledger](native-recompilation-summary.json) separates 18 bounded
-reconstructed entries from 11,613 pseudocode-only entries. This is host component
+The affine point-transform leaf now passes 12,000 bit-exact native comparisons
+and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
+uses recovered decoders behind strict file/run validation; invalid collision
+radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
+separates 19 bounded reconstructed entries from 11,612 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -26,6 +30,15 @@ startup of the tested Steam copy exits with code 53; normal Steam startup works.
 This combines launch configuration and bounded recovered logic, with separate
 native renderer/physics processes. See [native evidence](native-engine-validation.json)
 and [launcher evidence](unified-launcher-validation.json).
+
+The launcher now has Play, Resources and Diagnostics pages. It detects local
+Steam libraries and prepares/repairs original terrain, mesh, texture, script and
+starting-fleet resources through the existing tools, with progress/cancellation.
+The real GUI worker completed local preparation and recorded 1,609 file hashes;
+fresh archive extraction still requires the pinned original native GAR oracle.
+See [preparation instructions](../docs/LAUNCHER.md). Latest validation passes all
+24 Windows CTest checks, the portable-core test and 56 Python fixtures (two
+directory-symlink checks skipped on the local Windows account).
 
 The new [gameplay alpha](../docs/GAMEPLAY_RUNTIME.md) loads original starting
 fleets and field/crop data, executes recovered motor/wheel and farm-transfer
