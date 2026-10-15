@@ -155,6 +155,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Keep original binaries, recovered game code/assets and local packages out of Git.
 - [x] Publish this checklist and aggregate validation metadata.
 - [x] Show captured renders of both maps in the GitHub README.
+- [x] Document public contribution rules, local-only resources and dependency notices.
+- [x] Audit tracked files and reachable history for excluded payloads and common credential patterns.
+- [x] Add asset-free GitHub checks and regression tests for historical credential/path detection.
+- [ ] Select a project-wide license for the authored code; public visibility alone does not select one.
 - [ ] Provide a fully reconstructed playable game executable.
 
 Asset extraction currently uses a pinned original cipher oracle. The menu

@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible failure in the authored tools or reconstructed runtime.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Include reproducible steps and the command used.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Version and environment
+      description: Repository commit, Windows/compiler/Python versions, reference game version and map if relevant. Use generic paths.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Minimal error or validation evidence
+      description: Include only the relevant error, aggregate report or rendered screenshot. Do not upload game files, recovered scripts, raw decompilation, user saves, packages, dumps or credentials.
+  - type: textarea
+    id: checks
+    attributes:
+      label: Checks performed
+      description: Distinguish synthetic tests, native comparisons, rendered output and observed live gameplay.

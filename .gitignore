@@ -39,3 +39,25 @@ __pycache__/
 .venv/
 .vs/
 *.user
+# Public repository: local configuration and generated/original payloads.
+.env
+.env.*
+!.env.example
+*.exe
+*.dll
+*.lib
+*.pdb
+*.dmp
+*.bin
+*.gar
+*.dds
+*.i3d
+*.shapes
+*.meshes
+*.grle
+*.luc
+*.zip
+*.7z
+*.rar
+*.key
+*.pem

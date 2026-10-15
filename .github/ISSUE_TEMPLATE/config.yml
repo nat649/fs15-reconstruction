@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Project progress and known limitations
+    url: https://github.com/nat649/fs15-reconstruction/blob/master/PROJECT_CHECKLIST.md
+    about: Check current reconstruction scope before reporting a missing feature.

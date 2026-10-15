@@ -4,6 +4,14 @@ Early-stage reverse engineering and component reconstruction of **Farming
 Simulator 15 for Windows**, based on a locally installed copy of version
 **1.4.2.0**.
 
+**Source and tooling repository:** original game files, recovered game sources,
+raw decompiler exports and playable asset packages are kept local. Reproducing
+the game-resource results requires your own FS15 1.4.2.0 installation. The
+repository does not provide a ready-to-download copy of the game.
+
+[Progress checklist](PROJECT_CHECKLIST.md) · [Build instructions](#build) ·
+[Contributing](CONTRIBUTING.md) · [Project and dependency notices](NOTICE.md)
+
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;
 the full engine and farming simulation remain incomplete.**
@@ -187,9 +195,13 @@ source, analysis tools, documentation, and selected validation metadata.
 
 Requirements: 64-bit Windows, CMake, and Visual Studio with the C++ desktop
 workload and a Windows SDK. Development was validated with MSVC 19.51 and
-Windows SDK 10.0.26100. The C++ runtime is linked statically.
+Windows SDK 10.0.26100. The C++ runtime is linked statically. The engine and
+frontend require the pinned LuaJIT static library; prepare it before building.
 
 ```powershell
+git clone https://github.com/nat649/fs15-reconstruction.git
+cd fs15-reconstruction
+.\scripts\setup_lua_tools.ps1
 .\scripts\build.ps1
 .\FS15LauncherRebuilt.exe --self-test
 .\FS15LauncherRebuilt.exe --dry-run --game-dir 'D:\SteamLibrary\steamapps\common\Farming Simulator 15'
@@ -201,11 +213,16 @@ CMake uses its default Visual Studio generator. Select another explicitly:
 .\scripts\build.ps1 -Generator 'Visual Studio 17 2022'
 ```
 
-The build produces `FS15LauncherRebuilt.exe`, `FS15Core.dll` and
-`FS15EngineRebuilt.exe`, plus the frontend when LuaJIT is available, and runs CTest.
+The build produces `FS15LauncherRebuilt.exe`, `FS15Core.dll`,
+`FS15EngineRebuilt.exe` and the frontend, and runs the locally available CTest suites.
 The launcher has nine behavioral checks. If the local native RLE reference
 exists, the build also requires Python 3.11+ and runs the differential tests.
 Pass `-PythonExe 'C:\path\to\python.exe'` to select the interpreter.
+
+GitHub's **Repository checks** workflow uses only authored synthetic fixtures
+and publication guards, with no game assets or native reference image. Its
+result is separate from the eighteen-suite local game/native validation.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for asset-free checks and submission rules.
 
 To start the installed game through this launcher, remove `--dry-run`.
 Keep Steam available. This uses the **original game executable**. Set the
