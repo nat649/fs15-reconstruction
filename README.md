@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **62 native entries on bounded tested paths**. The affine component passes
+  **70 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -86,13 +86,19 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   scene, matrix and TRS objects, rename them and destroy supported owned forests.
   Comparisons cover 2,500 constructors, 7,500 renames and 250 recursive forests
   containing 2,470 deleting destructions. Platform allocation, ID/registry and
-  known dispatch services are explicit authored boundaries. Nonempty attributes,
-  shared resources and active triggers remain open. See
+  known dispatch services are explicit authored boundaries. Shared resources
+  and active triggers remain open. See
   [lifetime scope and evidence](docs/SCENE_LIFECYCLE_RECOVERY.md).
+- **Native attributes:** eight additional paths recover the actual attribute
+  tree layout, insertion/balance, Lua reads/writes and nonempty-map destruction.
+  12,600 setters, 25,200 getters and 12,780 complete trees match original code;
+  25,200 original getter calls also read reconstructed trees directly. Native
+  text-to-scalar allocation retention is measured explicitly. See
+  [attribute scope and evidence](docs/SCENE_ATTRIBUTES_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All six asset-free core tests pass on Windows x64, Linux x64
+  full linking. Asset-free core tests run on Windows x64, Linux x64
   and ARM64 Linux under QEMU, separately from the future Switch target. See
   [platform evidence](analysis/portable-core-platform-validation.json) and
   [porting blockers](docs/PORTABILITY_STATUS.md).

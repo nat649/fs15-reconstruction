@@ -57,8 +57,9 @@ reference separately executes the actual observed vtables. ReFarm retains its
 authored object ownership; these lifecycle paths are not yet integrated into a
 fully recovered scene loader, physics world or complete engine startup.
 
-Supported destruction requires an empty attribute map, default property type,
-no shared resource and no active-trigger teardown. Per-object checks reject
+Supported destruction now accepts valid nonempty maps through the
+[recovered attribute component](SCENE_ATTRIBUTES_RECOVERY.md), while requiring
+default property type, no shared resource and no active-trigger teardown. Per-object checks reject
 those unsupported states before freeing that object's members. The owning host
 must preflight descendants and supply correct callbacks. A callback failure
 after teardown starts cannot undo external frees or registry changes.
@@ -66,7 +67,7 @@ after teardown starts cannot undo external frees or registry changes.
 Allocation-failure cleanup and bounded-input rejection are authored behavior.
 The ID may already have advanced and a failed construction record may be
 partially initialized; it must not be destructed. Original C++ exception/unwind
-paths, arbitrary derived classes, nonempty attributes, shared-resource reference
+paths, arbitrary derived classes, shared-resource reference
 counting, triggers, singleton startup and concurrent registry semantics remain
 open. Full native allocation/ownership recovery is therefore still incomplete.
 

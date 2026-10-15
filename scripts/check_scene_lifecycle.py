@@ -33,13 +33,14 @@ def put(pointer,offset,value,fmt='Q'):C.memmove(pointer+offset,struct.pack(fmt,v
 
 class PortableServices:
     def __init__(self,core):
-        self.core=core;self.blocks={};self.retired={};self.registry={};self.sequence=0;self.kinds={};self.delete_order=[]
+        self.core=core;self.blocks={};self.retired={};self.registry={};self.sequence=0;self.kinds={};self.delete_order=[];self.release_order=[]
         self.callbacks=[ALLOC(self.allocate),FREE(self.release),NEXT(self.identifier),REGISTER(self.register),REGISTER(self.unregister),
                         UNLINK(self.unlink),DESTROY(self.destroy_child)]
         self.api=Services(None,*self.callbacks)
     def allocate(self,_,size):
         block=C.create_string_buffer(bytes([0xa5])*size,size);pointer=C.addressof(block);self.blocks[pointer]=block;return pointer
     def release(self,_,pointer):
+        self.release_order.append(pointer or 0)
         if pointer:self.retired[pointer]=self.blocks.pop(pointer).raw
     def identifier(self,_):self.sequence=(self.sequence+1)&0xffffffff;return self.sequence
     def register(self,_,identifier,pointer):self.registry.setdefault(identifier,pointer)
@@ -171,7 +172,8 @@ def main():
                 digest.update(a);counts['recursively_deleted_objects']+=1
             if native.registry() or portable.registry or portable.blocks or len(native.allocations)!=1:raise AssertionError('Recursive destruction leaked')
             counts['recursive_forests']+=1
-    paths=('src/core/scene_lifecycle.cpp','src/core/scene_lifecycle.h','src/core/scene_state.h')
+    paths=('src/core/scene_lifecycle.cpp','src/core/scene_lifecycle.h','src/core/scene_state.h',
+           'src/core/scene_attributes.cpp','src/core/scene_attributes.h')
     report=dict(status='passed',reference_sha256=EXPECTED_IMAGE,
         native_entries=['0x14004d640','0x14004d760','0x14004d7a0','0x1400b5ec0','0x1400b15e0',
             '0x14010fa90','0x14010fb40','0x1400b1710','0x1401362a0','0x14010fbb0','0x1400b5f90','0x1400b16e0','0x14010fb10'],

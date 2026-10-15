@@ -1,5 +1,6 @@
 // Recovered object initialization/lifetime flow with authored platform services.
 #include "scene_lifecycle.h"
+#include "scene_attributes.h"
 #include <cstring>
 #include <limits>
 #include <initializer_list>
@@ -17,13 +18,6 @@ size_t name_length(const char* name,size_t bytes) {
     const auto* end=static_cast<const char*>(std::memchr(name,0,bytes));
     if(!end||static_cast<size_t>(end-name)>=std::numeric_limits<uint32_t>::max())return 0;
     return static_cast<size_t>(end-name)+1;
-}
-bool empty_attributes(const void* node) {
-    const auto sentinel=read<uintptr_t>(node,0x80);
-    return sentinel&&read<size_t>(node,0x88)==0&&read<uintptr_t>(reinterpret_cast<void*>(sentinel),0)==sentinel&&
-        read<uintptr_t>(reinterpret_cast<void*>(sentinel),8)==sentinel&&
-        read<uintptr_t>(reinterpret_cast<void*>(sentinel),16)==sentinel&&
-        read<uint8_t>(reinterpret_cast<void*>(sentinel),0x49)!=0;
 }
 }
 extern "C" FS15_CORE_API int fs15_scene_construct(void* record,size_t bytes,unsigned kind,
@@ -88,7 +82,7 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
     uint32_t deleting_flags,const FS15SceneLifecycleServices* s) {
     if(!record||kind>FS15_OBJECT_TRS_TYPED||bytes<record_size(kind)||!services_ok(s))return 0;
     if(kind) {
-        if(!empty_attributes(record))return 0;
+        if(!fs15_scene_attributes_validate(record,bytes))return 0;
         if(kind>=FS15_OBJECT_MATRIX&&read<uintptr_t>(record,0x120))return 0;
         if(kind>=FS15_OBJECT_MATRIX) {
             const auto props=read<uintptr_t>(record,0x118);
@@ -107,7 +101,7 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
         if(const auto props=read<uintptr_t>(record,0x118))s->deallocate(s->user,reinterpret_cast<void*>(props));
     }
     if(kind) {
-        write(record,0,node_table);s->deallocate(s->user,reinterpret_cast<void*>(read<uintptr_t>(record,0x80)));
+        write(record,0,node_table);if(!fs15_scene_attributes_clear(record,bytes,1,s))return 0;
         if(const auto observers=read<uintptr_t>(record,0x58))s->deallocate(s->user,reinterpret_cast<void*>(observers));
         write<uintptr_t>(record,0x58,0);write<uintptr_t>(record,0x60,0);write<uintptr_t>(record,0x68,0);
         write(record,0,hierarchy_table);

@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_attributes', ['0x1400246f0','0x140136870','0x140136980','0x14027e1c0',
+        '0x1400e6900','0x1400e69b0','0x14016edc0','0x1401365f0'], 'analysis/scene-attributes-validation.json'),
     ('scene_object_lifecycle', ['0x14004d640','0x14004d760','0x14004d7a0','0x1400b5ec0',
         '0x1400b15e0','0x14010fa90','0x14010fb40','0x1400b1710','0x1401362a0',
         '0x14010fbb0','0x1400b5f90','0x1400b16e0','0x14010fb10'], 'analysis/scene-lifecycle-validation.json'),

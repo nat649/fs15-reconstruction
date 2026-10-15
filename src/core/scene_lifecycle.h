@@ -16,7 +16,7 @@ enum FS15SceneObjectKind {
  * unlink must remove the indexed child and clear its parent. destroy_child
  * must perform deleting destruction and detach the child from its parent.
  * Records/auxiliary allocations must remain addressable through callbacks.
- * Checks reject nonempty attribute maps, shared resources and active-trigger
+ * Checks reject malformed attribute maps, shared resources and active-trigger
  * teardown on the supplied record before its external frees begin. The caller
  * must preflight all descendants and only dispatch recovered object kinds. */
 typedef struct FS15SceneLifecycleServices {

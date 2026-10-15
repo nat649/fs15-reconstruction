@@ -28,9 +28,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | TRS math/cache/rebuild and six Lua getters/setters | Eleven native entries | 18,000 math results, 7,200 complete node arenas and notification traces; all recorded Windows floats bit-identical, with explicit platform-libm boundary |
 | Ordered scene link/reparent/unlink | Three native entries, preallocated vectors only | 19,200 successive complete node arenas/child buffers and notification traces, including same-parent reorder and suppressed removal |
 | Supported object construction, naming and lifetime chains | Thirteen entries with authored platform/container service boundaries | 2,500 constructor and 2,500 nondeleting-destructor records, 7,500 renames, 3,500 auxiliary allocations, 4,970 registry snapshots and 250 recursive forests / 2,470 deleting destructions |
+| Native-layout attribute maps and script frames | Eight entries, including RB insertion and nonempty-map cleanup | 12,780 complete trees, 12,600 setters, 25,200 getters and 180 complete member-free-order traces; original getter also reads reconstructed storage directly |
 
-Those are **62 native entries with bounded reconstructed paths**. They are not
-62 completely proven engine functions or a percentage of GE6 completion.
+Those are **70 native entries with bounded reconstructed paths**. They are not
+70 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -68,8 +69,7 @@ No Switch toolchain or packaging target is configured yet. Homebrew `.nro` is
 the selected future route; no console SDK contents are included.
 
 The workflow also defines an **ARM64 Linux cross-build with QEMU user-mode
-execution**. All six tests pass there and on Windows x64 and Linux x64. See
-the tested source revision and platform scope in
+execution**. See the tested source revision, test counts and platform scope in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 On a Linux host with `g++-aarch64-linux-gnu` and `qemu-user` installed:
 
@@ -130,8 +130,13 @@ registry/resource ownership remain unresolved.
 The [object lifecycle component](SCENE_LIFECYCLE_RECOVERY.md) recovers known
 constructor, rename and destructor chains, including recursive owned children.
 Allocator, ID/registry and known dispatch callbacks are authored services.
-Nonempty attributes, shared resources, triggers, arbitrary derived classes,
+Shared resources, triggers, arbitrary derived classes,
 singleton startup and native exception/concurrency behavior remain unresolved.
+
+The [attribute component](SCENE_ATTRIBUTES_RECOVERY.md) extends those destructor
+chains to valid nonempty maps. It retains native tree/string layouts and
+script-frame semantics, including observed String-to-scalar allocation retention.
+It does not recover shared resources, arbitrary derived teardown or full loading.
 
 ## Discovery and recovery ledger
 

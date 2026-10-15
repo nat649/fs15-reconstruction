@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 62 bounded reconstructed entries from 11,573 pseudocode-only entries. This is host component
+separates 70 bounded reconstructed entries from 11,565 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,8 +37,8 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has six asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. All eleven native differential suites also pass.
+has seven asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. All twelve native differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
 Euler extraction, lazy cache refresh, rebuild propagation and six Lua
@@ -73,15 +73,24 @@ records, 7,500 renames, 2,500 nondeleting destructor records and 250 recursive
 forests / 2,470 deleting destructions match the original. The native reference
 uses original CRT allocation and registry/tree code with a private heap and five
 kernel import seams. Portable allocator/ID/registry/dispatch services are authored.
-Shared resources, nonempty attributes, triggers, arbitrary derived classes and
+Shared resources, triggers, arbitrary derived classes and
 singleton/concurrent behavior remain open. See
 [lifetime scope](../docs/SCENE_LIFECYCLE_RECOVERY.md).
+
+Eight native attribute paths now retain the actual RB tree, inline/heap key
+layout and Lua value/frame semantics. 12,780 complete trees, 12,600 setters and
+25,200 getters match original code; the original getter also directly reads
+reconstructed storage in 25,200 calls. Nonempty-map destruction matches 180
+member-free-order traces. The native String-to-scalar behavior retains 1,177
+text allocations in these fixtures; those and their pointer residues are
+reported explicitly and reclaimed separately by the allocation contexts. See
+[attribute scope](../docs/SCENE_ATTRIBUTES_RECOVERY.md).
 
 A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all six asset-free tests under QEMU in CI. This is an intermediate
+Linux and executes asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
