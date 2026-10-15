@@ -56,7 +56,19 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Establish exact deterministic stripped-bytecode matches for 308 scripts, including 54 additional matches with no previous matches lost.
 - [ ] Fully validate the remaining 162 syntax-only scripts.
 
-## Main-menu milestone
+## Actual GIANTS Engine 6 integration target
+
+- [x] Confirm the native `-profile` argument and original mod source-loading path through local analysis.
+- [x] Prepare a separate native profile and a local recovered-source probe without modifying the installation or normal saves.
+- [x] Check the probe's 104 helper comparisons and mod isolation in an authored standalone fixture.
+- [ ] Validate a fresh actual-GE6 boot through the prepared isolated entry point.
+- [ ] Execute and observe the recovered-source probe in the actual engine during mission loading.
+- [ ] Integrate recovered game behavior into the actual engine and validate complete sessions.
+
+The Direct3D alpha remains an experimental viewer/test host. See the
+[native entry-point scope](docs/NATIVE_ENGINE_RUNTIME.md).
+
+## Experimental reconstructed frontend milestone
 
 - [x] Compile a separate menu executable with no original-engine dependency.
 - [x] Execute 36 recovered GUI/dependency Lua sources in the new host.

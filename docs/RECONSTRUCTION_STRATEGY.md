@@ -8,6 +8,14 @@ authored. Original meshes and scene placements are the source of map objects.
 
 ## Components currently used
 
+The runtime target is **the actual GIANTS Engine 6**, including its renderer,
+physics, scene/resource loading and lifecycle. Recovered game code must run on
+that engine. Native analysis supports understanding and modifying it; building
+a replacement engine around selected GIANTS services is not the project target.
+The existing authored Direct3D host remains an experimental viewer and test
+fixture. Its earlier milestones do not establish actual-GE6 integration.
+See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
+
 | Component | Origin | Current use |
 |---|---|---|
 | GUI logic | Recovered FS15 Lua sources | Compiled from source and executed in the frontend |
@@ -43,11 +51,11 @@ Native code analysis traced `externalShapesFile` loading through
 already reused directly as a local oracle. The comparison harness uses only
 the pinned analysis image and does not inject into a running game.
 
-The full original engine startup and mission services are not yet integrated
-into the compiled host. Their globals, native interfaces and dependencies
-need recovery before using additional components reliably. Reusing original
-components remains an available implementation path; each bridge should have
-an explicit scope and reproducible validation.
+The next runtime milestone uses the installed original engine with a separate
+profile and recovered-source loading through its supported script loader.
+This path runs alongside the experimental host rather than extending that host
+into a substitute engine. A successful unmodified-game launch is only a native
+baseline; execution and integration of recovered code need separate evidence.
 
 Original executable/code bytes, decoded geometry, textures and recovered Lua
 stay local. GitHub contains authored code, dependency provenance/licenses,

@@ -21,6 +21,10 @@ Engine 6 game. Original scripts, geometry, textures, scene transforms and native
 routines are reused or examined where practical. See the
 [reconstruction strategy](docs/RECONSTRUCTION_STRATEGY.md) for component provenance.
 
+**Runtime target: the actual GIANTS Engine 6.** The Direct3D alpha is an
+experimental viewer/test host. The next integration path runs recovered code
+inside the installed original engine; see the [prepared native entry point](docs/NATIVE_ENGINE_RUNTIME.md).
+
 ## Current results
 
 - **Native decompilation coverage:** a full pass through the existing Ghidra
