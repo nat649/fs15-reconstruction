@@ -1,9 +1,14 @@
 {
-  "catalogued": 12196,
-  "eligible": 11631,
-  "pseudocode_only": 11601,
-  "validated_component_path_entries": 30,
+  "catalogued": 12200,
+  "eligible": 11635,
+  "pseudocode_only": 11600,
+  "validated_component_path_entries": 35,
   "components": [
+    {
+      "name": "scene_state_and_dispatch",
+      "entries": 5,
+      "evidence": "analysis/scene-state-validation.json"
+    },
     {
       "name": "scene_math_and_transforms",
       "entries": 11,

@@ -10,13 +10,14 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 
 | Evidence | Observed result | What remains open |
 |---|---|---|
-| Existing native catalogue | 12,196 entries, 11,631 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 30 native entries with validated bounded paths | Remaining 11,601 eligible entries only have pseudocode in this ledger |
+| Existing native catalogue | 12,200 entries, 11,635 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
+| Recovered portable C++17 core | 35 native entries with validated bounded paths | Remaining 11,600 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
-| Known static dependency graph | 31,391 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
+| Scene state/vtables | 16 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
+| Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
 | 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 30 have validated components | 2,848 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
-| Prototype recovery | 11,307 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
+| Prototype recovery | 11,311 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
 | CPU portability | Both asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 
@@ -29,9 +30,10 @@ Zero missing native targets in these closures does not imply complete discovery.
 
 ## Work required before a complete port
 
-1. Recover scene-object types and vtables, setter/dirty propagation and object
-   ownership around the newly validated matrix/cache code. The current arena
-   API supplies bounded caller-owned memory, not native scene construction.
+1. Extend the recovered partial scene layout and base/TRS propagation with
+   allocation/destruction, remaining derived vtables, callbacks and ownership.
+   The [state component](SCENE_STATE_RECOVERY.md) supplies bounded caller-owned
+   memory and notification events, not native scene construction.
 2. Recover the resource lifecycle, archive decoding without an original-code
    oracle, complete I3D scene loading and original terrain/density services.
 3. Recover and link subsystem startup and scripting, following the observed

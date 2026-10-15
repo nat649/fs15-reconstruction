@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 30 bounded reconstructed entries from 11,601 pseudocode-only entries. This is host component
+separates 35 bounded reconstructed entries from 11,600 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,11 +37,20 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has two asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. Six native differential suites also pass.
+has three asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. Seven native differential suites also pass.
+
+The additional scene-state component recovers five native paths with a partial
+typed node layout and known base/TRS dispatch. All 12,000 complete synthetic
+node arenas and 7,200 notification traces match original code. The exercised
+world-preserving branch changes 185 child local matrices. Notifications are
+queued through an authored bounded transport; object allocation/destruction,
+arbitrary derived classes and callback side effects remain unresolved. Two
+constructor-observed vtables expose 16 audited slots and four newly catalogued
+functions. See [state scope](../docs/SCENE_STATE_RECOVERY.md).
 
 A new static [portability audit](native-portability-summary.json) records
-31,391 known call edges. The observed scripting roots reach 2,878 eligible
+31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
 Linux and passes both asset-free tests under QEMU in CI. This is an intermediate
@@ -87,10 +96,11 @@ GE6/PhysX behavior, complete specialization startup and persistent saves remain
 unfinished. Explicit harvest/silo scenarios relocate original equipment only
 for reproducible trials; normal new-game placement uses original templates.
 
-The native catalogue now has **11,631 verified local pseudocode exports** from
-11,631 eligible functions, with zero remaining export failures in this catalogue.
+The native catalogue now has **11,635 verified local pseudocode exports** from
+11,635 eligible functions, with zero remaining export failures in this catalogue.
 Thirty uncovered entries were discovered from 32 explicit scripting code-label
-references and then decompiled, expanding the catalogue to 12,196 functions.
+references and then decompiled; four additional explicit scene-vtable targets
+bring the catalogue to 12,200 functions.
 Another 565 catalogue entries are thunks or external functions. There are also
 498 explicit native scripting descriptors indexed separately from earlier Lua mappings.
 The tire-force calculation at `0x1400c24c0` is reconstructed in C++ and matches
@@ -224,7 +234,7 @@ Public summaries: [recovery](lua-recovery-summary.json),
 | Original launcher | 654 | 651 | 0 |
 | x64 game, initial selection | 12,166 (historical catalogue) | 249 | 1 |
 | x64 game, focused selection | Same catalogue | 44 | 0 |
-| x64 game, expanded eligible catalogue | 12,196 (11,631 eligible) | 11,631 | 0 |
+| x64 game, expanded eligible catalogue | 12,200 (11,635 eligible) | 11,635 | 0 |
 
 The game selections overlap. Counts include C/C++ runtime and third-party
 library code and are not completion percentages.

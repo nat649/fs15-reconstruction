@@ -29,14 +29,15 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Inventory installed files and record original executable/archive hashes.
 - [x] Capture the normally loaded native code section for local analysis.
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
-- [x] Catalogue 12,196 native functions, including 30 entries identified from explicit binding targets.
+- [x] Catalogue 12,200 native functions, including 30 entries from binding targets and four from explicit scene-vtable slots.
 - [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
-- [x] Verify all 11,631 eligible local pseudocode exports with no remaining catalogue export failures.
+- [x] Verify all 11,635 eligible local pseudocode exports with no remaining catalogue export failures.
 - [x] Unblock the two large exports with a larger response limit and C-only output; retry Windows progress-file sharing conflicts.
 - [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
 - [x] Audit 32 code-label references, identify 30 distinct uncovered executable functions and decompile all 30.
+- [x] Verify 16 slots in two constructor-observed scene vtables, discover four uncovered targets and export all four without splitting existing functions.
 - [ ] Audit function discovery and code labels beyond this catalogue.
-- [x] Export the catalogue's 31,391 known static call edges and count computed calls/import boundaries separately.
+- [x] Export the catalogue's 31,393 known static call edges and count computed calls/import boundaries separately.
 - [x] Audit known scripting and CRT dependency closures without describing them as a complete link graph.
 - [ ] Recover compilable native source, types, globals and subsystem initialization from the exported pseudocode.
 - [x] Map 112 observed Lua/native registrations from one routine.
@@ -59,8 +60,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover affine composition/inversion, rigid inverse points, WXYZ quaternion conversions and scale extraction; pass 36,000 bit-exact native comparisons.
 - [x] Recover cached hierarchical world transforms and four script-frame conversions; pass 5,999 complete node arenas and 4,799 complete frames.
 - [x] Connect recovered local/world coordinate adapters to ReFarm's existing world matrices and repeat 24 two-map gameplay reliability runs.
-- [x] Track 30 bounded reconstructed native entries separately from 11,601 pseudocode-only entries, with source-pinned evidence.
-- [ ] Recover native scene object allocation, ownership, dirty propagation, vtables and complete resource lifecycle.
+- [x] Recover bounded base/TRS dirty-state propagation, clip/mask inheritance, observer tracking and matrix setters; match 12,000 complete node arenas and 7,200 notification traces.
+- [x] Check the world-preserving child path in 185 observed local-matrix changes, with singular-parent rejection in authored tests.
+- [x] Track 35 bounded reconstructed native entries separately from 11,600 pseudocode-only entries, with source-pinned evidence.
+- [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.

@@ -50,6 +50,8 @@
 !/analysis/scene-core-validation.json
 !/analysis/native-portability-summary.json
 !/analysis/portable-core-platform-validation.json
+!/analysis/scene-state-validation.json
+!/analysis/scene-vtables-summary.json
 /logs/
 __pycache__/
 *.pyc

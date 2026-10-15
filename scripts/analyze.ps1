@@ -9,6 +9,7 @@ param(
     [string[]]$Inspect = @(),
     [string[]]$Instructions = @(),
     [switch]$Dependencies,
+    [string[]]$Vtables = @(),
     [switch]$FullExport,
     [switch]$RecoverBindings,
     [ValidateRange(1,600)][int]$FunctionTimeoutSeconds = 10,
@@ -56,6 +57,15 @@ if ($RecoverBindings) {
 } elseif ($FullExport) {
     if (-not $Existing) { throw 'Full export requires -Existing: use the previously analyzed, verified program.' }
     $arguments += @('-postScript', 'ExportFullProgram.java', $out, "$FunctionTimeoutSeconds")
+} elseif ($Vtables.Count) {
+    if (-not $Existing -or $Target -ne 'game-runtime') { throw 'Vtable discovery requires the existing game-runtime analysis.' }
+    foreach ($vtableSpec in $Vtables) {
+        if ($vtableSpec -notmatch '^[0-9a-fA-F]+:[1-9][0-9]*$') { throw 'Use a quoted table-address:slot-count pair.' }
+    }
+    $vtableMarker = Join-Path $projectRoot 'analysis/vtable-discovery/complete.txt'
+    if (Test-Path -LiteralPath $vtableMarker) { Remove-Item -LiteralPath $vtableMarker }
+    $arguments += @('-postScript', 'RecoverVtableFunctions.java', (Join-Path $projectRoot 'analysis/vtable-discovery'))
+    $arguments += $Vtables
 } elseif ($Dependencies) {
     if (-not $Existing -or $Target -ne 'game-runtime') { throw 'Dependency export requires the existing game-runtime analysis.' }
     $dependencyMarker = Join-Path $projectRoot "analysis\native-dependencies\dependencies-complete.txt"
@@ -90,6 +100,7 @@ $javaArguments = @('-Xmx2G', '-XX:ParallelGCThreads=2', '-XX:CICompilerCount=2',
 if ($LASTEXITCODE -ne 0) { throw "Ghidra failed with exit code $LASTEXITCODE" }
 if ($Instructions.Count -and -not (Test-Path -LiteralPath $instructionMarker)) { throw 'Ghidra returned without completing the instruction export; inspect the script log.' }
 if ($Dependencies -and -not (Test-Path -LiteralPath $dependencyMarker)) { throw 'Ghidra returned without completing the dependency export; inspect the script log.' }
+if ($Vtables.Count -and -not (Test-Path -LiteralPath $vtableMarker)) { throw 'Ghidra returned without completing the vtable audit; inspect the script log.' }
 if ($FullExport) {
     $exportProgress = Get-Content -LiteralPath (Join-Path $out 'progress.json') -Raw | ConvertFrom-Json
     if (-not $exportProgress.complete_pass) { throw 'Ghidra returned without completing the catalogue export; inspect the script log and resume.' }

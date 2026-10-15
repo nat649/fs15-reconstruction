@@ -36,8 +36,8 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 | Starting fleets and dynamic wheels | Original career templates, vehicle XML/I3D | Thirteen / twelve objects, eleven distinct prepared configurations |
 | Motor, wheel and farm-transfer rules | Recovered Lua | Executed with partial native services; no full PhysX integration |
 | Vehicle animation and trailer state transitions | Recovered AnimatedVehicle / Trailer / SpecializationUtil | Original XML loader, timing, visibility, discharge and closure; 777 matching original-bytecode fixture samples |
-| Native engine catalogue | Ghidra export plus explicit binding-target discovery | All 11,631 eligible functions exported locally; 30 newly found functions; analysis rather than compilable recovered engine source |
-| Portable recovered core | Reconstructed native RLE/tire math, wheel lookup/read adapters, bit operations, affine/quaternion math and scene transforms | 30 bounded native entries compiled as C++17; coordinate adapters run in ReFarm through an authored matrix bridge; no complete engine or Switch startup |
+| Native engine catalogue | Ghidra export plus explicit binding/vtable discovery | All 11,635 eligible functions exported locally; 30 binding targets and four scene-vtable targets discovered; analysis rather than compilable recovered engine source |
+| Portable recovered core | Reconstructed native RLE/tire math, wheel lookup/read adapters, bit operations, affine/quaternion math and scene state/transforms | 35 bounded native entries compiled as C++17; coordinate adapters run in ReFarm through an authored matrix bridge; state propagation is a separately validated component; no complete engine or Switch startup |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
 | Simulation scheduling and pause | Authored host code | Fixed 60 Hz gameplay updates, bounded stall recovery and pause/input clearing; not recovered GE6 physics timing |

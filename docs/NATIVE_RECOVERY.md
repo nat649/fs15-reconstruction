@@ -16,7 +16,7 @@ retried with a longer per-function timeout.
 
 The [aggregate report](../analysis/native-export-summary.json) records the
 catalogue, eligible exports, remaining failures and a digest of the verified
-export set. The current pass verified **11,631 / 11,631 eligible functions**,
+export set. The current pass verified **11,635 / 11,635 eligible functions**,
 with no remaining export failures in this catalogue. The two large functions
 at `0x1400f8420` and `0x1401f59a0` now have verified local exports. Increasing
 the timeout exposed a response-buffer limit. The exporter now allows 128 MiB
@@ -26,6 +26,9 @@ retry brief Windows sharing conflicts, and the wrapper checks completion even
 when Ghidra returns success after a script error.
 An explicit binding audit added 30 previously uncovered executable functions
 after the earlier 11,601-export pass, bringing the catalogue to 12,196 entries.
+The subsequent audit of 16 explicit slots in two scene vtables discovered four
+more targets, bringing the current catalogue to **12,200 entries**. All four
+have local pseudocode exports; see [scene state recovery](SCENE_STATE_RECOVERY.md).
 The remaining 565 catalogue entries are thunks or external functions.
 Detailed recovered code stays under `recovered/decompiled/game-full`
 and is excluded from Git. A complete pass through this catalogue does not prove
@@ -48,7 +51,7 @@ as code labels now resolve to 30 distinct newly catalogued functions. General sc
 of these descriptors; the count is not a unique total of engine subsystems.
 
 The [native recompilation report](NATIVE_RECOMPILATION.md) distinguishes the
-expanded pseudocode catalogue from 30 entries with compiled, bounded recovered
+expanded pseudocode catalogue from 35 entries with compiled, bounded recovered
 paths. It documents the newly recovered wheel-record layout/read adapters,
 32-bit scripting operations and portable-core build. Full native engine
 recompilation and Switch execution remain unverified.

@@ -54,17 +54,24 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 
 - **Native recompilation:** 30 uncovered binding targets
   were identified as functions and decompiled. The enlarged catalogue has
-  **11,631 eligible exports**. A separate portable C++ core now builds the RLE
+  **11,635 eligible exports**, after four additional targets were found in
+  constructor-observed scene vtables. A separate portable C++ core now builds the RLE
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **30 native entries on bounded tested paths**. The new component passes
+  **35 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
   Full GE6 linking remains pending; the future
   Switch homebrew target is deferred. See [recompilation scope](docs/NATIVE_RECOMPILATION.md).
-- **Portability audit:** the current static catalogue has 31,391 known call
+- **Scene state recovery:** five native paths now reproduce dirty/visibility,
+  clip-distance/mask propagation, observer-presence tracking and base/TRS matrix
+  setters. 12,000 complete synthetic node arenas and 7,200 notification traces
+  match original code, including 185 world-preserving child matrix changes.
+  This is a portable component; allocators, object destruction and arbitrary
+  observer side effects are not reconstructed. See [scope](docs/SCENE_STATE_RECOVERY.md).
+- **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
   full linking. The asset-free core cross-compiles for ARM64 Linux and passes both
@@ -81,7 +88,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   launcher retains normal Steam startup and an explicit direct mode.
   See the [bounded log evidence](analysis/native-engine-validation.json).
 - **Native decompilation coverage:** a full pass through the existing Ghidra
-  catalogue exported **11,631 / 11,631 eligible functions** as local pseudocode,
+  catalogue exported **11,635 / 11,635 eligible functions** as local pseudocode,
   with no remaining export failures. The last two exports were unblocked with
   larger response capacity and C-only output; 565 thunks or external entries
   are excluded. **498 explicit native scripting API
@@ -136,7 +143,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   segment boundaries.
 - **Analysis tools:** installation inventory, PE metadata and strings,
   a code-section snapshot tool, and reproducible Ghidra exports.
-- **Native catalogue:** 12,196 functions catalogued after explicit binding-target discovery. The full export supersedes
+- **Native catalogue:** 12,200 functions catalogued after binding-target and bounded scene-vtable discovery. The full export supersedes
   the earlier overlapping targeted selections, which remain local references.
 - **Lua interface mapping:** 112 observed name/implementation/wrapper
   associations from one registration routine.

@@ -24,9 +24,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Affine multiplication/inversion, rigid inverse point, quaternion conversion, scale extraction | Six native math entries | 36,000 complete bit-exact output comparisons, including singular failures and partial writes |
 | Cached hierarchical world transforms | `0x1400b1a50` | 1,200 complete node-arena comparisons across dirty/cached parent chains |
 | Four Lua local/world point/direction adapters | `0x1400e5330`, `0x1400e5410`, `0x1400e54e0`, `0x1400e55f0` | 4,799 complete script frames and their 4,799 node arenas; integrated into ReFarm through an authored world-matrix bridge |
+| Scene state, observer tracking, inherited flag and base/TRS matrix setters | Five native entries; two constructor-observed vtables | 12,000 complete node arenas and 7,200 side-effect-free notification traces; includes 185 world-preserving child matrix changes |
 
-Those are **30 native entries with bounded reconstructed paths**. They are not
-30 completely proven engine functions or a percentage of GE6 completion.
+Those are **35 native entries with bounded reconstructed paths**. They are not
+35 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -104,15 +105,23 @@ scene lifecycle integration. Both original-map gameplay fixtures still match
 source/bytecode, frame partitions and pause/resume in 24 host runs. See
 [component evidence](../analysis/scene-core-validation.json).
 
+The additional `scene_state.h` component recovers the base/TRS state dispatcher,
+observer-presence propagation and the two matrix-setter variants. It supplies a
+partial `0x170`-byte node layout, bounded pointer views and ordered notification
+output. It does not execute arbitrary original vtables/callbacks or allocate
+engine objects. Its staged failure guards and maximum descendant depth are
+authored. See [state recovery scope and remaining lifecycle work](SCENE_STATE_RECOVERY.md).
+
 ## Discovery and recovery ledger
 
 Auditing the 32 scripting references previously emitted as code labels found
 **30 distinct uncovered executable entries**. All 30 were created as functions
 without splitting existing function bodies, and then decompiled. The enlarged
-catalogue now contains **12,196 entries, 11,631 eligible pseudocode exports and
+catalogue now contains **12,200 entries, 11,635 eligible pseudocode exports and
 565 excluded thunks/external functions**. All 498 observed native scripting
 descriptors now resolve to catalogue function entries. This audit is limited
-to those explicit references; wider code discovery remains open.
+to those explicit references and a subsequent 16-slot scene-vtable audit that
+added four functions. Wider code discovery remains open.
 
 ```powershell
 scripts/analyze.ps1 -Target game-runtime -Existing -RecoverBindings -ExportName binding-discovery -JavaHome 'C:\path\to\jdk-21'
