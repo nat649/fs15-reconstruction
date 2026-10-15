@@ -29,11 +29,12 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Inventory installed files and record original executable/archive hashes.
 - [x] Capture the normally loaded native code section for local analysis.
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
-- [x] Catalogue 12,166 native functions and export targeted pseudocode.
+- [x] Catalogue 12,196 native functions, including 30 entries identified from explicit binding targets.
 - [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
-- [x] Verify all 11,601 eligible local pseudocode exports with no remaining catalogue export failures.
+- [x] Verify all 11,631 eligible local pseudocode exports with no remaining catalogue export failures.
 - [x] Unblock the two large exports with a larger response limit and C-only output; retry Windows progress-file sharing conflicts.
 - [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
+- [x] Audit 32 code-label references, identify 30 distinct uncovered executable functions and decompile all 30.
 - [ ] Audit function discovery and code labels beyond this catalogue.
 - [ ] Recover compilable native source, types, globals and subsystem initialization from the exported pseudocode.
 - [x] Map 112 observed Lua/native registrations from one routine.
@@ -48,9 +49,26 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Read the observed version-1 GRLE8/16 grids with bounds and size checks.
 - [x] Reconstruct the native tire-force calculation and compile it into FS15Core.
 - [x] Compare tire-force math with original code in 3,300 cases / 13,200 float outputs.
+- [x] Recover explicit 0x160-byte wheel records and typed registry/object views; keep unknown fields explicit.
+- [x] Compare wheel registry lookup in 1,440 valid native cases and seven read adapters in 11,760 complete script frames.
+- [x] Reconstruct seven 32-bit scripting bit operations and compare 21,763 complete native script frames.
+- [x] Build these recovered components as a static portable C++17 core without the Windows frontend or original payloads.
+- [x] Track 18 bounded reconstructed native entries separately from 11,613 pseudocode-only entries, with source-pinned evidence.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.
+
+## Future Nintendo Switch target
+
+- [x] Confirm Nintendo Switch as the requested future target.
+- [x] Isolate Windows symbol exports and add a portable-only build path.
+- [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
+- [ ] Choose/configure the console toolchain and packaging route.
+- [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
+- [ ] Recover/link the complete native engine and its platform/middleware interfaces.
+- [ ] Validate console startup, menu, rendering, input, physics and complete farming/save sessions.
+
+See [native recompilation and console limits](docs/NATIVE_RECOMPILATION.md).
 
 ## Archive and script recovery
 

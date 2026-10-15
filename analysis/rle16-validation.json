@@ -2,6 +2,12 @@
   "status": "passed",
   "original_function": "0x14028f770",
   "reference_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "rebuilt_source_sha256": {
+    "src/core/rle16.cpp": "81c454feaa0c7522ce06d88c85c8082b56f249ba689606f322928b852455394a",
+    "src/core/rle16.h": "586f114a2109f4ff404f134124762ccb758694ef75ed1fea30a5389337bc015d",
+    "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
+    "src/core/export.h": "75a4bb3e1577531703f25043d307c8c515276f0b5dc58e9a32efd3d0f5945720"
+  },
   "differential_cases": 107,
   "decoded_samples": 35133356,
   "real_density_maps": [

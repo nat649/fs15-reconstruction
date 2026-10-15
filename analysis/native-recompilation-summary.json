@@ -1,0 +1,36 @@
+{
+  "catalogued": 12196,
+  "eligible": 11631,
+  "pseudocode_only": 11613,
+  "validated_component_path_entries": 18,
+  "components": [
+    {
+      "name": "rle8",
+      "entries": 1,
+      "evidence": "analysis/rle8-validation.json"
+    },
+    {
+      "name": "rle16",
+      "entries": 1,
+      "evidence": "analysis/rle16-validation.json"
+    },
+    {
+      "name": "tire_math",
+      "entries": 1,
+      "evidence": "analysis/tire-forces-validation.json"
+    },
+    {
+      "name": "wheel_lookup_and_reads",
+      "entries": 8,
+      "evidence": "analysis/wheel-queries-validation.json"
+    },
+    {
+      "name": "bit_operations",
+      "entries": 7,
+      "evidence": "analysis/bit-operations-validation.json"
+    }
+  ],
+  "full_native_rebuild_verified": false,
+  "switch_build_verified": false,
+  "scope": "Bounded source-pinned component recovery, not a function-completion percentage or a complete GE6/console rebuild"
+}

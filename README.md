@@ -36,6 +36,12 @@ separate experimental host; they are not the actual-engine entry point.
 
 ## Current results
 
+- **Native recompilation / Switch preparation:** 30 uncovered binding targets
+  were identified as functions and decompiled. The enlarged catalogue has
+  **11,631 eligible exports**. A separate portable C++ core now builds the RLE
+  decoders, tire math, wheel lookup/read adapters and seven bit operations.
+  These cover **18 native entries on bounded tested paths**. Full GE6 linking
+  and a Switch build remain pending. See [recompilation scope](docs/NATIVE_RECOMPILATION.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
   profile. The recovered WheelsUtil source executes through the native mod
@@ -46,7 +52,7 @@ separate experimental host; they are not the actual-engine entry point.
   launcher retains normal Steam startup and an explicit direct mode.
   See the [bounded log evidence](analysis/native-engine-validation.json).
 - **Native decompilation coverage:** a full pass through the existing Ghidra
-  catalogue exported **11,601 / 11,601 eligible functions** as local pseudocode,
+  catalogue exported **11,631 / 11,631 eligible functions** as local pseudocode,
   with no remaining export failures. The last two exports were unblocked with
   larger response capacity and C-only output; 565 thunks or external entries
   are excluded. **498 explicit native scripting API
@@ -101,7 +107,7 @@ separate experimental host; they are not the actual-engine entry point.
   segment boundaries.
 - **Analysis tools:** installation inventory, PE metadata and strings,
   a code-section snapshot tool, and reproducible Ghidra exports.
-- **Native catalogue:** 12,166 functions catalogued. The full export supersedes
+- **Native catalogue:** 12,196 functions catalogued after explicit binding-target discovery. The full export supersedes
   the earlier overlapping targeted selections, which remain local references.
 - **Lua interface mapping:** 112 observed name/implementation/wrapper
   associations from one registration routine.

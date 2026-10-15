@@ -28,3 +28,8 @@ jobs:
         run: |
           c++ -std=c++17 -Wall -Wextra -Werror tests/simulation_clock.cpp -o /tmp/fs15-simulation-clock
           /tmp/fs15-simulation-clock
+      - name: Build and test recovered portable components without Windows or original resources
+        run: |
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/ci-portable-core --parallel 2
+          ctest --test-dir build/ci-portable-core --output-on-failure

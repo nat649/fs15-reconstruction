@@ -16,7 +16,7 @@ retried with a longer per-function timeout.
 
 The [aggregate report](../analysis/native-export-summary.json) records the
 catalogue, eligible exports, remaining failures and a digest of the verified
-export set. The current pass verified **11,601 / 11,601 eligible functions**,
+export set. The current pass verified **11,631 / 11,631 eligible functions**,
 with no remaining export failures in this catalogue. The two large functions
 at `0x1400f8420` and `0x1401f59a0` now have verified local exports. Increasing
 the timeout exposed a response-buffer limit. The exporter now allows 128 MiB
@@ -24,6 +24,8 @@ responses and requests C text without the unused HighFunction syntax tree.
 The successful retry used a 300-second per-function limit. Progress-file moves
 retry brief Windows sharing conflicts, and the wrapper checks completion even
 when Ghidra returns success after a script error.
+An explicit binding audit added 30 previously uncovered executable functions
+after the earlier 11,601-export pass, bringing the catalogue to 12,196 entries.
 The remaining 565 catalogue entries are thunks or external functions.
 Detailed recovered code stays under `recovered/decompiled/game-full`
 and is excluded from Git. A complete pass through this catalogue does not prove
@@ -41,8 +43,15 @@ are rejected. Code labels remain distinguished from catalogued functions.
 The earlier 205 associations remain included. These are additional
 observations beside the earlier 112 Lua/native associations. Counts can
 overlap and should not be added as a unique API total. The detailed index stays
-local in `analysis/engine-bindings.json`. General scripting utilities are part
+local in `analysis/engine-bindings.json`. The 32 references originally emitted
+as code labels now resolve to 30 distinct newly catalogued functions. General scripting utilities are part
 of these descriptors; the count is not a unique total of engine subsystems.
+
+The [native recompilation report](NATIVE_RECOMPILATION.md) distinguishes the
+expanded pseudocode catalogue from 18 entries with compiled, bounded recovered
+paths. It documents the newly recovered wheel-record layout/read adapters,
+32-bit scripting operations and portable-core build. Full native engine
+recompilation and Switch execution remain unverified.
 
 Selected wheel paths traced from those descriptors:
 

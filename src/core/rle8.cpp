@@ -5,10 +5,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "api.h"
 
 static constexpr auto failure = (std::numeric_limits<std::size_t>::max)();
 
-extern "C" __declspec(dllexport) std::size_t fs15_decode_rle8(
+extern "C" FS15_CORE_API std::size_t fs15_decode_rle8(
     const std::uint8_t* input, std::size_t input_size,
     unsigned stride_bits, unsigned value_bits,
     std::uint8_t* output, std::size_t output_bytes) noexcept {

@@ -38,6 +38,10 @@
 !/analysis/tire-forces-validation.json
 !/analysis/native-engine-validation.json
 !/analysis/unified-launcher-validation.json
+!/analysis/wheel-queries-validation.json
+!/analysis/bit-operations-validation.json
+!/analysis/binding-discovery-summary.json
+!/analysis/native-recompilation-summary.json
 /logs/
 __pycache__/
 *.pyc

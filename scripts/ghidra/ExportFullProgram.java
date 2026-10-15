@@ -36,7 +36,13 @@ public class ExportFullProgram extends GhidraScript {
         int total = 0, eligible = 0, processed = 0, ok = 0, failed = 0, reused = 0;
         FunctionManager fm = currentProgram.getFunctionManager();
         FunctionIterator count = fm.getFunctions(true);
-        while (count.hasNext()) { Function f=count.next();total++;if (!f.isExternal() && !f.isThunk()) eligible++; }
+        try(BufferedWriter catalogue=Files.newBufferedWriter(out.resolve("functions.csv"),StandardCharsets.UTF_8)) {
+            catalogue.write("entry,name,size,thunk,external,prototype\n");
+            while(count.hasNext()) {
+                Function f=count.next();total++;if(!f.isExternal()&&!f.isThunk())eligible++;
+                catalogue.write(csv(f.getEntryPoint().toString())+","+csv(f.getName())+","+f.getBody().getNumAddresses()+","+f.isThunk()+","+f.isExternal()+","+csv(f.getPrototypeString(false,false))+"\n");
+            }
+        }
         DecompInterface decompiler = new DecompInterface();
         // Large registration functions exceeded Ghidra's default response cap.
         // Increase transport capacity; retain normal decompilation semantics.

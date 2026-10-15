@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "lookup_routine": "0x1400c9e50",
+  "rebuilt_dll_sha256": "b7da63468c6a084edd71da6ebb2d4d349382946057403f2a44cbce43cf501ab7",
+  "rebuilt_source_sha256": {
+    "src/core/wheel_queries.cpp": "f06b5cba3143210202b8fe5e247d065725b43915761a436148131d9607301155",
+    "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef",
+    "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028"
+  },
+  "query_adapters": [
+    "0x1400e77e0",
+    "0x1400e7850",
+    "0x1400e78d0",
+    "0x1400e7990",
+    "0x1400e7a30",
+    "0x1400e7ac0",
+    "0x1400e7b90"
+  ],
+  "lookup_comparisons": 1440,
+  "complete_script_frame_comparisons": 11760,
+  "original_frame_sha256": "99fe4946e5bfd9a02c2b239682e0c53aefd9d4c2130ed7b9ff8d296ebcf2c88f",
+  "wheel_record_bytes": 352,
+  "scope": "Recovered wheel registry lookup and seven read adapters with synthetic data; not integrated suspension/contacts, full GE6 recompilation or a Switch build",
+  "excluded_native_undefined_case": "Missing-record position exposes uninitialized data; missing-lookup diagnostics require unlinked CRT imports. Native comparisons use successful lookups and null-node adapters only. Authored guards are tested separately.",
+  "platform": "Windows x64 original-code comparison; portable core cross-platform tests are separate"
+}

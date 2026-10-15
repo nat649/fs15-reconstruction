@@ -1,6 +1,13 @@
 {
+  "status": "passed",
   "routine": "0x1400c24c0",
   "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "rebuilt_source_sha256": {
+    "src/core/tire_forces.cpp": "92e5539f00aeaee39c12a2aedf4282d235eac009b9f584c05fe53103c02cde81",
+    "src/core/tire_forces.h": "5e28bca9cdd22987ef857f74d87ca780c225d08b40d5b56a832a3e7df893732e",
+    "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
+    "src/core/export.h": "75a4bb3e1577531703f25043d307c8c515276f0b5dc58e9a32efd3d0f5945720"
+  },
   "comparisons": 3300,
   "scalar_outputs": 13200,
   "maximum_scaled_absolute_error": [

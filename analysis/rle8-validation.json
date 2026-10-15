@@ -1,6 +1,11 @@
 {
   "status": "passed",
   "native_reference_sha256": "b0a14bc2a8764b6cb979ff372730c6fab11339645fc284fa0fb09e5d75c7c83c",
+  "rebuilt_source_sha256": {
+    "src/core/rle8.cpp": "af0c818d72404b7fb680351b4045b3a4997ffdd10298551d29f0bec6b7f5fccc",
+    "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
+    "src/core/export.h": "75a4bb3e1577531703f25043d307c8c515276f0b5dc58e9a32efd3d0f5945720"
+  },
   "original_function": "0x14028f430",
   "differential_cases": 266,
   "decoded_samples": 853086,

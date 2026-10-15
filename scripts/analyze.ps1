@@ -8,6 +8,7 @@ param(
     [string]$LeafReference = '',
     [string[]]$Inspect = @(),
     [switch]$FullExport,
+    [switch]$RecoverBindings,
     [ValidateRange(1,600)][int]$FunctionTimeoutSeconds = 10,
     [string]$JavaHome = $env:JAVA_HOME
 )
@@ -44,7 +45,13 @@ if ($Existing) {
     $arguments += @('-import', $binary)
 }
 $arguments += @('-analysisTimeoutPerFile', "$TimeoutSeconds", '-max-cpu', '4', '-scriptPath', (Join-Path $PSScriptRoot 'ghidra'))
-if ($FullExport) {
+if ($RecoverBindings) {
+    if (-not $Existing -or $Target -ne 'game-runtime') { throw 'Binding recovery requires the existing game-runtime analysis.' }
+    $bindingIndex = Get-Content -LiteralPath (Join-Path $projectRoot 'analysis/engine-bindings.json') -Raw | ConvertFrom-Json
+    $bindingSeeds = @($bindingIndex.bindings | Where-Object { $_.implementation_kind -eq 'code_label' -or $_.pseudocode_reference_kind -eq 'code_label' } | Select-Object -ExpandProperty implementation -Unique)
+    $arguments += @('-postScript', 'RecoverBindingFunctions.java', (Join-Path $projectRoot 'analysis/binding-discovery'))
+    $arguments += $bindingSeeds
+} elseif ($FullExport) {
     if (-not $Existing) { throw 'Full export requires -Existing: use the previously analyzed, verified program.' }
     $arguments += @('-postScript', 'ExportFullProgram.java', $out, "$FunctionTimeoutSeconds")
 } elseif ($Inspect.Count) {

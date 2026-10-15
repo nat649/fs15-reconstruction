@@ -62,7 +62,9 @@ def main():
                                  ((0.5, 2, 1, 8, 1), float('nan'), 0, 1), ((0.5, 2, 1, 8, 1), 0.1, 0, -1)]:
         if rebuilt((FLOAT * 5)(*params), sx, sy, load, (FLOAT * 4)()):
             raise AssertionError('Invalid authored API input accepted')
-    report = dict(routine='0x1400c24c0', reference_sha256=EXPECTED_IMAGE,
+    report = dict(status='passed', routine='0x1400c24c0', reference_sha256=EXPECTED_IMAGE,
+                  rebuilt_source_sha256={path:hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
+                                         for path in ('src/core/tire_forces.cpp','src/core/tire_forces.h','src/core/api.h','src/core/export.h')},
                   comparisons=len(cases), scalar_outputs=len(cases)*4, maximum_scaled_absolute_error=max_error,
                   tolerance='abs(error) <= 2e-5 * max(1, abs(original)) for each float output',
                   original_output_sha256=digest.hexdigest(),

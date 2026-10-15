@@ -133,6 +133,8 @@ def main():
         if rebuilt(source, 3, 8, 8, output, 1) != C.c_size_t(-1).value:
             raise AssertionError("Output overflow was not rejected")
         result = dict(status="passed", native_reference_sha256=REFERENCE_SHA256,
+                      rebuilt_source_sha256={path:hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
+                                             for path in ('src/core/rle8.cpp','src/core/api.h','src/core/export.h')},
                       original_function="0x14028f430", differential_cases=count,
                       decoded_samples=total_samples, added_capacity_check="passed",
                       scope="Valid RLE8, 1..8-bit values, strides up to 16 in these tests; native 64 KiB segment boundaries included")

@@ -8,6 +8,15 @@ and machine-specific analysis outputs remain local.
 
 ## Compiled components
 
+The future target is Nintendo Switch. A portable C++ core now compiles without
+Windows/Direct3D/LuaJIT or original game payloads. Recovered wheel registry/read
+logic passes 1,440 lookup / 11,760 full-frame comparisons, and seven bit
+operations pass 21,763 full-frame comparisons. RLE/tire checks still pass.
+The [recompilation ledger](native-recompilation-summary.json) separates 18 bounded
+reconstructed entries from 11,613 pseudocode-only entries. This is host component
+validation; the complete engine and console build remain pending.
+See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
+
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the
 home runtime, original GE6 baseline or GE6 with three recovered wheel helpers.
 The native menu, Westbridge Hills and tractor HUD were observed; all three
@@ -37,8 +46,10 @@ GE6/PhysX behavior, complete specialization startup and persistent saves remain
 unfinished. Explicit harvest/silo scenarios relocate original equipment only
 for reproducible trials; normal new-game placement uses original templates.
 
-The native catalogue now has **11,601 verified local pseudocode exports** from
-11,601 eligible functions, with zero remaining export failures in this catalogue.
+The native catalogue now has **11,631 verified local pseudocode exports** from
+11,631 eligible functions, with zero remaining export failures in this catalogue.
+Thirty uncovered entries were discovered from 32 explicit scripting code-label
+references and then decompiled, expanding the catalogue to 12,196 functions.
 Another 565 catalogue entries are thunks or external functions. There are also
 498 explicit native scripting descriptors indexed separately from earlier Lua mappings.
 The tire-force calculation at `0x1400c24c0` is reconstructed in C++ and matches
@@ -170,9 +181,9 @@ Public summaries: [recovery](lua-recovery-summary.json),
 | Analysis | Functions catalogued | Pseudocode exports | Export failures |
 |---|---:|---:|---:|
 | Original launcher | 654 | 651 | 0 |
-| x64 game, initial selection | 12,166 | 249 | 1 |
+| x64 game, initial selection | 12,166 (historical catalogue) | 249 | 1 |
 | x64 game, focused selection | Same catalogue | 44 | 0 |
-| x64 game, full eligible catalogue | 12,166 (11,601 eligible) | 11,601 | 0 |
+| x64 game, expanded eligible catalogue | 12,196 (11,631 eligible) | 11,631 | 0 |
 
 The game selections overlap. Counts include C/C++ runtime and third-party
 library code and are not completion percentages.

@@ -107,6 +107,8 @@ def main():
         if rebuilt(source,3,16,16,tiny,2) != C.c_size_t(-1).value:
             raise AssertionError('RLE16 output overflow was not rejected')
     result=dict(status='passed',original_function='0x14028f770',reference_image_sha256=EXPECTED_IMAGE,
+                rebuilt_source_sha256={path:hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
+                                       for path in ('src/core/rle16.cpp','src/core/rle16.h','src/core/api.h','src/core/export.h')},
                 differential_cases=comparisons,decoded_samples=samples,real_density_maps=real,
                 scope='Original 16-bit RLE leaf, bit widths 1..16, strides through 32, extended runs and 64 KiB boundaries')
     (ROOT/'analysis/rle16-validation.json').write_text(json.dumps(result,indent=2)+'\n')

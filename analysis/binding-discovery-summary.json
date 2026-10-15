@@ -1,0 +1,5 @@
+{
+  "explicit_unique_targets": 30,
+  "new_functions": 30,
+  "scope": "Only explicit native binding code labels were audited; existing function bodies were not split; wider discovery remains open"
+}

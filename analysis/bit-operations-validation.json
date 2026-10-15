@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "rebuilt_dll_sha256": "b7da63468c6a084edd71da6ebb2d4d349382946057403f2a44cbce43cf501ab7",
+  "rebuilt_source_sha256": {
+    "src/core/bit_operations.cpp": "0adb266f9fc5f10e15ab085309a001d59763b43a3bc0373611916dd91658eac9",
+    "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028"
+  },
+  "native_entries": [
+    "0x1400dc960",
+    "0x1400dc980",
+    "0x1400dc9a0",
+    "0x1400dc9c0",
+    "0x1400dc9e0",
+    "0x1400dca00",
+    "0x1400dca20"
+  ],
+  "complete_script_frame_comparisons": 21763,
+  "original_frame_sha256": "d68e1055ecad58a3cd6072338557e77b7bf4d510779598c7dfff29e3aa364706",
+  "scope": "Seven portable reconstructed 32-bit scripting operations; Windows x64 native comparison only, no GE6 startup or Switch execution"
+}

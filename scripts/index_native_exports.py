@@ -76,7 +76,10 @@ def main():
         rows = list(csv.DictReader(stream))
     if len(rows) != progress['eligible'] or len({row['entry'] for row in rows}) != len(rows):
         raise ValueError('Incomplete/duplicate function catalogue')
-    with (ROOT / 'recovered/decompiled/game-runtime/functions.csv').open(newline='', encoding='utf-8') as stream:
+    catalogue_path = args.export / 'functions.csv'
+    if not catalogue_path.exists():
+        catalogue_path = ROOT / 'recovered/decompiled/game-runtime/functions.csv'
+    with catalogue_path.open(newline='', encoding='utf-8') as stream:
         catalogue = list(csv.DictReader(stream))
     eligible = {row['entry']: row for row in catalogue if row['thunk'] == 'false' and row['external'] == 'false'}
     if len(catalogue) != progress['catalogued'] or {row['entry'] for row in rows} != eligible.keys():
@@ -105,6 +108,9 @@ def main():
     if counts['ok'] != progress['exported'] or counts['failed'] != progress['failed']:
         raise ValueError('Export progress and verified files disagree')
     for binding in bindings:
+        if binding['implementation_kind'] == 'code_label' and binding['implementation'][2:] in eligible:
+            binding['pseudocode_reference_kind'] = 'code_label'
+            binding['implementation_kind'] = 'function'
         binding['direct_named_callees'] = by_address.get(binding['implementation'], [])
     if not any(row['name'] == 'createWheelShape' for row in bindings):
         raise ValueError('Expected engine wheel descriptors were not recovered')
