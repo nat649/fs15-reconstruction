@@ -57,6 +57,9 @@ void run() {
     require(std::memcmp(before.data(),capacity.nodes.data(),sizeof(before))==0&&std::memcmp(&old_event,&events[0],sizeof(old_event))==0,"Capacity failure is atomic");
     capacity.children[0]=1;
     require(!fs15_scene_state_update(&capacity.arena,0,FS15_SCENE_PROPAGATE,1,0,events.data(),events.size(),&used)&&std::memcmp(before.data(),capacity.nodes.data(),sizeof(before))==0,"External child pointer rejected atomically");
+    Fixture malformed;malformed.nodes[0].observers_end=malformed.nodes[0].observers_begin+1;before=malformed.nodes;
+    require(!fs15_scene_state_update(&malformed.arena,0,FS15_SCENE_RESCAN_OBSERVERS,1,0,events.data(),events.size(),&used)&&
+        std::memcmp(before.data(),malformed.nodes.data(),sizeof(before))==0,"Misaligned observer span rejected atomically");
     Fixture cycle;cycle.nodes[0].parent=reinterpret_cast<uintptr_t>(&cycle.nodes[1]);
     cycle.nodes[1].children_begin=reinterpret_cast<uintptr_t>(&cycle.children[1]);cycle.nodes[1].children_end=cycle.nodes[1].children_begin+8;
     cycle.children[1]=reinterpret_cast<uintptr_t>(&cycle.nodes[0]);

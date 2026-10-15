@@ -137,7 +137,7 @@ struct State {
             visited[i]=true;
             auto& n=nodes[i];
             if(mask&1) {
-                bool present=n.observers_begin!=n.observers_end;
+                bool present=!span(n.observers_begin,n.observers_end,view.observers,view.observer_count).empty();
                 if(!present)for(size_t child:children(i))if(nodes[child].flags&0x10){present=true;break;}
                 if(((n.flags&0x10)!=0)==present)mask&=~uint32_t(1);
                 else if(present)n.flags|=0x10;else n.flags&=~uint32_t(0x10);
