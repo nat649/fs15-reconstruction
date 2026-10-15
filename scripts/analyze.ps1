@@ -7,6 +7,8 @@ param(
     [string]$ExportName = '',
     [string]$LeafReference = '',
     [string[]]$Inspect = @(),
+    [switch]$FullExport,
+    [ValidateRange(1,120)][int]$FunctionTimeoutSeconds = 10,
     [string]$JavaHome = $env:JAVA_HOME
 )
 $ErrorActionPreference = 'Stop'
@@ -42,7 +44,10 @@ if ($Existing) {
     $arguments += @('-import', $binary)
 }
 $arguments += @('-analysisTimeoutPerFile', "$TimeoutSeconds", '-max-cpu', '4', '-scriptPath', (Join-Path $PSScriptRoot 'ghidra'))
-if ($Inspect.Count) {
+if ($FullExport) {
+    if (-not $Existing) { throw 'Full export requires -Existing: use the previously analyzed, verified program.' }
+    $arguments += @('-postScript', 'ExportFullProgram.java', $out, "$FunctionTimeoutSeconds")
+} elseif ($Inspect.Count) {
     $arguments += @('-postScript', 'InspectAddresses.java', (Join-Path $projectRoot "analysis\inspection\$ExportName"))
     $arguments += $Inspect
 } elseif ($LeafReference) {

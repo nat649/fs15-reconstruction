@@ -21,8 +21,11 @@ authored. Original meshes and scene placements are the source of map objects.
 | GAR cipher | Original native initializer/decoder | Existing local extraction oracle |
 | RLE8 routine | Reconstructed C++ from native analysis | Differentially checked against original machine code |
 | RLE16 routine | Reconstructed C++ from native `0x14028f770` | 107 comparisons including both full original fruit grids |
+| Tire-force calculation | Reconstructed C++ from native `0x1400c24c0` | 3,300 comparisons / 13,200 float outputs; not yet integrated with playable physics |
 | Starting fleets and dynamic wheels | Original career templates, vehicle XML/I3D | Thirteen / twelve objects, eleven distinct prepared configurations |
 | Motor, wheel and farm-transfer rules | Recovered Lua | Executed with partial native services; no full PhysX integration |
+| Vehicle animation and trailer state transitions | Recovered AnimatedVehicle / Trailer / SpecializationUtil | Original XML loader, timing, visibility, discharge and closure; 777 matching original-bytecode fixture samples |
+| Native engine catalogue | Full Ghidra pseudocode export | 11,599 eligible functions exported locally, two timeouts; analysis rather than compilable recovered engine source |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
 
@@ -50,6 +53,11 @@ stay local. GitHub contains authored code, dependency provenance/licenses,
 aggregate validation and selected rendered screenshots.
 
 ## Next reconstruction targets
+
+The [native recovery report](NATIVE_RECOVERY.md) records full-export scope,
+remaining timeouts and 205 observed engine descriptors. Wheel creation, property
+updates, slip lookup, tire forces and differential dispatch are now traced to
+native entry points; their full services are not integrated yet.
 
 Recover the remaining native physics/density interfaces, original component
 joints, complete specialization startup and persistent sessions. Restore full

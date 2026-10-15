@@ -1,19 +1,19 @@
 {
+  "recoveredAssets": 407,
+  "identicalRender": true,
   "matchingScreenCaptures": [
     "CareerScreen",
     "CreditsScreen",
     "DifficultyScreen",
     "MapSelectionScreen"
   ],
-  "identicalRender": true,
-  "saveMetadataReadOnly": true,
-  "recoveredAssets": 407,
-  "recoveredSources": 58,
-  "packageSha256": "d669a03e7fa5d133e813fdf92bb7512fed21ba0d01c0530ed6ceb58552c7a93c",
   "sourceHashesVerified": true,
-  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
-  "scope": "Recovered frontend and experimental gameplay subset; original fleet/crops and partial authored native services",
-  "nativeEngineDependency": false,
   "workspaceSmokePassed": true,
-  "packageSmokePassed": true
+  "saveMetadataReadOnly": true,
+  "packageSha256": "f21c3b4b53488ae1b70046f57d07bc51cfae11776693facb4b1e9bc0623a251c",
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
+  "nativeEngineDependency": false,
+  "packageSmokePassed": true,
+  "recoveredSources": 62,
+  "scope": "Recovered frontend and experimental gameplay subset; original fleet/crops and partial authored native services"
 }

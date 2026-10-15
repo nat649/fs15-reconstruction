@@ -7,7 +7,7 @@ full GE6 startup or provide original PhysX behavior.
 ## Launch and controls
 
 Build, prepare the original resources, and package as described in the README.
-The current local package is `build/FS15GameplayAlpha/FS15MenuRebuilt.exe`.
+The current local package is `build/FS15GameplayAlpha2/FS15MenuRebuilt.exe`.
 Choose an empty Career slot, difficulty, map, and Start. Existing saved games
 remain read-only and cannot resume a simulation. The original installation and
 profile are never written.
@@ -90,9 +90,14 @@ It blocks the vehicle centre capsule against walls/trunks and constrains the
 following camera. It does not supply full vehicle/implement rigid-body
 collisions. Attachment following is kinematic; native articulation, moving
 three-point linkages and original saved front-weight connections need recovery.
-Pipe rotations/translations use original XML animation parts through an
-authored interpolation adapter. Procedural grain fill surfaces, unloading
-particles, full tipping animation and other client effects remain incomplete.
+Recovered `AnimatedVehicle.load/update` interprets original XML animation parts,
+including chained transforms, visibility, timing, reversal and stop times.
+Recovered `Trailer.load/updateTick` controls tip/door animations, delayed discharge
+and automatic closing. Authored transform/visibility services connect these rules
+to rendering, including initially hidden vehicle geometry. Procedural grain fill
+surfaces, unloading particles and other client effects remain incomplete.
+See [native and animation recovery](NATIVE_RECOVERY.md) for the bytecode comparison
+and the limits of the joint-callback fixture.
 
 The HUD is authored. The earlier recovered frontend remains separate. Audio,
 fuel consumption/refuelling, complete shops/economy, persistent save/load,
@@ -101,11 +106,13 @@ growth remain unfinished. Closing this alpha discards the session.
 
 ## Validation and scenarios
 
-`mission_Map01` and `mission_Map02` exercise 34 gameplay assertions each:
+`mission_Map01` and `mission_Map02` exercise 43 gameplay assertions each:
 motor travel/braking/steering; original silo overlaps and transfer; overflow,
 empty-stock and mixed-grain rejection; original farm unloading; field
 definitions; authored in-memory harvest/cultivate/sow fixtures; combine pipe
-raycasts and conservation; and seed-station refilling/payment. These fixtures
+raycasts and conservation; seed-station refilling/payment; original tip state,
+door motion, discharge delay, automatic closure and support-wheel visibility.
+These fixtures
 do not claim complete original-engine parity.
 
 `mission_harvest` additionally relocates the original combine and cutter to a
@@ -113,7 +120,18 @@ mature crop in an originally owned field, drives the actual work area through
 the original density map, checks harvested litres and rendered vehicle pixels,
 and captures both maps. See [harvest evidence](../analysis/mission-validation.json).
 
-For reproducible manual trials use `--scenario harvest` or `--scenario silo`.
+`recovered_vehicle_animation` separately compares 777 complete state samples
+against the original normalized bytecode in seven authored service scenarios.
+It covers exercised behavior of AnimatedVehicle, Trailer and SpecializationUtil,
+without claiming every branch or native physics parity.
+
+`mission_harvest` also captures `--scenario tip` on both maps after four seconds:
+the original 8,500 L Brantner tilts and transfers grain into the original farm
+trigger. Trailer contents plus discharged grain remain equal to initial capacity,
+and farm inventory increases by precisely the discharged amount.
+
+For reproducible manual trials use `--scenario harvest`, `--scenario silo` or
+`--scenario tip`.
 These explicitly relocate equipment in a disposable new session. Normal Career
 Start retains the original starting placements. Scenario screenshots are
 labelled as such; they are not evidence of a saved career or original physics.
@@ -135,6 +153,13 @@ the tool. That new session was left open for manual driving.
 
 Packaging verified all recovered source hashes, both original starting fleets,
 all four frontend captures, and identical workspace/package scene and gameplay
-renders from a different working directory. The local package contains 58
+renders from a different working directory. The local package contains 62
 recovered source files and 407 traced resources; no original executable or code
 snapshot is included.
+
+The Alpha2 package was launched through the recovered frontend in a real Windows
+window: empty Career slot, Normal difficulty, Bjornholm, Start. O visibly opened
+and closed the original Sampo pipe through recovered AnimatedVehicle logic.
+E attached the starting cutter and B activated it; the session was left open.
+This is live launch/animation/input evidence. The new trailer discharge captures
+and conservation checks remain separate scripted scenario evidence.

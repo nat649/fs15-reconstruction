@@ -15,7 +15,9 @@ struct Node {
     float world[16]{};
     std::vector<int> children;
     std::map<std::string,std::string> attributes;
+    std::map<std::string,std::string> attribute_types;
     bool visible=true;
+    bool local_visible=true, lod_visible=true;
     bool collidable=false;
     int mesh=-1;
 };
@@ -56,8 +58,9 @@ struct Texture {
     std::vector<std::uint8_t> bytes;
 };
 Terrain load_terrain(const std::filesystem::path& resource_root,const std::string& map_id);
-Terrain load_scene(const std::filesystem::path& resource_root,const std::filesystem::path& relative);
+Terrain load_scene(const std::filesystem::path& resource_root,const std::filesystem::path& relative,bool dynamic_visibility=false);
 void update_transforms(Terrain& scene,const Matrix& root);
+void update_visibility(Terrain& scene);
 float terrain_height(const Terrain& terrain,float x,float z);
 Texture load_dds(const std::filesystem::path& filename);
 std::vector<Mesh> load_meshes(const std::filesystem::path& root,const std::filesystem::path& relative);

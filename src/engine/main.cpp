@@ -277,7 +277,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             else if(arg==L"--play")play=true;
             else if(arg==L"--scene")scene_only=true;
             else if(arg==L"--mission-test"){play=true;mission_test=true;}
-            else if(arg==L"--scenario"&&i+1<argc){std::wstring s=argv[++i];if(s!=L"harvest"&&s!=L"silo")throw std::runtime_error("Scenario must be harvest or silo");scenario=s==L"harvest"?"harvest":"silo";play=true;}
+            else if(arg==L"--scenario"&&i+1<argc){std::wstring s=argv[++i];if(s!=L"harvest"&&s!=L"silo"&&s!=L"tip")throw std::runtime_error("Scenario must be harvest, silo or tip");scenario=s==L"harvest"?"harvest":s==L"tip"?"tip":"silo";play=true;}
             else if(arg==L"--difficulty"&&i+1<argc){difficulty=std::stoi(argv[++i]);if(difficulty<1||difficulty>3)throw std::runtime_error("Difficulty must be 1..3");}
             else if(arg==L"--warp")warp=true;
             else if(arg==L"--no-shadows")shadows_enabled=false;
@@ -304,6 +304,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         if(!window)throw std::runtime_error("Cannot create engine window");
         Renderer render(window,terrain,warp,root);if(!smoke)ShowWindow(window,show);
         if(smoke&&scenario=="harvest"){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
+        if(smoke&&scenario=="tip"){for(int i=0;i<240;++i)mission->update(1.0f/60,0,0,true);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
         if(mission_test){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);mission->action("selfcheck");XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
         render.draw(true,!smoke);render.verify_visibility();
         auto vehicle_samples=mission?mission->visible_samples():0;if(mission&&!vehicle_samples)throw std::runtime_error("No original vehicle pixels rasterized");

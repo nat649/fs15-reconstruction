@@ -1,0 +1,27 @@
+{
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "catalogued": 12166,
+  "eligible": 11601,
+  "excluded_thunks_or_external": 565,
+  "exported": 11599,
+  "failed": 2,
+  "complete_pass": true,
+  "pseudocode_bytes": 25329195,
+  "export_set_sha256": "6b469ea1bfa97da3d7908cee4b5b6c543a3279c50a5144a1015f53b0f859776c",
+  "explicit_engine_descriptors": 205,
+  "distinct_engine_names": 205,
+  "descriptor_registration_functions": 1,
+  "unresolved": [
+    {
+      "entry": "0x1400f8420",
+      "size": 43946,
+      "diagnostic": "Exception while decompiling 1400f8420: process: timeout "
+    },
+    {
+      "entry": "0x1401f59a0",
+      "size": 34645,
+      "diagnostic": "Exception while decompiling 1401f59a0: process: timeout "
+    }
+  ],
+  "scope": "All eligible functions in the existing Ghidra catalogue were attempted. Pseudocode is not buildable recovered source or proof of complete function discovery, signatures, engine reconstruction or behavior parity."
+}

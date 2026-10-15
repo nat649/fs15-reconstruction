@@ -1,6 +1,6 @@
 # Project status — October 15, 2026
 
-**The native analysis and Lua recovery milestones are complete. The full game is not rebuilt.**
+**Recovered scripts, original-map rendering and a gameplay alpha are available. The full game is not rebuilt.**
 
 The reference is Farming Simulator 15 for Windows **1.4.2.0**. Its original
 executables were checked after analysis and remain unchanged. Original files
@@ -11,11 +11,24 @@ and machine-specific analysis outputs remain local.
 The new [gameplay alpha](../docs/GAMEPLAY_RUNTIME.md) loads original starting
 fleets and field/crop data, executes recovered motor/wheel and farm-transfer
 rules, and supports basic cutting/cultivation/sowing through a partial native
-bridge. Both maps pass 34 gameplay assertions. The RLE16 leaf matches original
+bridge. Both maps pass 43 gameplay assertions. Recovered AnimatedVehicle and
+Trailer loading/update now control original XML animations, discharge delay and
+automatic closing. The source matches original bytecode in 777 fixture samples.
+Both maps also render animated farm discharge with inventory conservation.
+The RLE16 leaf matches original
 code in 107 cases / 35,133,356 values, including both full fruit maps. Full
 GE6/PhysX behavior, complete specialization startup and persistent saves remain
 unfinished. Explicit harvest/silo scenarios relocate original equipment only
 for reproducible trials; normal new-game placement uses original templates.
+
+The native catalogue now has **11,599 verified local pseudocode exports** from
+11,601 eligible functions, with two explicit timeouts after 120-second retries.
+Another 565 catalogue entries are thunks or external functions. There are also
+205 explicit engine descriptors indexed separately from earlier Lua mappings.
+The tire-force calculation at `0x1400c24c0` is reconstructed in C++ and matches
+the original in **3,300 cases / 13,200 float outputs**. It is not yet integrated
+with playable contacts/slip/rigid-body physics. See [native recovery](../docs/NATIVE_RECOVERY.md),
+[export summary](native-export-summary.json) and [force validation](tire-forces-validation.json).
 
 A newly compiled **FS15MenuRebuilt.exe** now launches a visible main menu
 without starting the original game engine or Steam. It executes **36
@@ -34,7 +47,7 @@ The smoke check renders 120 main-menu frames plus input-path screen captures,
 exercises wheel scrolling to slot twenty, metadata display, new-game choices,
 Back navigation, Credits and Quit. The package passes from a different working
 directory with matching frontend PNGs. Source hashes are checked against the
-recovery manifest. The build now has eleven CTest
+recovery manifest. The build now has eighteen CTest
 suites when all local inputs/tools are present.
 
 This is an independently implemented GUI host with a subset bootstrap.
@@ -137,12 +150,15 @@ Public summaries: [recovery](lua-recovery-summary.json),
 | Original launcher | 654 | 651 | 0 |
 | x64 game, initial selection | 12,166 | 249 | 1 |
 | x64 game, focused selection | Same catalogue | 44 | 0 |
+| x64 game, full eligible catalogue | 12,166 (11,601 eligible) | 11,599 | 2 |
 
 The game selections overlap. Counts include C/C++ runtime and third-party
 library code and are not completion percentages.
 
-Automatic engine analysis completed within 300 seconds. **0x1400f8420**
-exceeded its initial 20-second decompilation timeout. Two data-creation
+Automatic engine analysis completed within 300 seconds. Full export retries
+up to 120 seconds still time out for **0x1400f8420** and **0x1401f59a0**.
+The full-export script preserves successful files and records failures for
+further analysis. Two data-creation
 diagnostics remain at `0x140457006` and `0x140457047`; exports and project
 saving succeeded. The original PDB is unavailable. Raw pseudocode still
 requires type recovery, naming, and reconstruction before compilation.

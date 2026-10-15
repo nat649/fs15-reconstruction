@@ -2,6 +2,7 @@
 -- The planar tyre/contact integrator below is temporary, not GE6/PhysX parity.
 source('dataS/scripts/shared/class.lua')
 source('dataS/scripts/Utils.lua')
+source('dataS/scripts/SpecializationUtil.lua')
 source('dataS/scripts/AnimCurve.lua')
 Object, Event = {}, {}
 Class(Object); Class(Event)
@@ -17,11 +18,13 @@ function InitStaticObjectClass() end
 function InitStaticEventClass() end
 g_server = {broadcastEvent=function() end} -- Network transport intentionally absent.
 g_i18n = {getText=function(_, key) return key end, hasText=function() return false end}
+g_languageShort='en'
 source('dataS/scripts/vehicles/specializations/Fillable.lua')
 source('dataS/scripts/FruitUtil.lua')
 source('dataS/scripts/vehicles/VehicleMotor.lua')
 source('dataS/scripts/vehicles/WheelsUtil.lua')
 source('dataS/scripts/vehicles/specializations/Motorized.lua')
+source('dataS/scripts/vehicles/specializations/AnimatedVehicle.lua')
 source('dataS/scripts/triggers/MultiSiloTrigger.lua')
 source('dataS/scripts/objects/FieldDefinition.lua')
 source('dataS/scripts/FSUtils.lua')
@@ -100,7 +103,6 @@ for name, amount in pairs(defaults.farmSiloAmounts) do
 end
 function addTrigger(id, callback, object) triggers[id]={callback=callback, object=object} end
 function removeTrigger(id) triggers[id]=nil end
-function setVisibility() end -- Server-side field marker only; visual service pending.
 
 local function number(xml, key, default) return Utils.getNoNil(getXMLFloat(xml, key), default) end
 local function point(node) return {getWorldTranslation(node)} end
@@ -110,24 +112,19 @@ end
 local function rootVehicle(self) return self.attacherVehicle or self end
 local function noop() end
 local function modelAnimation(v,name,time)
-    local anim=v.animations[name]
-    if not anim then return end
-    local seconds=time*anim.duration
-    for _,part in ipairs(anim.parts) do
-        local t=Utils.clamp((seconds-part.start)/math.max(part.finish-part.start,0.001),0,1)
-        if part.r0 and part.r1 then setRotation(part.node,Utils.vector3ArrayLerp(part.r0,part.r1,t)) end
-        if part.t0 and part.t1 then setTranslation(part.node,Utils.vector3ArrayLerp(part.t0,part.t1,t)) end
-    end
+    v:setAnimationTime(name,time,true)
 end
 local function loadVehicle(config, template, key)
     local xml = assert(loadXMLFile('VehicleConfig', config))
     local id, roots = worldLoadVehicle(config)
     local v = {id=id,config=config,name=getXMLString(xml,'vehicle.name.en') or config,
-        components={},wheels={},differentials={},attachedImplements={},speed=0,movingDirection=1,
+        components={},componentJoints={},specializations={AnimatedVehicle},configFileName=config,
+        wheels={},differentials={},attachedImplements={},speed=0,movingDirection=1,
         lastSpeedReal=0,rotatedTime=0,isServer=true,isClient=false,
         setBrakeLightsVisibility=noop,setReverseLightsVisibility=noop,
         getRootAttacherVehicle=rootVehicle,onBrake=noop,onReleaseBrake=noop,
-        fillVolumes={},fillLevel=0,currentFillType=0,lastValidFillType=0,fillTypeChangeThreshold=0.05,
+        fillVolumes={},fillVolumeHeights={},fillVolumeDeformers={},fillVolumeHeightRefNodeToFillVolumeHeight={},
+        fillLevel=0,currentFillType=0,lastValidFillType=0,fillTypeChangeThreshold=0.05,
         fillTypes={[0]=true},allowFillFromAir=true,measurementTime=0,fillTriggers={},fillActivatable={},isFilling=false}
     local count = getXMLInt(xml,'vehicle.components#count') or 1
     for i=1,count do v.components[i]={node=assert(roots[i])} end
@@ -173,21 +170,6 @@ local function loadVehicle(config, template, key)
     local input=getXMLString(xml,'vehicle.inputAttacherJoints.inputAttacherJoint(0)#index')
     if input then v.inputJoint=Utils.indexToObject(v.components,input);v.jointType=getXMLString(xml,'vehicle.inputAttacherJoints.inputAttacherJoint(0)#jointType') or 'implement' end
     v.tipReferencePoints={}
-    i=0
-    while hasXMLProperty(xml,'vehicle.tipReferencePoints.tipReferencePoint('..i..')') do
-        local k='vehicle.tipReferencePoints.tipReferencePoint('..i..')'
-        v.tipReferencePoints[#v.tipReferencePoints+1]={node=Utils.indexToObject(v.components,getXMLString(xml,k..'#index')),width=number(xml,k..'#width',0)}
-        i=i+1
-    end
-    v.tipAnimations={}
-    i=0
-    while hasXMLProperty(xml,'vehicle.tipAnimations.tipAnimation('..i..')') do
-        local k='vehicle.tipAnimations.tipAnimation('..i..')'
-        v.tipAnimations[#v.tipAnimations+1]={dischargeStartTime=number(xml,k..'#dischargeStartTime',0)*1000,
-            dischargeEndTime=number(xml,k..'#dischargeEndTime',10)*1000,animationOpenSpeedScale=number(xml,k..'#speedScale',1)}
-        i=i+1
-    end
-    v.currentTipReferencePointIndex=1;v.fillLevelToTippedFillLevel=1
     v.workAreas={};i=0
     while hasXMLProperty(xml,'vehicle.workAreas.workArea('..i..')') do
         local k='vehicle.workAreas.workArea('..i..')'
@@ -198,25 +180,7 @@ local function loadVehicle(config, template, key)
     end
     v.acceptedFruits={}
     for name in (getXMLString(xml,'vehicle.fruitTypes#fruitTypes') or ''):gmatch('%S+') do v.acceptedFruits[name]=true end
-    v.animations={};v.playing={};i=0
-    while hasXMLProperty(xml,'vehicle.animations.animation('..i..')') do
-        local k='vehicle.animations.animation('..i..')'
-        local anim={parts={},duration=0};local j=0
-        while hasXMLProperty(xml,k..'.part('..j..')') do
-            local p=k..'.part('..j..')';local start=number(xml,p..'#startTime',0)
-            local part={node=Utils.indexToObject(v.components,getXMLString(xml,p..'#node')),start=start,
-                finish=number(xml,p..'#endTime',start+number(xml,p..'#duration',1))}
-            for src,dst in pairs({startRot='r0',endRot='r1',startTrans='t0',endTrans='t1'}) do
-                local str=getXMLString(xml,p..'#'..src)
-                if str then local values={Utils.getVectorFromString(str)};if src:find('Rot') then for n=1,3 do values[n]=math.rad(values[n]) end end;part[dst]=values end
-            end
-            if part.node then anim.parts[#anim.parts+1]=part;anim.duration=math.max(anim.duration,part.finish) end
-            j=j+1
-        end
-        v.animations[getXMLString(xml,k..'#name')]=anim;i=i+1
-    end
-    v.playAnimation=function(self,name,speed,time) self.playing[name]={speed=speed,time=time or 0} end
-    v.getAnimationTime=function(self,name) return self.playing[name] and self.playing[name].time or 0 end
+    AnimatedVehicle.load(v,xml)
     v.getNextDirtyFlag=function() return 1 end;v.raiseDirtyFlags=noop
     local overloading=getXMLFloat(xml,'vehicle.overloadingCapacity')
     if overloading then
@@ -230,9 +194,12 @@ local function loadVehicle(config, template, key)
             v[field]={node=Utils.indexToObject(v.components,getXMLString(xml,'vehicle.'..tag..'#index')),width=number(xml,'vehicle.'..tag..'#width',0.4),length=number(xml,'vehicle.'..tag..'#length',0.4)}
         end
     end
-    v.getCanTip=Trailer.getCanTip;v.getCanTipToGround=function() return false end
-    v.getCurrentTipAnimationTime=function(self) return self.tipTime or 0 end
-    v.onEndTip=function(self) self.tipping=false end
+    if hasXMLProperty(xml,'vehicle.tipAnimations') then
+        v.specializations[#v.specializations+1]=Trailer
+        Trailer.load(v,xml)
+        for _,animation in ipairs(v.tipAnimations) do animation.dischargeParticleSystems={} end
+        v.getCanTipToGround=function() return false end -- Ground heaps are not implemented.
+    end
     Fillable.postLoad(v,xml)
     local absolute=getXMLString(template,key..'.component1#position')
     if absolute then
@@ -404,28 +371,23 @@ function missionUpdate(dt,throttle,steering,handbrake)
     updateSilos(dt)
     for _,body in ipairs(vehicles) do
         Fillable.updateTick(body,dt*1000)
-        for name,playing in pairs(body.playing) do
-            local anim=body.animations[name]
-            if anim and anim.duration>0 then
-                playing.time=Utils.clamp(playing.time+playing.speed*dt/anim.duration,0,1)
-                modelAnimation(body,name,playing.time)
-                if name==body.pipeAnimation and (playing.time==1 or playing.time==0) then body.currentPipeState=body.targetPipeState end
-            end
+        AnimatedVehicle.update(body,dt*1000)
+        pose(body) -- Publish original animated local transforms before trigger queries.
+        if body.hasPipe then
+            if not body:getIsAnimationPlaying(body.pipeAnimation) then body.currentPipeState=body.targetPipeState end
+            Overloading.updateTick(body,dt*1000)
         end
-        if body.hasPipe then pose(body);Overloading.updateTick(body,dt*1000) end
+        if body.tipState then
+            local before=body.fillLevel
+            Trailer.updateTick(body,dt*1000)
+            unloaded=unloaded+math.max(0,before-body.fillLevel)
+        end
     end
-    for _,t in ipairs(vehicles) do if t.tipping then
-        t.tipTime=t.tipTime+dt*1000
-        local before=t.fillLevel
-        Trailer.updateTipping(t,dt*1000)
-        unloaded=unloaded+math.max(0,before-t.fillLevel)
-        if t.fillLevel==0 then t.tipping=false end
-    end end
 end
 function missionAction(action)
     local v=g_currentMission.controlledVehicle
     if action=='selfcheck' then missionSelfcheck()
-    elseif action=='scenario-harvest' or action=='scenario-silo' then missionScenario(action)
+    elseif action=='scenario-harvest' or action=='scenario-silo' or action=='scenario-tip' then missionScenario(action)
     elseif action=='next' then selectVehicle()
     elseif action=='camera' then freeCamera=not freeCamera;worldSelect(freeCamera and 0 or selection)
     elseif action=='work' and v and v.implement then v.implement.working=not v.implement.working;message=v.implement.working and 'Tool working' or 'Tool stopped'
@@ -455,14 +417,14 @@ function missionAction(action)
         end end
     elseif action=='tip' and v and v.implement then
         local t=v.implement
-        if t.tipping then t.tipping=false;message='Unloading stopped'
+        if t.tipState==Trailer.TIPSTATE_OPENING or t.tipState==Trailer.TIPSTATE_OPEN then t:onEndTip();message='Unloading closing'
         elseif t.fillLevel>0 and #t.tipReferencePoints>0 then
             local best,distance,pointIndex
             for _,trigger in ipairs(tipTriggers) do
                 local allowed,d,p=trigger:getTipInfoForTrailer(t)
                 if allowed and d<g_currentMission.tipTriggerRangeThreshold and (not distance or d<distance) then best,distance,pointIndex=trigger,d,p end
             end
-            if best then t.currentTipTrigger=best;t.currentTipReferencePointIndex=pointIndex;t.tipTime=0;t.tipping=true;message='Unloading at '..best.stationName
+            if best then t:toggleTipState(best,pointIndex,true);message='Unloading at '..best.stationName
             else message='Move a tipping point to a compatible unloading station' end
         end
     end
@@ -500,7 +462,7 @@ function missionScenario(kind)
         local x,y,z=getWorldTranslation(joint);local tx,ty,tz=getWorldTranslation(tool.inputJoint)
         tool.x,tool.y,tool.z=tool.x+x-tx,tool.y+y-ty,tool.z+z-tz;pose(tool);tool.working=true
         message='Harvest test scenario on an original owned field'
-    else
+    elseif kind=='scenario-silo' then
         local silo=assert(silos[1]);tool.yaw=0;pose(tool)
         local x,z=0,0
         for _,id in ipairs(silo.triggerIds) do local cx,_,cz=worldBounds(id);x,z=x+cx,z+cz end
@@ -511,6 +473,20 @@ function missionScenario(kind)
         local x,_,z=getWorldTranslation(tool.inputJoint);local hx,_,hz=getWorldTranslation(joint)
         v.x,v.z=v.x+x-hx,v.z+z-hz;v.y=worldHeight(v.x,v.z)+v.restHeight;pose(v)
         message='Silo test scenario: R starts/stops filling wheat'
+    else
+        local farm
+        for _,trigger in ipairs(tipTriggers) do if trigger.isFarmTrigger and trigger.acceptedFillTypes[Fillable.FILLTYPE_WHEAT] then farm=trigger;break end end
+        assert(farm,'Tipping scenario needs an original farm trigger')
+        tool.yaw=0;pose(tool)
+        local x,_,z=getWorldTranslation(farm.triggerStartId)
+        local tx,_,tz=getWorldTranslation(tool.tipReferencePoints[1].node)
+        tool.x,tool.z=tool.x+x-tx,tool.z+z-tz;tool.y=worldHeight(tool.x,tool.z)+tool.restHeight;pose(tool)
+        v.yaw=tool.yaw;pose(v)
+        local x,_,z=getWorldTranslation(tool.inputJoint);local hx,_,hz=getWorldTranslation(joint)
+        v.x,v.z=v.x+x-hx,v.z+z-hz;v.y=worldHeight(v.x,v.z)+v.restHeight;pose(v)
+        tool:setFillLevel(tool.capacity,Fillable.FILLTYPE_WHEAT,true)
+        tool:onStartTip(farm,1,true,true)
+        message='Original trailer animation and farm discharge test scenario'
     end
     v.hitch=joint;v.implement=tool;tool.attacherVehicle=v
     selection=v.id;g_currentMission.controlledVehicle=v;freeCamera=false;worldSelect(selection);updateSilos(0)
@@ -570,8 +546,17 @@ function missionSelfcheck()
     local fx,_,fz=getWorldTranslation(farm.triggerStartId)
     local px,_,pz=getWorldTranslation(t.tipReferencePoints[1].node)
     t.x=t.x+fx-px;t.z=t.z+fz-pz;t.y=worldHeight(t.x,t.z)+t.restHeight;pose(t)
-    t.currentTipTrigger=farm;t.currentTipReferencePointIndex=1;t.tipTime=3000
     t:setFillLevel(1000,Fillable.FILLTYPE_WHEAT,true)
+    t:onStartTip(farm,1,true,true)
+    check(t.tipState==Trailer.TIPSTATE_OPENING,'original trailer enters opening state')
+    local tipName=t.tipAnimations[1].animationName
+    local firstPart=t.animations[tipName].parts[1]
+    local initialRotation={getRotation(firstPart.node)}
+    AnimatedVehicle.update(t,1000);Trailer.updateTick(t,1000)
+    check(t.fillLevel==1000,'grain stays inside before original discharge start time')
+    local rx,ry,rz=getRotation(firstPart.node)
+    check(math.abs(rx-initialRotation[1])+math.abs(ry-initialRotation[2])+math.abs(rz-initialRotation[3])>0.001,'original XML tip animation moves the door before discharge')
+    t:setCurrentTipAnimationTime(3000)
     check(farm:getTipInfoForTrailer(t,1),'unloading accepts configured grain')
     local before=g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT)+t.fillLevel
     Trailer.updateTipping(t,1000)
@@ -580,6 +565,25 @@ function missionSelfcheck()
     check(math.abs(g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT)+t.fillLevel-before)<0.001,'original unloading preserves farm inventory')
     check(t.fillLevel==0 and t.currentFillType==Fillable.FILLTYPE_UNKNOWN,'empty trailer clears fill type')
     t.x,t.y,t.z,t.yaw,t.fillLevel,t.currentFillType=unpack(old)
+    Trailer.updateTick(t,0)
+    check(t.tipState==Trailer.TIPSTATE_CLOSING,'empty trailer automatically enters original closing state')
+    for _=1,600 do AnimatedVehicle.update(t,16);Trailer.updateTick(t,16) end
+    check(t.tipState==Trailer.TIPSTATE_CLOSED and t.currentTipReferencePointIndex==nil,'original tipping cycle closes and releases animation reference')
+    local rx,ry,rz=getRotation(firstPart.node)
+    check(math.abs(rx-firstPart.startRot[1])+math.abs(ry-firstPart.startRot[2])+math.abs(rz-firstPart.startRot[3])<0.0001,'tip door returns to original closed pose')
+    local support=t.animations.moveSupport
+    check(support and #support.parts==5,'original support-wheel visibility sequence is loaded')
+    local n1,n2
+    for _,part in ipairs(support.parts) do if part.startTime==0 then
+        if part.visibility==false then n1=part.node elseif part.visibility==true then n2=part.node end
+    end end
+    assert(n1 and n2,'Original support visibility parts missing')
+    local visible1,visible2=getVisibility(n1),getVisibility(n2)
+    t:setRealAnimationTime('moveSupport',25,true)
+    check(not getVisibility(n1) and getVisibility(n2),'recovered support animation swaps original visible wheel nodes')
+    t:setRealAnimationTime('moveSupport',75,true)
+    check(getVisibility(n1) and not getVisibility(n2),'recovered support animation restores opposite visibility state')
+    t:setAnimationTime('moveSupport',0,true);setVisibility(n1,visible1);setVisibility(n2,visible2)
     t.currentTipTrigger=nil;t.attacherVehicle=nil;v.implement=nil;pose(t)
     g_currentMission.controlledVehicle=oldControlled;g_currentMission:setSiloAmount(Fillable.FILLTYPE_WHEAT,stock)
     updateSilos(0)
@@ -649,6 +653,9 @@ function missionStatus()
         v and v.fillLevel or 0,v and v.capacity or 0,trailer and string.format(' | %s %.0f/%.0f L',trailer.name,trailer.fillLevel,trailer.capacity) or '',g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT),harvested,g_currentMission.money,message)
 end
 function missionReport()
-    return string.format('{"vehicles":%d,"silos":%d,"tip_triggers":%d,"fields":%d,"field_parallelograms":%d,"distance_m":%.6f,"silo_transfer_l":%.6f,"unloaded_l":%.6f,"harvested_l":%.6f,"worked_sqm":%.6f,"seeded_sqm":%.6f,"checks":%d,"physics":"temporary planar host; original motor and wheel control Lua"}',
-        #vehicles,#silos,#tipTriggers,g_currentMission.fieldDefinitionBase and g_currentMission.fieldDefinitionBase.numberOfFields or 0,#g_currentMission.fields,totalDistance,transferred,unloaded,harvested,worked,seeded,#checks)
+    local animations,active=0,0
+    for _,v in ipairs(vehicles) do for _ in pairs(v.animations) do animations=animations+1 end;for _ in pairs(v.activeAnimations) do active=active+1 end end
+    local v=g_currentMission.controlledVehicle;local t=v and v.implement
+    return string.format('{"vehicles":%d,"silos":%d,"tip_triggers":%d,"fields":%d,"field_parallelograms":%d,"distance_m":%.6f,"silo_transfer_l":%.6f,"unloaded_l":%.6f,"harvested_l":%.6f,"worked_sqm":%.6f,"seeded_sqm":%.6f,"checks":%d,"recovered_animations":%d,"active_animations":%d,"implement_fill_l":%.6f,"implement_capacity_l":%.6f,"implement_tip_state":%d,"farm_wheat_l":%.6f,"physics":"temporary planar host; original motor and wheel control Lua"}',
+        #vehicles,#silos,#tipTriggers,g_currentMission.fieldDefinitionBase and g_currentMission.fieldDefinitionBase.numberOfFields or 0,#g_currentMission.fields,totalDistance,transferred,unloaded,harvested,worked,seeded,#checks,animations,active,t and t.fillLevel or 0,t and t.capacity or 0,t and t.tipState or 0,g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT))
 end

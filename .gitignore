@@ -30,6 +30,9 @@
 !/analysis/mission-recovery.json
 !/analysis/mission-validation.json
 !/analysis/rle16-validation.json
+!/analysis/vehicle-animation-validation.json
+!/analysis/native-export-summary.json
+!/analysis/tire-forces-validation.json
 /logs/
 __pycache__/
 *.pyc

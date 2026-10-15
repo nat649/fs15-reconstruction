@@ -15,6 +15,20 @@ routines are reused or examined where practical. See the
 
 ## Current results
 
+- **Native decompilation coverage:** a full pass through the existing Ghidra
+  catalogue exported **11,599 / 11,601 eligible functions** as local pseudocode.
+  Two functions still time out after retries up to 120 seconds; 565 thunks or
+  external entries are excluded. An additional **205 explicit engine API
+  descriptors** now guide wheel/physics interface recovery. This is analysis
+  coverage, not a recompilable full engine. See [native recovery](docs/NATIVE_RECOVERY.md).
+- **Recovered vehicle animations:** original `AnimatedVehicle` and `Trailer`
+  loading/update logic now animate doors, trailer bodies and pipes. Tipping waits
+  for original discharge timing and automatically closes when empty. Recovered
+  source and original bytecode produce identical traces in **777 fixture samples**.
+- **Reconstructed tire-force math:** native routine `0x1400c24c0` is now compiled
+  from reconstructed C++, with **3,300 native comparisons / 13,200 float outputs**.
+  It remains a standalone validated component; contacts, suspension and its
+  integration into playable physics are still pending.
 - **Experimental gameplay:** original starting fleets, selectable/drivable
   tractors and combine, animated wheels, compatible implement attachment,
   original field/crop data, cutting/cultivation/sowing, silo filling, tipping
@@ -56,8 +70,8 @@ routines are reused or examined where practical. See the
   segment boundaries.
 - **Analysis tools:** installation inventory, PE metadata and strings,
   a code-section snapshot tool, and reproducible Ghidra exports.
-- **Initial analysis:** 12,166 native functions catalogued; 249 pseudocode
-  exports in an initial selection and 44 in an overlapping focused selection.
+- **Native catalogue:** 12,166 functions catalogued. The full export supersedes
+  the earlier overlapping targeted selections, which remain local references.
 - **Lua interface mapping:** 112 observed name/implementation/wrapper
   associations from one registration routine.
 - **GAR extraction:** 1,121 local files recovered from `dataS.gar` and
@@ -81,12 +95,23 @@ Track completed work and remaining milestones in the
 Original combine/cutter, original owned fields and density data. These explicit
 test layouts relocate equipment; normal Career uses original fleet placements.
 The captured runs harvested 140.4 L / 124.8 L. Physics, crop placement and native
-services remain partial. All sixteen CTest suites pass, including the gameplay
+services remain partial. All eighteen CTest suites pass, including the gameplay
 and native RLE comparisons.
 
 ![Bjornholm original crop harvest scenario](docs/screenshots/gameplay-harvest-map01.png)
 
 ![Westbridge Hills original crop harvest scenario](docs/screenshots/gameplay-harvest-map02.png)
+
+### Recovered trailer animation
+
+Original Brantner XML and recovered animation/tipping scripts, shown four seconds
+into explicit farm-discharge scenarios. Each scenario starts with the original
+8,500 L capacity and checks trailer/farm grain conservation. Physics, procedural
+grain surfaces and discharge particles remain incomplete.
+
+![Bjornholm recovered trailer animation scenario](docs/screenshots/gameplay-tip-map01.png)
+
+![Westbridge Hills recovered trailer animation scenario](docs/screenshots/gameplay-tip-map02.png)
 
 ### Original scene and environment captures
 
@@ -126,12 +151,14 @@ Earlier terrain-only captures remain available for comparison:
 |---|---|
 | `src/launcher/main.cpp` | Compilable behavioral reconstruction of the launcher |
 | `src/core/rle8.cpp` | Compilable RLE8 engine routine |
+| `src/core/tire_forces.h` | Compilable reconstructed tire-force calculation, validated separately from gameplay |
 | `src/menu/` | Independently compiled GUI host and authored recovered-menu bootstrap |
 | `src/engine/` | Native scene host, hierarchical I3D transforms, instanced original meshes and terrain layers |
 | `src/shape_bridge/` | Local original-mesh staging bridge using pinned MIT I3DShapesTool source |
 | `scripts/inventory.py` | Read-only inventory, local binary copies, PE reports, and SDK example extraction |
 | `scripts/runtime_snapshot.py` | Capture only the normally loaded game's code section for analysis |
 | `scripts/analyze.ps1` | Ghidra headless runner |
+| `scripts/index_native_exports.py` | Verify full local exports, index engine descriptors and publish aggregate counts |
 | `scripts/ghidra/` | Function, reference, and pseudocode export scripts |
 | `scripts/check_rle.py` | Differential tests against a locally recovered native reference |
 | `scripts/map_bindings.py` | Index observed Lua registrations |
@@ -197,7 +224,7 @@ After script/asset recovery below, run:
 & 'C:\path\to\python.exe' scripts\prepare_mission.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15GameplayAlpha\FS15MenuRebuilt.exe
+.\build\FS15GameplayAlpha2\FS15MenuRebuilt.exe
 ```
 
 The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
@@ -233,7 +260,7 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15GameplayAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15GameplayAlpha2\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,

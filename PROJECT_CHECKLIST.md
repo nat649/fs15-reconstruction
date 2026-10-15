@@ -22,6 +22,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Capture the normally loaded native code section for local analysis.
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
 - [x] Catalogue 12,166 native functions and export targeted pseudocode.
+- [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
+- [x] Verify 11,599 local pseudocode exports and record two unresolved functions after 120-second retries.
+- [x] Index 205 additional explicit engine API descriptors and trace selected wheel/physics call paths.
+- [ ] Resolve the two remaining full-export timeouts and audit function discovery beyond this catalogue.
+- [ ] Recover compilable native source, types, globals and subsystem initialization from the exported pseudocode.
 - [x] Map 112 observed Lua/native registrations from one routine.
 - [ ] Recover signatures and behavior for the wider engine interface.
 
@@ -32,6 +37,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Compare RLE8 with the original routine in 266 cases / 853,086 values.
 - [x] Reconstruct the 16-bit RLE leaf and compare 107 cases / 35,133,356 values.
 - [x] Read the observed version-1 GRLE8/16 grids with bounds and size checks.
+- [x] Reconstruct the native tire-force calculation and compile it into FS15Core.
+- [x] Compare tire-force math with original code in 3,300 cases / 13,200 float outputs.
+- [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.
 
@@ -109,6 +117,13 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Stage both original starting fleets, eleven configurations and linked wheel models locally.
 - [x] Render thirteen / twelve original starting objects and switch among motor vehicles.
 - [x] Execute recovered motor curves, gearing, pedal/brake and wheel-control Lua.
+- [x] Execute recovered AnimatedVehicle loading/update and original XML animation sequences.
+- [x] Execute recovered Trailer loading/state transitions, discharge timing and automatic closing.
+- [x] Match recovered animation/dispatch/tipping source with original bytecode in 777 fixture samples.
+- [x] Preserve typed I3D user attributes and render vehicle visibility changes through native adapters.
+- [x] Validate original animated farm discharge and inventory conservation on both maps.
+- [x] Observe Alpha2 Career Start, original pipe opening/closing through O, and cutter E/B input in a live window.
+- [x] Verify packaged original animation resources and matching starting-fleet/discharge renders on both maps.
 - [x] Drive through temporary terrain/contact services and animate original wheel nodes.
 - [x] Block centre-capsule movement against original static wall/trunk triangles.
 - [x] Attach compatible nearby tools with a temporary kinematic hitch service.
@@ -120,14 +135,14 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Discharge through recovered trailer and tipping-station rules.
 - [x] Transfer grain through the original combine pipe animation/raycast and recovered unloading rules.
 - [x] Refill the original seed tool at original supply triggers and charge the original unit price.
-- [x] Exercise 34 gameplay assertions on each map and native collision/GRLE fixtures.
+- [x] Exercise 43 gameplay assertions on each map and native collision/GRLE fixtures.
 - [x] Observe packaged silo filling through R, 5,000 L conservation, E detach/attach, Tab and camera orbit in a live window.
 - [x] Observe Career Start opening the new gameplay path and attach/activate the original starting cutter through E/B.
 - [ ] Observe and validate a complete field-to-silo cycle through live user input.
 - [ ] Reconstruct physics and vehicle simulation.
 - [ ] Implement terrain, crops and farming interactions.
 - [ ] Complete native drivetrain, suspension, articulation and vehicle/implement collisions.
-- [ ] Restore exact foliage/detail rendering, grain fill surfaces and unloading effects.
+- [ ] Restore exact foliage/detail rendering, procedural grain fill surfaces and unloading particles/effects.
 - [ ] Implement crop growth, fertilizer/straw behavior and the complete specialization pipeline.
 - [ ] Reconstruct audio playback and mixing.
 - [ ] Implement save/load and validate a complete single-player session.

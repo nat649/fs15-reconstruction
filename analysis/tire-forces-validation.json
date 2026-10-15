@@ -1,0 +1,22 @@
+{
+  "routine": "0x1400c24c0",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "comparisons": 3300,
+  "scalar_outputs": 13200,
+  "maximum_scaled_absolute_error": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "tolerance": "abs(error) <= 2e-5 * max(1, abs(original)) for each float output",
+  "original_output_sha256": "3b8e9ecba4c4828f5aa167636853a8029e0020675d72bd056e35747479d7569e",
+  "scope": "Standalone tire-force math using synthetic wheel records; no integrated native contacts, suspension, drivetrain or rigid-body physics",
+  "outputs": [
+    "wheel torque",
+    "longitudinal force",
+    "lateral force",
+    "aligning quantity"
+  ],
+  "parameter_names_and_units": "Inferred from native wheel-record fields; complete API semantics remain under investigation"
+}

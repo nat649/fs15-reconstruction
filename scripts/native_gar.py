@@ -1,8 +1,10 @@
 """Version-pinned native reference for investigating the FS15 GAR format.
 
 This oracle requires the user's locally captured 1.4.2.0 x64 image. It calls
-only the observed cipher initializer and buffer decoder in this process;
-it never executes the PE entry point or performs game/license initialization.
+the observed cipher initializer and buffer decoder in this process. Other
+comparison scripts use its pinned mapping for inspected routines; the optional
+auxiliary math section is needed by the tire-force comparison. It never
+executes the PE entry point or performs game/license initialization.
 It is an original-code dependency, not a reconstructed cipher implementation.
 """
 import ctypes as C
@@ -16,7 +18,7 @@ DEFAULT_IMAGE = ROOT / "inputs/runtime/FarmingSimulator2015Game.runtime.bin"
 
 
 class NativeGarCipher:
-    def __init__(self, image=DEFAULT_IMAGE):
+    def __init__(self, image=DEFAULT_IMAGE, *, math_helpers=False):
         if C.sizeof(C.c_void_p) != 8:
             raise RuntimeError("The native reference requires 64-bit Windows Python")
         data = Path(image).read_bytes()
@@ -42,12 +44,14 @@ class NativeGarCipher:
                 raise RuntimeError("The native reference's preferred address range is unavailable")
             C.memmove(self.base, data[:pe.size_headers], pe.size_headers)
             for section in pe.sections:
-                if section["name"] not in (".text", ".rdata", ".data", ".pdata"):
+                # Optional inspected cosine helper, used only by the tire-force
+                # differential process. Never map/execute .bind or the entry point.
+                if section["name"] not in ((".text", ".rdata", ".data", ".pdata", "text") if math_helpers else (".text", ".rdata", ".data", ".pdata")):
                     continue
                 block = data[section["raw_offset"]:section["raw_offset"] + section["raw_size"]]
                 C.memmove(self.base + section["rva"], block, len(block))
                 old = C.c_uint32()
-                protection = 0x20 if section["name"] == ".text" else 0x04 if section["name"] == ".data" else 0x02
+                protection = 0x20 if section["name"] in (".text", "text") else 0x04 if section["name"] == ".data" else 0x02
                 if not self.kernel.VirtualProtect(self.base + section["rva"], max(section["virtual_size"], len(block)), protection, C.byref(old)):
                     raise C.WinError(C.get_last_error())
             self.kernel.FlushInstructionCache(self.kernel.GetCurrentProcess(), self.base, end)

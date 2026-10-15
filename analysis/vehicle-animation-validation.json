@@ -1,0 +1,32 @@
+{
+  "scope": "Authored service fixtures; recovered Lua versus original normalized bytecode, not full native game parity",
+  "samples": 777,
+  "matching_traces": true,
+  "scenarios": [
+    "forward chained parts",
+    "reverse at double speed",
+    "stop time",
+    "forward/reverse seek",
+    "joint-limit callbacks",
+    "looping",
+    "tip/door/discharge/automatic close"
+  ],
+  "trace_sha256": "6283bf01159a0dd8b4f716621ae30296cf14f4f78f0d146c23fc8420e49a26ab",
+  "files": [
+    {
+      "path": "scripts/SpecializationUtil",
+      "source_sha256": "c6a5b6da765703dc1ba8c97d4c6d6bc582aa7d8f0a88ab0400ad1f49b3291b4a",
+      "bytecode_sha256": "561d74b5c4b511888ef44cf4fec1d3e3b166ea07eb1497afb5e0546787608f95"
+    },
+    {
+      "path": "scripts/vehicles/specializations/AnimatedVehicle",
+      "source_sha256": "169d3640a38ede0167bc934df3066126a9a86e96959b88588658eead2ed4f548",
+      "bytecode_sha256": "02874a105f5ee647442be20907d4999c8b73d9346bcaafc46ec9be06201d2e3e"
+    },
+    {
+      "path": "scripts/vehicles/specializations/Trailer",
+      "source_sha256": "ff0d9b260ac741db569aecf48fc5e502df7d7d5ed3df271a6feb79bd0791e6b0",
+      "bytecode_sha256": "82e3efe53830c479f48cabda6c0d8a2a1a9f74fcabcde6c63e7756f79efc9036"
+    }
+  ]
+}

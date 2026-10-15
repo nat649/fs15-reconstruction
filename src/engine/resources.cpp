@@ -144,7 +144,7 @@ WeightImage load_weight(const std::filesystem::path& filename) {
     check(factory->CreateFormatConverter(&converter),"Weight converter");check(converter->Initialize(frame.Get(),GUID_WICPixelFormat8bppGray,WICBitmapDitherTypeNone,nullptr,0,WICBitmapPaletteTypeCustom),"Weight gray conversion");
     image.pixels.resize(size_t(image.width)*image.height);check(converter->CopyPixels(nullptr,image.width,static_cast<UINT>(image.pixels.size()),image.pixels.data()),"Weight pixels");return image;
 }
-static Terrain load_scene_impl(const std::filesystem::path& root,const std::string& map_id,const std::filesystem::path& relative,bool require_terrain) {
+static Terrain load_scene_impl(const std::filesystem::path& root,const std::string& map_id,const std::filesystem::path& relative,bool require_terrain,bool dynamic_visibility=false) {
     Terrain out;out.map_id=map_id;
     const auto stem=map_id=="Map01"?"map01":"map02";
     out.scene_file=resource(root,relative);
@@ -177,7 +177,7 @@ static Terrain load_scene_impl(const std::filesystem::path& root,const std::stri
             if(layer.type&&layer.offset<16&&layer.channels<=8)out.foliage.push_back(std::move(layer));continue;
         }
         if(tag=="UserAttribute"){auto a=attributes(xml.Get());auto at=node_ids.find(std::stoi(value(a,"nodeId","0")));user_node=at==node_ids.end()?-1:at->second;continue;}
-        if(tag=="Attribute"&&user_node>=0){auto a=attributes(xml.Get());out.nodes[user_node].attributes[value(a,"name")]=value(a,"value");continue;}
+        if(tag=="Attribute"&&user_node>=0){auto a=attributes(xml.Get());out.nodes[user_node].attributes[value(a,"name")]=value(a,"value");out.nodes[user_node].attribute_types[value(a,"name")]=value(a,"type","string");continue;}
         if(tag=="Scene"){scene=true;scene_depth=depth;continue;}
         if(tag=="File") {
             auto a=attributes(xml.Get());files.emplace(std::stoi(value(a,"fileId")),value(a,"filename"));continue;
@@ -240,14 +240,16 @@ static Terrain load_scene_impl(const std::filesystem::path& root,const std::stri
         auto local=XMMatrixScaling(scale[0],scale[1],scale[2])*XMMatrixRotationX(XMConvertToRadians(rotation[0]))*XMMatrixRotationY(XMConvertToRadians(rotation[1]))*XMMatrixRotationZ(XMConvertToRadians(rotation[2]))*XMMatrixTranslation(translation[0],translation[1],translation[2]);
         if(node.parent>=0){XMFLOAT4X4 parent;std::copy(out.nodes[node.parent].world,out.nodes[node.parent].world+16,&parent._11);local=local*XMLoadFloat4x4(&parent);}
         XMFLOAT4X4 world;XMStoreFloat4x4(&world,local);std::copy(&world._11,&world._11+16,node.world);
-        node.visible=value(a,"visibility","true")!="false"&&!lower_lod(node.name)&&(node.parent<0||out.nodes[node.parent].visible);
+        node.local_visible=value(a,"visibility","true")!="false";
+        node.lod_visible=!lower_lod(node.name)&&(node.parent<0||out.nodes[node.parent].lod_visible);
+        node.visible=node.local_visible&&node.lod_visible&&(node.parent<0||out.nodes[node.parent].visible);
         const auto index=static_cast<int>(out.nodes.size());out.nodes.push_back(std::move(node));
         node_ids[out.nodes.back().id]=index;if(out.nodes.back().parent>=0)out.nodes[out.nodes.back().parent].children.push_back(index);
         if(!xml->IsEmptyElement())parents.emplace_back(depth,index);
         if(tag=="Shape"){
             ++out.shape_nodes;auto mesh=mesh_ids.find(static_cast<unsigned>(std::stoul(value(a,"shapeId","0"))));
             if(mesh!=mesh_ids.end())out.nodes.back().mesh=static_cast<int>(mesh->second);
-            if(mesh!=mesh_ids.end()&&out.nodes.back().visible&&value(a,"nonRenderable")!="true"&&value(a,"trigger")!="true"&&!value(a,"materialIds").empty()){
+            if(mesh!=mesh_ids.end()&&(out.nodes.back().visible||(dynamic_visibility&&out.nodes.back().lod_visible))&&value(a,"nonRenderable")!="true"&&value(a,"trigger")!="true"&&!value(a,"materialIds").empty()){
                 std::istringstream stream(value(a,"materialIds"));std::vector<int> material_ids;int id;while(stream>>id)material_ids.push_back(id);
                 bool casts=value(a,"castsShadows","false")=="true",receives=value(a,"receiveShadows","true")!="false";
                 const auto key=std::make_tuple(mesh->second,material_ids,casts,receives);auto group=group_ids.find(key);unsigned group_index;
@@ -317,14 +319,18 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
     if(map_id!="Map01"&&map_id!="Map02")throw std::runtime_error("Only Map01 and Map02 are currently supported");
     return load_scene_impl(root,map_id,std::filesystem::path("data/maps")/(map_id=="Map01"?"map01.i3d":"map02.i3d"),true);
 }
-Terrain load_scene(const std::filesystem::path& root,const std::filesystem::path& relative){return load_scene_impl(root,"",relative,false);}
+Terrain load_scene(const std::filesystem::path& root,const std::filesystem::path& relative,bool dynamic_visibility){return load_scene_impl(root,"",relative,false,dynamic_visibility);}
 void update_transforms(Terrain& scene,const Matrix& root){
     using namespace DirectX;XMFLOAT4X4 r;std::copy(root.value,root.value+16,&r._11);
     for(auto& node:scene.nodes){auto m=XMMatrixScaling(node.scale[0],node.scale[1],node.scale[2])*XMMatrixRotationX(node.rotation[0])*XMMatrixRotationY(node.rotation[1])*XMMatrixRotationZ(node.rotation[2])*XMMatrixTranslation(node.translation[0],node.translation[1],node.translation[2]);
         if(node.parent>=0){XMFLOAT4X4 p;std::copy(scene.nodes[node.parent].world,scene.nodes[node.parent].world+16,&p._11);m=m*XMLoadFloat4x4(&p);}else m=m*XMLoadFloat4x4(&r);
         XMFLOAT4X4 w;XMStoreFloat4x4(&w,m);std::copy(&w._11,&w._11+16,node.world);
     }
-    for(auto& group:scene.groups)for(size_t i=0;i<group.nodes.size();++i)std::copy(scene.nodes[group.nodes[i]].world,scene.nodes[group.nodes[i]].world+16,group.instances[i].value);
+    update_visibility(scene);
+}
+void update_visibility(Terrain& scene){
+    for(auto& node:scene.nodes)node.visible=node.local_visible&&node.lod_visible&&(node.parent<0||scene.nodes[node.parent].visible);
+    for(auto& group:scene.groups){group.instances.clear();for(int index:group.nodes)if(scene.nodes[index].visible){Matrix matrix;std::copy(scene.nodes[index].world,scene.nodes[index].world+16,matrix.value);group.instances.push_back(matrix);}}
 }
 float terrain_height(const Terrain& t,float x,float z){
     if(t.heights.empty())throw std::runtime_error("Terrain height service unavailable");

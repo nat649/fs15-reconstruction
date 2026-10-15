@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "scope": "Original owned-field harvest scenario, original combine/cutter; host native services remain approximate",
+  "scope": "Original harvest and animated farm-discharge scenarios; host physics/native services remain approximate",
   "maps": [
     {
       "map": "Map01",
@@ -21,6 +21,28 @@
       "foliageInstances": 14738,
       "collisionTriangles": 1347518,
       "visibleVehicleSamples": 162207
+    }
+  ],
+  "tipScenarios": [
+    {
+      "map": "Map01",
+      "unloadedLiters": 2448.809652,
+      "trailerLiters": 6051.190348,
+      "capacityLiters": 8500.0,
+      "farmWheatLiters": 7448.809652,
+      "recoveredAnimations": 19,
+      "activeAnimations": 1,
+      "visibleVehicleSamples": 85014
+    },
+    {
+      "map": "Map02",
+      "unloadedLiters": 2448.809652,
+      "trailerLiters": 6051.190348,
+      "capacityLiters": 8500.0,
+      "farmWheatLiters": 7448.809652,
+      "recoveredAnimations": 19,
+      "activeAnimations": 1,
+      "visibleVehicleSamples": 45920
     }
   ]
 }
