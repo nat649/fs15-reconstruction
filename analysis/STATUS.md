@@ -43,8 +43,10 @@ symlink checks are skipped. Six native differential suites also pass.
 A new static [portability audit](native-portability-summary.json) records
 31,391 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
-and full linking remain unresolved. ARM64 Linux/QEMU core CI is configured as
-an intermediate CPU check; no full ARM64 GE6 or Switch build is available.
+and full linking remain unresolved. The recovered core cross-compiles for ARM64
+Linux and passes both asset-free tests under QEMU in CI. This is an intermediate
+CPU check; no full ARM64 GE6 or Switch build is available. See
+[platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
 
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the

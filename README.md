@@ -67,8 +67,10 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,391 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. An asset-free ARM64 Linux/QEMU core check is configured separately
-  from the future Switch target. See [porting blockers](docs/PORTABILITY_STATUS.md).
+  full linking. The asset-free core cross-compiles for ARM64 Linux and passes both
+  tests under QEMU in CI, separately from the future Switch target. See
+  [platform evidence](analysis/portable-core-platform-validation.json) and
+  [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
   profile. The recovered WheelsUtil source executes through the native mod

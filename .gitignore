@@ -49,6 +49,7 @@
 !/analysis/local-engine-script-validation.json
 !/analysis/scene-core-validation.json
 !/analysis/native-portability-summary.json
+!/analysis/portable-core-platform-validation.json
 /logs/
 __pycache__/
 *.pyc
