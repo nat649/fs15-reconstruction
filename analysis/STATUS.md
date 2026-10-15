@@ -38,7 +38,7 @@ original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
 has five asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. Native differential suites are run separately.
+symlink checks are skipped. All ten native differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
 Euler extraction, lazy cache refresh, rebuild propagation and six Lua
@@ -71,7 +71,7 @@ A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and executes asset-free tests under QEMU in CI. This is an intermediate
+Linux and passes all five asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).

@@ -60,6 +60,9 @@ validated independently and is not substituted for a complete GE6 lifecycle.
 - A fifth asset-free CTest checks independent hierarchy/world-pose invariants,
   observer transfer, same-parent ordering, suppression, capacity atomicity and
   malformed/cyclic forest rejection.
+- All five portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+  under QEMU. Cross-platform checks use asset-free invariants; the original-code
+  differential comparisons run on Windows only. No Switch build is validated.
 
 All node bytes are compared exactly after canonicalizing addresses of the two
 synthetic node/vector allocations. Property and observer storage is shared by

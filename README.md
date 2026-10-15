@@ -85,8 +85,8 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. The asset-free core also cross-compiles and runs under QEMU on
-  ARM64 Linux in CI, separately from the future Switch target. See
+  full linking. All five asset-free core tests pass on Windows x64, Linux x64
+  and ARM64 Linux under QEMU, separately from the future Switch target. See
   [platform evidence](analysis/portable-core-platform-validation.json) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
