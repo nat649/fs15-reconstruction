@@ -15,6 +15,12 @@ bridge. Both maps pass 43 gameplay assertions. Recovered AnimatedVehicle and
 Trailer loading/update now control original XML animations, discharge delay and
 automatic closing. The source matches original bytecode in 777 fixture samples.
 Both maps also render animated farm discharge with inventory conservation.
+The host now uses fixed 60 Hz simulation updates, bounded stall recovery and
+P/focus-loss pause with input clearing. In 24 native runs, both maps match
+vehicle/crop/inventory state and captured images across 15/30/60/144 Hz frame
+partitions and pause/resume. The same exercised paths match 28 original whole
+Lua chunks loaded in a separate reference mode; source slices and authored
+native services remain shared. See [reliability evidence](mission-reliability.json).
 The RLE16 leaf matches original
 code in 107 cases / 35,133,356 values, including both full fruit maps. Full
 GE6/PhysX behavior, complete specialization startup and persistent saves remain
@@ -47,7 +53,7 @@ The smoke check renders 120 main-menu frames plus input-path screen captures,
 exercises wheel scrolling to slot twenty, metadata display, new-game choices,
 Back navigation, Credits and Quit. The package passes from a different working
 directory with matching frontend PNGs. Source hashes are checked against the
-recovery manifest. The build now has eighteen CTest
+recovery manifest. The build now has twenty-one CTest
 suites when all local inputs/tools are present.
 
 This is an independently implemented GUI host with a subset bootstrap.

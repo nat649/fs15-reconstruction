@@ -1,0 +1,75 @@
+{
+  "status": "passed",
+  "native_runs": 24,
+  "maps": [
+    "Map01",
+    "Map02"
+  ],
+  "original_bytecode_chunks_per_reference_run": [
+    28
+  ],
+  "fixed_step_seconds": 0.016666666666666666,
+  "scenarios": [
+    {
+      "map": "Map01",
+      "scenario": "harvest",
+      "matching_render_rates": [
+        15,
+        30,
+        60,
+        144
+      ],
+      "pause_and_focus_checks": true,
+      "original_bytecode_matches": true,
+      "simulation_ticks": 300,
+      "image_sha256": "0881d335cb0fac4144a31ece14b201cbfd168e1d11f4cf93be326904af0d83e9"
+    },
+    {
+      "map": "Map01",
+      "scenario": "tip",
+      "matching_render_rates": [
+        15,
+        30,
+        60,
+        144
+      ],
+      "pause_and_focus_checks": true,
+      "original_bytecode_matches": true,
+      "simulation_ticks": 240,
+      "image_sha256": "9c87169faf4227b8694644efd345780ad3f2bb0857f797c1542d28ad30c75fb3"
+    },
+    {
+      "map": "Map02",
+      "scenario": "harvest",
+      "matching_render_rates": [
+        15,
+        30,
+        60,
+        144
+      ],
+      "pause_and_focus_checks": true,
+      "original_bytecode_matches": true,
+      "simulation_ticks": 300,
+      "image_sha256": "ea03eb854f5b6093b440772abf0ef18d0c7d665af3b18770517fc3bf255b8f80"
+    },
+    {
+      "map": "Map02",
+      "scenario": "tip",
+      "matching_render_rates": [
+        15,
+        30,
+        60,
+        144
+      ],
+      "pause_and_focus_checks": true,
+      "original_bytecode_matches": true,
+      "simulation_ticks": 240,
+      "image_sha256": "388e112e4bb5d786b74b4fd8a9d1962a2759d11a706755ec4f88e33ffca24482"
+    }
+  ],
+  "gameplay_assertions_per_map": 43,
+  "input_manifest_sha256": "9e30b541d926a419c72806e133b90547d2494a3b2145c618f76a1c3be4eb48e4",
+  "authored_host_script_sha256": "ab7c8bab74ebc9b87a3eca0b9fc48f0056cd4c9c575e0f7c64dfb56e0558cb7c",
+  "native_host_sha256": "e2df889083a0f9c352dbec0c8f42b22582a343a45b6e5f82e24e27c9c294fae8",
+  "scope": "Whole original Lua chunks versus recovered sources in the same authored native host; source slices remain shared; no full GE6/PhysX parity"
+}

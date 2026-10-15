@@ -7,7 +7,7 @@ full GE6 startup or provide original PhysX behavior.
 ## Launch and controls
 
 Build, prepare the original resources, and package as described in the README.
-The current local package is `build/FS15GameplayAlpha3/FS15MenuRebuilt.exe`.
+The current local package is `build/FS15GameplayAlpha4/FS15MenuRebuilt.exe`.
 Choose an empty Career slot, difficulty, map, and Start. Existing saved games
 remain read-only and cannot resume a simulation. The original installation and
 profile are never written.
@@ -21,6 +21,7 @@ free-camera viewer. Hidden rendering tests default to scene mode unless
 |---|---|
 | WASD / ZQSD / arrows | Accelerate, reverse/brake, steer |
 | Space | Handbrake |
+| P | Pause / resume; also resumes after losing focus or minimizing |
 | Tab | Select the next original motor vehicle |
 | Mouse drag / wheel | Orbit / zoom the following camera |
 | E | Attach/detach a nearby compatible implement |
@@ -135,6 +136,45 @@ For reproducible manual trials use `--scenario harvest`, `--scenario silo` or
 These explicitly relocate equipment in a disposable new session. Normal Career
 Start retains the original starting placements. Scenario screenshots are
 labelled as such; they are not evidence of a saved career or original physics.
+
+## Timing, pause and original-script comparisons
+
+The authored host now advances gameplay in fixed 1/60-second ticks. Different
+render frame durations accumulate into the same simulation updates, so motor
+control, crop work, grain transfers and original animations receive a consistent
+time step. Each frame accepts at most 0.25 seconds of catch-up time; additional
+stall time is counted explicitly instead of causing an unbounded update burst.
+This is host scheduling, not a recovered claim about GE6's native physics rate.
+
+P freezes gameplay. Losing focus or minimizing pauses the session, clears held
+keys and pending actions, and requires P to resume. Vehicle selection, work,
+attachment, filling, pipe and unloading actions are ignored while paused.
+Suspended time and fractional update debt do not accumulate for later playback.
+The pause notice appears in the HUD/window title. This pause adapter does not
+implement the original in-game menu or missing audio/traffic services.
+
+`tests/mission_reliability.py` exercises both original maps in 24 native runs.
+Harvest and animated farm discharge compare 15, 30, 60 and 144 Hz frame-time
+partitions, including a two-minute pause and a window focus-loss message. It
+compares complete reported vehicle poses, speeds, fill types/levels, wheel and
+animation state, crop/inventory/economy counters and captured images. These
+rates describe test input timing, not a graphics performance benchmark.
+
+The same scenarios and the 43-assertion gameplay fixtures also run with the
+original normalized Lua bytecode for every whole chunk loaded via `source()`.
+Both bytecode and recovered-source hashes are pinned before testing. Native
+services, authored mission orchestration and recovered `worldReadSource` slices
+are shared between modes. Complete original `main.lua`/mission startup and GE6
+physics are not executed. Matching exercised paths do not prove all branches of
+the remaining syntax-only scripts. The reference mode requires local bytecode,
+is restricted to smoke tests and is not used by the playable package.
+
+See [reliability evidence](../analysis/mission-reliability.json).
+
+The packaged Alpha4 starting fleet was also observed in a visible native
+window with the focus-loss pause notice in both the HUD and title bar.
+Interactive P-key resume was not observed in that session; pause/resume and
+action suppression are covered by the automated mission/window-message checks.
 
 `world_native_services` separately tests transformed static walls, trigger
 exclusion, height checks, GRLE8/16 values and malformed/oversized data rejection.

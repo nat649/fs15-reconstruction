@@ -9,10 +9,12 @@ class MissionRuntime {
     struct Impl;
     std::unique_ptr<Impl> impl;
 public:
-    MissionRuntime(const std::filesystem::path& root,const fs15world::Terrain& terrain,int difficulty);
+    MissionRuntime(const std::filesystem::path& root,const fs15world::Terrain& terrain,int difficulty,bool reference_bytecode=false);
     ~MissionRuntime();
     void initialize_graphics(ID3D11Device*,ID3D11DeviceContext*);
-    void update(float dt,float throttle,float steering,bool handbrake);
+    void update(double dt,float throttle,float steering,bool handbrake);
+    void set_paused(bool paused);
+    bool paused()const;
     void action(const char* action);
     void draw(const DirectX::XMMATRIX&,const DirectX::XMFLOAT3&,bool shadow_pass=false,bool measure=false);
     bool camera(DirectX::XMFLOAT3& eye,DirectX::XMFLOAT3& target)const;

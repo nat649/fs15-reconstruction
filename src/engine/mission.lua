@@ -648,14 +648,24 @@ end
 function missionStatus()
     local v=g_currentMission.controlledVehicle
     local trailer=v and v.implement
-    return string.format('%s | %.1f km/h | Tank %.0f/%.0f L%s\nWASD/ZQSD/arrows | TAB vehicle | E attach | B work | O pipe | R fill | I unload | F8 camera | Space brake\nWheat silo: %.0f L | Harvested %.0f L | Money %.0f | %s',
+    return string.format('%s | %.1f km/h | Tank %.0f/%.0f L%s\nWASD/ZQSD/arrows | TAB vehicle | E attach | B work | O pipe | R fill | I unload | F8 camera | Space brake | P pause\nWheat silo: %.0f L | Harvested %.0f L | Money %.0f | %s',
         v and v.name or 'Free camera',v and math.abs(v.speed)*3.6 or 0,
         v and v.fillLevel or 0,v and v.capacity or 0,trailer and string.format(' | %s %.0f/%.0f L',trailer.name,trailer.fillLevel,trailer.capacity) or '',g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT),harvested,g_currentMission.money,message)
 end
 function missionReport()
     local animations,active=0,0
     for _,v in ipairs(vehicles) do for _ in pairs(v.animations) do animations=animations+1 end;for _ in pairs(v.activeAnimations) do active=active+1 end end
+    local states={}
+    for _,body in ipairs(vehicles) do
+        local names,times,wheels={},{},{}
+        for name in pairs(body.animations) do names[#names+1]=name end
+        table.sort(names)
+        for _,name in ipairs(names) do times[#times+1]=string.format('%.9f',body:getAnimationTime(name)) end
+        for _,wheel in ipairs(body.wheels) do wheels[#wheels+1]=string.format('[%.9f,%.9f]',wheel.spin,wheel.steeringAngle) end
+        states[#states+1]=string.format('{"id":%d,"x":%.9f,"y":%.9f,"z":%.9f,"yaw":%.9f,"speed":%.9f,"fill_l":%.9f,"fill_type":%d,"attached_to":%d,"working":%s,"pipe_state":%d,"tip_state":%d,"animation_times":[%s],"wheels":[%s]}',
+            body.id,body.x,body.y,body.z,body.yaw,body.speed,body.fillLevel,body.currentFillType,body.attacherVehicle and body.attacherVehicle.id or 0,body.working and 'true' or 'false',body.currentPipeState or 0,body.tipState or 0,table.concat(times,','),table.concat(wheels,','))
+    end
     local v=g_currentMission.controlledVehicle;local t=v and v.implement
-    return string.format('{"vehicles":%d,"silos":%d,"tip_triggers":%d,"fields":%d,"field_parallelograms":%d,"distance_m":%.6f,"silo_transfer_l":%.6f,"unloaded_l":%.6f,"harvested_l":%.6f,"worked_sqm":%.6f,"seeded_sqm":%.6f,"checks":%d,"recovered_animations":%d,"active_animations":%d,"implement_fill_l":%.6f,"implement_capacity_l":%.6f,"implement_tip_state":%d,"farm_wheat_l":%.6f,"physics":"temporary planar host; original motor and wheel control Lua"}',
-        #vehicles,#silos,#tipTriggers,g_currentMission.fieldDefinitionBase and g_currentMission.fieldDefinitionBase.numberOfFields or 0,#g_currentMission.fields,totalDistance,transferred,unloaded,harvested,worked,seeded,#checks,animations,active,t and t.fillLevel or 0,t and t.capacity or 0,t and t.tipState or 0,g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT))
+    return string.format('{"vehicles":%d,"silos":%d,"tip_triggers":%d,"fields":%d,"field_parallelograms":%d,"distance_m":%.6f,"silo_transfer_l":%.6f,"unloaded_l":%.6f,"harvested_l":%.6f,"worked_sqm":%.6f,"seeded_sqm":%.6f,"checks":%d,"recovered_animations":%d,"active_animations":%d,"implement_fill_l":%.6f,"implement_capacity_l":%.6f,"implement_tip_state":%d,"farm_wheat_l":%.6f,"money":%.9f,"controlled_vehicle":%d,"vehicle_states":[%s],"physics":"temporary planar host; original motor and wheel control Lua"}',
+        #vehicles,#silos,#tipTriggers,g_currentMission.fieldDefinitionBase and g_currentMission.fieldDefinitionBase.numberOfFields or 0,#g_currentMission.fields,totalDistance,transferred,unloaded,harvested,worked,seeded,#checks,animations,active,t and t.fillLevel or 0,t and t.capacity or 0,t and t.tipState or 0,g_currentMission:getSiloAmount(Fillable.FILLTYPE_WHEAT),g_currentMission.money,selection,table.concat(states,','))
 end

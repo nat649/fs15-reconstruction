@@ -1,4 +1,4 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15GameplayAlpha3')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15GameplayAlpha4')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 & (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir
@@ -140,6 +140,10 @@ The default local Documents/My Games/FarmingSimulator2015 profile is read only.
 Use --save-dir "PATH" for another profile, or --empty-saves for empty slots.
 
 Logs are written to logs/menu-runtime.log.
+
+P pauses/resumes gameplay. Losing focus or minimizing pauses the session and
+clears held/pending input; press P after returning to resume. Gameplay advances
+at a fixed 60 Hz independently of rendering. Long stalls have bounded catch-up.
 '@
 $readmePath = Join-Path $packageRoot 'README.txt'
 $readme | Set-Content -LiteralPath $readmePath -Encoding utf8

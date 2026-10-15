@@ -29,6 +29,7 @@
 !/analysis/environment-validation.json
 !/analysis/mission-recovery.json
 !/analysis/mission-validation.json
+!/analysis/mission-reliability.json
 !/analysis/rle16-validation.json
 !/analysis/vehicle-animation-validation.json
 !/analysis/native-export-summary.json

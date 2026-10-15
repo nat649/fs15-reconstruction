@@ -249,7 +249,7 @@ static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARA
             if(wparam==VK_F5)environment_hour=std::fmod(environment_hour+1,24.0f);
             if(wparam==VK_F6)environment_hour=std::fmod(environment_hour+23,24.0f);
             if(wparam==VK_F7)shadows_enabled=!shadows_enabled;
-            if(mission){const std::pair<WPARAM,const char*> actions[]{{VK_TAB,"next"},{'E',"attach"},{'R',"fill"},{'I',"tip"},{'B',"work"},{'O',"pipe"},{VK_F8,"camera"}};for(auto action:actions)if(wparam==action.first)mission_actions.push_back(action.second);}
+            if(mission){const std::pair<WPARAM,const char*> actions[]{{VK_TAB,"next"},{'E',"attach"},{'R',"fill"},{'I',"tip"},{'B',"work"},{'O',"pipe"},{'P',"pause"},{VK_F8,"camera"}};for(auto action:actions)if(wparam==action.first)mission_actions.push_back(action.second);}
         }return 0;
     case WM_KEYUP:if(wparam<keys.size())keys[wparam]=false;return 0;
     case WM_LBUTTONDOWN:
@@ -258,7 +258,7 @@ static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARA
     case WM_RBUTTONUP:rmb=false;ReleaseCapture();return 0;
     case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};if(mission&&follow_vehicle)mission->orbit(-(now.x-last_mouse.x)*0.004f,(now.y-last_mouse.y)*0.004f);else{camera.yaw-=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);}last_mouse=now;}return 0;
     case WM_MOUSEWHEEL:if(mission&&follow_vehicle)mission->zoom(-GET_WHEEL_DELTA_WPARAM(wparam)/120.0f);return 0;
-    case WM_KILLFOCUS:keys.fill(false);rmb=false;ReleaseCapture();return 0;
+    case WM_KILLFOCUS:keys.fill(false);mission_actions.clear();rmb=false;ReleaseCapture();if(mission)mission->set_paused(true);return 0;
     case WM_DESTROY:done=true;PostQuitMessage(0);return 0;
     }
     return DefWindowProcW(window,message,wparam,lparam);
@@ -269,6 +269,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     try {
         check(com,"Engine COM initialization");auto root=exe_directory();if(!fs::exists(root/"assets/data/maps/map01.i3d")&&!fs::exists(root/"recovered/gar/data/maps/map01.i3d"))root=root.parent_path().parent_path();
         std::string map="Map01",scenario;fs::path capture,report;bool warp=false,original_view=true,play=false,mission_test=false,scene_only=false;int difficulty=2;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
+        bool reference_bytecode=false,test_pause=false;unsigned test_frame_rate=60;
         XMFLOAT3 explicit_camera{},explicit_target{};bool has_camera=false,has_target=false;
         for(int i=1;i<argc;++i){std::wstring arg=argv[i];
             if(arg==L"--root"&&i+1<argc)root=fs::absolute(argv[++i]);
@@ -277,6 +278,9 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             else if(arg==L"--play")play=true;
             else if(arg==L"--scene")scene_only=true;
             else if(arg==L"--mission-test"){play=true;mission_test=true;}
+            else if(arg==L"--reference-bytecode")reference_bytecode=true;
+            else if(arg==L"--test-pause")test_pause=true;
+            else if(arg==L"--test-frame-rate"&&i+1<argc){size_t end;std::wstring text=argv[++i];int rate=std::stoi(text,&end);if(end!=text.size()||rate<5||rate>240)throw std::runtime_error("Test frame rate must be 5..240");test_frame_rate=unsigned(rate);}
             else if(arg==L"--scenario"&&i+1<argc){std::wstring s=argv[++i];if(s!=L"harvest"&&s!=L"silo"&&s!=L"tip")throw std::runtime_error("Scenario must be harvest, silo or tip");scenario=s==L"harvest"?"harvest":s==L"tip"?"tip":"silo";play=true;}
             else if(arg==L"--difficulty"&&i+1<argc){difficulty=std::stoi(argv[++i]);if(difficulty<1||difficulty>3)throw std::runtime_error("Difficulty must be 1..3");}
             else if(arg==L"--warp")warp=true;
@@ -288,14 +292,15 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             else if(arg==L"--report"&&i+1<argc)report=fs::absolute(argv[++i]);
             else throw std::runtime_error("Usage: FS15EngineRebuilt --root PATH --map Map01|Map02 [--smoke] [--warp] [--capture PNG] [--report JSON]");
         }
-        LocalFree(argv);if(!smoke&&!scene_only)play=true;fs::create_directories(root/"logs");log_file.open(root/"logs"/("engine-"+map+".log"));
+        LocalFree(argv);if((reference_bytecode||test_pause||test_frame_rate!=60)&&!smoke)throw std::runtime_error("Reference and timing test options require --smoke");if(!smoke&&!scene_only)play=true;fs::create_directories(root/"logs");log_file.open(root/"logs"/("engine-"+map+".log"));
         if(!log_file)throw std::runtime_error("Cannot open engine log");
         log("ENGINE_BOOT authored Win32/D3D11 runtime; original engine not loaded");
         auto terrain=fs15world::load_terrain(root,map);
         log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" shape_nodes="+std::to_string(terrain.shape_nodes));
         camera.initialize(terrain,original_view);if(has_camera!=has_target)throw std::runtime_error("Use --camera and --look-at together");if(has_camera)camera.look_at(explicit_camera,explicit_target);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
         if(!camera_test)throw std::runtime_error("Camera movement check failed");
-        if(play){mission=std::make_unique<MissionRuntime>(root,terrain,difficulty);if(!scenario.empty())mission->action(("scenario-"+scenario).c_str());XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);log("MISSION_READY vehicles="+std::to_string(mission->vehicle_count()));}
+        if(play){mission=std::make_unique<MissionRuntime>(root,terrain,difficulty,reference_bytecode);if(!scenario.empty())mission->action(("scenario-"+scenario).c_str());XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);log("MISSION_READY vehicles="+std::to_string(mission->vehicle_count()));}
+        if((reference_bytecode||test_pause)&&!mission)throw std::runtime_error("Reference/pause checks require a gameplay session");
         WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
         if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
         DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;RECT rect{0,0,int(width),int(height)};AdjustWindowRect(&rect,style,FALSE);
@@ -303,9 +308,19 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         window=CreateWindowW(wc.lpszClassName,title.c_str(),style,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,instance,nullptr);
         if(!window)throw std::runtime_error("Cannot create engine window");
         Renderer render(window,terrain,warp,root);if(!smoke)ShowWindow(window,show);
-        if(smoke&&scenario=="harvest"){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
-        if(smoke&&scenario=="tip"){for(int i=0;i<240;++i)mission->update(1.0f/60,0,0,true);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
-        if(mission_test){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);mission->action("selfcheck");XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
+        if(test_pause){
+            const auto before=mission->report();mission->action("pause");
+            for(const char* action:{"next","attach","fill","tip","work","pipe"})mission->action(action);
+            mission->update(120,1,1,false);mission->action("pause");
+            if(mission->report()!=before)throw std::runtime_error("Paused gameplay changed or accumulated suspended time");
+            keys['W']=true;mission_actions.push_back("fill");SendMessageW(window,WM_KILLFOCUS,0,0);
+            if(!mission->paused()||keys['W']||!mission_actions.empty())throw std::runtime_error("Focus loss did not pause/clear input");
+            mission->action("pause");if(mission->report()!=before)throw std::runtime_error("Focus pause changed gameplay state");
+            log("MISSION_PAUSE_TEST_OK");
+        }
+        if(smoke&&scenario=="harvest"){for(unsigned i=0;i<5*test_frame_rate;++i)mission->update(1.0/test_frame_rate,1,0,false);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
+        if(smoke&&scenario=="tip"){for(unsigned i=0;i<4*test_frame_rate;++i)mission->update(1.0/test_frame_rate,0,0,true);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
+        if(mission_test){for(int i=0;i<300;++i)mission->update(1.0/60,1,0,false);mission->action("selfcheck");XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
         render.draw(true,!smoke);render.verify_visibility();
         auto vehicle_samples=mission?mission->visible_samples():0;if(mission&&!vehicle_samples)throw std::runtime_error("No original vehicle pixels rasterized");
         // Capture before Present: discard swap chains need not preserve content.
@@ -335,15 +350,15 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         else {
             auto previous=std::chrono::steady_clock::now();MSG message{};
             while(!done){while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}if(done)break;
-                auto now=std::chrono::steady_clock::now();float dt=std::min(0.1f,std::chrono::duration<float>(now-previous).count());previous=now;
-                if(IsIconic(window)){Sleep(25);continue;}
+                auto now=std::chrono::steady_clock::now();double elapsed=std::chrono::duration<double>(now-previous).count();float dt=float(std::min(0.1,elapsed));previous=now;
+                if(IsIconic(window)){if(mission)mission->set_paused(true);mission_actions.clear();Sleep(25);continue;}
                 if(mission){
                     for(auto action:mission_actions)mission->action(action);mission_actions.clear();
-                    mission->update(dt,float(keys['W']||keys['Z']||keys[VK_UP])-float(keys['S']||keys[VK_DOWN]),float(keys['A']||keys['Q']||keys[VK_LEFT])-float(keys['D']||keys[VK_RIGHT]),keys[VK_SPACE]);
+                    mission->update(elapsed,float(keys['W']||keys['Z']||keys[VK_UP])-float(keys['S']||keys[VK_DOWN]),float(keys['A']||keys['Q']||keys[VK_LEFT])-float(keys['D']||keys[VK_RIGHT]),keys[VK_SPACE]);
                     XMFLOAT3 eye,target;follow_vehicle=mission->camera(eye,target);if(follow_vehicle)camera.look_at(eye,target);else camera.update(dt);
                     static float status_time=0;status_time+=dt;if(status_time>0.25f){auto status=mission->status();status=status.substr(0,status.find(L'\n'));SetWindowTextW(window,(L"FS15 - "+status).c_str());status_time=0;}
                 }
-                else camera.update(dt);animation_time+=dt;render.draw();
+                else camera.update(dt);if(!mission||!mission->paused())animation_time+=dt;render.draw();
             }
         }
         if(mission){std::ofstream final_report(root/"logs"/("mission-"+map+"-final.json"));final_report<<mission->report()<<'\n';mission.reset();}

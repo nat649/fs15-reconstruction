@@ -28,6 +28,7 @@ authored. Original meshes and scene placements are the source of map objects.
 | Native engine catalogue | Full Ghidra pseudocode export | 11,599 eligible functions exported locally, two timeouts; analysis rather than compilable recovered engine source |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
+| Simulation scheduling and pause | Authored host code | Fixed 60 Hz gameplay updates, bounded stall recovery and pause/input clearing; not recovered GE6 physics timing |
 
 ## Original engine components
 

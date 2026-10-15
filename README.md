@@ -241,7 +241,7 @@ After script/asset recovery below, run:
 & 'C:\path\to\python.exe' scripts\prepare_mission.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15GameplayAlpha3\FS15MenuRebuilt.exe
+.\build\FS15GameplayAlpha4\FS15MenuRebuilt.exe
 ```
 
 The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
@@ -267,9 +267,14 @@ no persistent save.
 Credits/Back and Quit also work.
 Use WASD/ZQSD or arrows to drive, Space to brake, Tab to change vehicle, E to
 attach, B to work, R to fill, I to tip and O for the combine pipe. Mouse drag/wheel
-orbit/zoom the camera. F8 opens the earlier free camera. See the
+orbit/zoom the camera. P pauses/resumes; losing focus or minimizing also pauses
+and clears pending input. F8 opens the earlier free camera. See the
 [gameplay notes](docs/GAMEPLAY_RUNTIME.md) for limitations and test scenarios.
 F5/F6 step the preview hour; F7 toggles local shadows.
+
+Gameplay uses fixed 60 Hz host updates independently of rendering. Both maps
+pass original-bytecode/recovered-source comparisons and timing/pause checks
+in 24 native runs. See [reliability scope and evidence](docs/GAMEPLAY_RUNTIME.md#timing-pause-and-original-script-comparisons).
 
 Interactive runs read the local Windows Documents/My Games/FarmingSimulator2015
 profile. Override it with `--save-dir PATH`, or use `--empty-saves` for empty
@@ -277,7 +282,7 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15GameplayAlpha3\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15GameplayAlpha4\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,

@@ -138,6 +138,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Transfer grain through the original combine pipe animation/raycast and recovered unloading rules.
 - [x] Refill the original seed tool at original supply triggers and charge the original unit price.
 - [x] Exercise 43 gameplay assertions on each map and native collision/GRLE fixtures.
+- [x] Advance gameplay with fixed host time steps and bounded stall recovery independently of rendering.
+- [x] Pause gameplay with P and on focus loss/minimization; clear held/pending input and prevent suspended-time catch-up.
+- [x] Match vehicle/crop/inventory state and captured renders across 15/30/60/144 Hz frame partitions on both maps.
+- [x] Compare 28 original whole Lua chunks with recovered sources in 24 native scenario/fixture runs; keep shared source-slice/native-host limits explicit.
+- [x] Observe the packaged Alpha4 focus-loss pause notice in a live native window.
 - [x] Observe packaged silo filling through R, 5,000 L conservation, E detach/attach, Tab and camera orbit in a live window.
 - [x] Observe Career Start opening the new gameplay path and attach/activate the original starting cutter through E/B.
 - [ ] Observe and validate a complete field-to-silo cycle through live user input.

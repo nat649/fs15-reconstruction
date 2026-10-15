@@ -2,6 +2,7 @@
 #include "scene_render.h"
 #include "foliage.h"
 #include "collision.h"
+#include "simulation_clock.h"
 #include "../menu/xml_bridge.h"
 #include <lua.hpp>
 #include <DirectXCollision.h>
@@ -37,6 +38,9 @@ struct MissionRuntime::Impl {
     struct DensityView {fs15world::DensityGrid* grid=nullptr;unsigned offset=0,type=0;int type_compare=0,new_type=0,shift=0;Filter compare,mask;};
     std::map<int,DensityView> density_views;
     unsigned revision=0,rendered_revision=0;
+    SimulationClock clock;
+    bool reference_bytecode=false;
+    unsigned reference_chunks=0;
     // Scene nodes remain stable once a vehicle has been parsed.
     fs::path resolve(const std::string& name){
         const auto rel=fs::u8path(name);if(rel.is_absolute()||rel.has_root_name())throw std::runtime_error("Absolute mission resource");for(const auto& part:rel)if(part=="..")throw std::runtime_error("Mission resource traversal");
@@ -51,7 +55,17 @@ struct MissionRuntime::Impl {
     static Impl& self(lua_State* l){return *static_cast<Impl*>(lua_touserdata(l,lua_upvalueindex(1)));}
     template<int (*Fn)(lua_State*)>static int safe(lua_State* l){try{return Fn(l);}catch(const std::exception& e){lua_pushstring(l,e.what());}return lua_error(l);}
     void bind(const char* name,lua_CFunction fn){lua_pushlightuserdata(lua,this);lua_pushcclosure(lua,fn,1);lua_setglobal(lua,name);}
-    static int source(lua_State* l){auto& s=self(l);s.execute(s.resolve(luaL_checkstring(l,1)));return 0;}
+    static int source(lua_State* l){
+        auto& s=self(l);std::string name=luaL_checkstring(l,1);auto file=s.resolve(name);
+        if(s.reference_bytecode){
+            auto relative=fs::u8path(name);
+            if(relative.begin()==relative.end()||*relative.begin()!=L"dataS"||relative.extension()!=L".lua")throw std::runtime_error("Unsupported reference Lua resource");
+            relative.replace_extension(".luc");file=s.root/"recovered/luajit"/relative;
+            if(!fs::is_regular_file(file))throw std::runtime_error("Missing local reference Lua bytecode: "+name);
+            s.execute(file);++s.reference_chunks;
+        }else s.execute(file);
+        return 0;
+    }
     static int read_source(lua_State* l){auto& s=self(l);std::ifstream f(s.resolve(luaL_checkstring(l,1)),std::ios::binary);std::string text((std::istreambuf_iterator<char>(f)),{});lua_pushlstring(l,text.data(),text.size());return 1;}
     static int destroy_xml(lua_State* l){fs15menu::delete_xml(int(luaL_checkinteger(l,1)));return 0;}
     static int load_vehicle(lua_State* l){auto& s=self(l);if(s.bodies.size()>=64)throw std::runtime_error("Starting fleet exceeds limit");fs::path file=fs::u8path(luaL_checkstring(l,1));file.replace_extension(".runtime.i3d");
@@ -134,7 +148,7 @@ struct MissionRuntime::Impl {
         if(write&&count>0)++s.revision;lua_pushnumber(l,sum);lua_pushnumber(l,count);lua_pushnumber(l,total);return 3;
     }
     void bind_area(const char* name,bool write,bool masked){lua_pushlightuserdata(lua,this);lua_pushboolean(lua,write);lua_pushboolean(lua,masked);lua_pushcclosure(lua,safe<density_area>,3);lua_setglobal(lua,name);}
-    Impl(const fs::path& r,const fs15world::Terrain& t,int difficulty):root(r),terrain(t){
+    Impl(const fs::path& r,const fs15world::Terrain& t,int difficulty,bool reference):root(r),terrain(t),reference_bytecode(reference){
         bodies.reserve(64);lua=luaL_newstate();if(!lua)throw std::runtime_error("Cannot create mission Lua VM");luaL_openlibs(lua);
         fs15menu::register_xml(lua,[this](const std::string& name){return resolve(name);});
         bind("source",safe<source>);bind("worldReadSource",safe<read_source>);bind("delete",safe<destroy_xml>);bind("worldLoadVehicle",safe<load_vehicle>);bind("getNumOfChildren",safe<children>);bind("getChildAt",safe<child>);bind("getTranslation",safe<translation>);bind("getRotation",safe<rotation>);bind("setRotation",safe<set_rotation>);bind("getWorldTranslation",safe<transform>);bind("localToWorld",safe<transform>);bind("localDirectionToWorld",safe<direction>);bind("getUserAttribute",safe<attribute>);bind("worldHeight",safe<height>);bind("worldSetPose",safe<pose>);bind("worldFindCallbacks",safe<find_callbacks>);bind("worldOverlap",safe<overlap>);bind("worldSelect",safe<select>);
@@ -148,18 +162,28 @@ struct MissionRuntime::Impl {
     }
     ~Impl(){if(lua)lua_close(lua);}
 };
-MissionRuntime::MissionRuntime(const fs::path& r,const fs15world::Terrain& t,int difficulty):impl(std::make_unique<Impl>(r,t,difficulty)){}
+MissionRuntime::MissionRuntime(const fs::path& r,const fs15world::Terrain& t,int difficulty,bool reference):impl(std::make_unique<Impl>(r,t,difficulty,reference)){}
 MissionRuntime::~MissionRuntime()=default;
 void MissionRuntime::initialize_graphics(ID3D11Device* d,ID3D11DeviceContext* c){for(auto& b:impl->bodies)b.renderer=std::make_unique<SceneRenderer>(d,c,b.scene,impl->root);impl->foliage=std::make_unique<FoliageRenderer>(d,c,impl->terrain,impl->fruit,impl->root);auto resources=impl->foliage->resources();impl->resources.insert(impl->resources.end(),resources.begin(),resources.end());}
-void MissionRuntime::update(float dt,float throttle,float steering,bool handbrake){auto l=impl->lua;lua_getglobal(l,"missionUpdate");lua_pushnumber(l,dt);lua_pushnumber(l,throttle);lua_pushnumber(l,steering);lua_pushboolean(l,handbrake);impl->call("missionUpdate",4);for(auto& b:impl->bodies)if(b.renderer)b.renderer->update_instances(b.scene);}
-void MissionRuntime::action(const char* action){auto l=impl->lua;lua_getglobal(l,"missionAction");lua_pushstring(l,action);impl->call("missionAction",1);if(std::string(action)=="scenario-tip"){impl->orbit_yaw=1.0f;impl->camera_distance=16;}}
+void MissionRuntime::update(double dt,float throttle,float steering,bool handbrake){
+    const auto steps=impl->clock.advance(dt);auto l=impl->lua;
+    for(unsigned i=0;i<steps;++i){lua_getglobal(l,"missionUpdate");lua_pushnumber(l,1.0f/60);lua_pushnumber(l,throttle);lua_pushnumber(l,steering);lua_pushboolean(l,handbrake);impl->call("missionUpdate",4);}
+    for(auto& b:impl->bodies)if(b.renderer)b.renderer->update_instances(b.scene);
+}
+void MissionRuntime::set_paused(bool value){impl->clock.set_paused(value);}
+bool MissionRuntime::paused()const{return impl->clock.paused();}
+void MissionRuntime::action(const char* action){
+    if(std::string(action)=="pause"){set_paused(!paused());return;}
+    if(paused())return;
+    auto l=impl->lua;lua_getglobal(l,"missionAction");lua_pushstring(l,action);impl->call("missionAction",1);if(std::string(action)=="scenario-tip"){impl->orbit_yaw=1.0f;impl->camera_distance=16;}
+}
 void MissionRuntime::draw(const XMMATRIX& vp,const XMFLOAT3& eye,bool shadow,bool measure){for(auto& b:impl->bodies)if(b.renderer)b.renderer->draw(vp,eye,measure,shadow);if(impl->foliage){impl->foliage->update(eye,impl->revision!=impl->rendered_revision);impl->rendered_revision=impl->revision;impl->foliage->draw(vp,eye,shadow);}}
 bool MissionRuntime::camera(XMFLOAT3& eye,XMFLOAT3& target)const{if(impl->controlled<=0)return false;const auto& b=impl->bodies.at(impl->controlled-1);target={b.position.x,b.position.y+1.6f,b.position.z};float yaw=b.yaw+impl->orbit_yaw,pitch=impl->orbit_pitch,distance=impl->camera_distance;XMFLOAT3 desired{target.x-std::sin(yaw)*std::cos(pitch)*distance,target.y+std::sin(pitch)*distance,target.z-std::cos(yaw)*std::cos(pitch)*distance};eye=target;
     for(int i=1;i<=40;++i){float t=i/40.0f;XMFLOAT3 p{target.x+(desired.x-target.x)*t,target.y+(desired.y-target.y)*t,target.z+(desired.z-target.z)*t};p.y=std::max(p.y,fs15world::terrain_height(impl->terrain,p.x,p.z)+0.4f);if(impl->collision->blocked(p.x,p.z,p.y-1.3f,0.2f))break;eye=p;}if(std::hypot(eye.x-target.x,eye.z-target.z)<0.2f){eye=desired;eye.y=std::max(eye.y,target.y+1);}return true;}
 void MissionRuntime::orbit(float yaw,float pitch){impl->orbit_yaw+=yaw;impl->orbit_pitch=std::clamp(impl->orbit_pitch+pitch,0.05f,1.25f);}
 void MissionRuntime::zoom(float amount){impl->camera_distance=std::clamp(impl->camera_distance+amount,4.0f,35.0f);}
-std::wstring MissionRuntime::status()const{auto l=impl->lua;lua_getglobal(l,"missionStatus");impl->call("missionStatus",0,1);std::string s=lua_tostring(l,-1);lua_pop(l,1);return std::wstring(s.begin(),s.end());}
-std::string MissionRuntime::report()const{auto l=impl->lua;lua_getglobal(l,"missionReport");impl->call("missionReport",0,1);std::string s=lua_tostring(l,-1);lua_pop(l,1);s.pop_back();s+=",\"collision_triangles\":"+std::to_string(impl->collision->triangle_count())+",\"foliage_instances\":"+std::to_string(impl->foliage?impl->foliage->instances():0)+",\"density_width\":"+std::to_string(impl->fruit.width)+",\"density_revision\":"+std::to_string(impl->revision)+"}";return s;}
+std::wstring MissionRuntime::status()const{auto l=impl->lua;lua_getglobal(l,"missionStatus");impl->call("missionStatus",0,1);std::string s=lua_tostring(l,-1);lua_pop(l,1);if(paused())s="PAUSED - P to resume\n"+s;return std::wstring(s.begin(),s.end());}
+std::string MissionRuntime::report()const{auto l=impl->lua;lua_getglobal(l,"missionReport");impl->call("missionReport",0,1);std::string s=lua_tostring(l,-1);lua_pop(l,1);s.pop_back();s+=",\"collision_triangles\":"+std::to_string(impl->collision->triangle_count())+",\"foliage_instances\":"+std::to_string(impl->foliage?impl->foliage->instances():0)+",\"density_width\":"+std::to_string(impl->fruit.width)+",\"density_revision\":"+std::to_string(impl->revision)+",\"simulation_ticks\":"+std::to_string(impl->clock.ticks())+",\"discarded_time_s\":"+std::to_string(impl->clock.discarded_seconds())+",\"paused\":"+(paused()?"true":"false")+",\"reference_bytecode_chunks\":"+std::to_string(impl->reference_chunks)+"}";return s;}
 std::uint64_t MissionRuntime::visible_samples(){std::uint64_t n=0;for(auto& b:impl->bodies)if(b.renderer)n+=b.renderer->visible_samples(false);return n;}
 unsigned MissionRuntime::vehicle_count()const{return unsigned(impl->bodies.size());}
 const std::vector<fs::path>& MissionRuntime::resources()const{return impl->resources;}

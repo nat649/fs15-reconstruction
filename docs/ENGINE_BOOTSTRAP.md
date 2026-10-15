@@ -75,7 +75,7 @@ Lua sources. Mesh staging additionally needs Git and the
 .\FS15EngineRebuilt.exe --map Map01 --view overview
 ```
 
-The complete local package is `build/FS15EnvironmentAlpha`. Launch its
+The current local package is `build/FS15GameplayAlpha4`. Launch its
 `FS15MenuRebuilt.exe`, select Career, an empty slot, difficulty, map and Start.
 Start now creates the experimental gameplay process and forwards difficulty.
 Slot selection remains in the frontend; no persistent session is written. Existing saved simulations
