@@ -27,6 +27,9 @@
 !/analysis/scene-recovery.json
 !/analysis/shapes-native-validation.json
 !/analysis/environment-validation.json
+!/analysis/mission-recovery.json
+!/analysis/mission-validation.json
+!/analysis/rle16-validation.json
 /logs/
 __pycache__/
 *.pyc

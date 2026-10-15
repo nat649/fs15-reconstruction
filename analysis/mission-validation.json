@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "scope": "Original owned-field harvest scenario, original combine/cutter; host native services remain approximate",
+  "maps": [
+    {
+      "map": "Map01",
+      "vehicles": 13,
+      "fields": 41,
+      "harvestedLiters": 140.4,
+      "distanceMetres": 25.453947,
+      "foliageInstances": 9887,
+      "collisionTriangles": 2258536,
+      "visibleVehicleSamples": 188387
+    },
+    {
+      "map": "Map02",
+      "vehicles": 12,
+      "fields": 21,
+      "harvestedLiters": 124.8,
+      "distanceMetres": 25.453953,
+      "foliageInstances": 14738,
+      "collisionTriangles": 1347518,
+      "visibleVehicleSamples": 162207
+    }
+  ]
+}

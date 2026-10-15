@@ -20,6 +20,10 @@ authored. Original meshes and scene placements are the source of map objects.
 | GE6 mesh cipher | Original native `0x1402b3fa0` | Executed in an isolated comparison process; 128 comparisons pass |
 | GAR cipher | Original native initializer/decoder | Existing local extraction oracle |
 | RLE8 routine | Reconstructed C++ from native analysis | Differentially checked against original machine code |
+| RLE16 routine | Reconstructed C++ from native `0x14028f770` | 107 comparisons including both full original fruit grids |
+| Starting fleets and dynamic wheels | Original career templates, vehicle XML/I3D | Thirteen / twelve objects, eleven distinct prepared configurations |
+| Motor, wheel and farm-transfer rules | Recovered Lua | Executed with partial native services; no full PhysX integration |
+| Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
 
 ## Original engine components
@@ -47,7 +51,9 @@ aggregate validation and selected rendered screenshots.
 
 ## Next reconstruction targets
 
-Recover GIANTS material/shader behavior, terrain detail and crop density
-rendering; restore distance-based LOD, full shadow cascades and tree skeletons; then recover mission
-startup and the native interfaces required for vehicle/physics simulation.
+Recover the remaining native physics/density interfaces, original component
+joints, complete specialization startup and persistent sessions. Restore full
+terrain/crop material behavior, density placement, distance-based LOD, shadow
+cascades and tree skeletons. The current [gameplay subset](GAMEPLAY_RUNTIME.md)
+keeps authored physics/contact/trigger approximations explicit.
 Validate placement, rendering and gameplay separately as those components land.

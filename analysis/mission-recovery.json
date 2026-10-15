@@ -1,0 +1,106 @@
+{
+  "scope": "Original starting vehicle XML/I3D plus linked original wheels; derived local caches",
+  "configurations": 11,
+  "sourceFiles": 132,
+  "vehicles": [
+    {
+      "config": "data/vehicles/steerable/sampoRosenlew/sampoRosenlewC6.xml",
+      "runtime": "data/vehicles/steerable/sampoRosenlew/sampoRosenlewC6.runtime.i3d",
+      "linkedParts": 4,
+      "meshes": 110,
+      "vertices": 86207,
+      "triangles": 72679,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/cutters/sampoRosenlew/sampoRosenlewC6.xml",
+      "runtime": "data/vehicles/cutters/sampoRosenlew/sampoRosenlewC6.runtime.i3d",
+      "linkedParts": 0,
+      "meshes": 20,
+      "vertices": 24127,
+      "triangles": 17798,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/steerable/huerlimann/huerlimannH488.xml",
+      "runtime": "data/vehicles/steerable/huerlimann/huerlimannH488.runtime.i3d",
+      "linkedParts": 4,
+      "meshes": 95,
+      "vertices": 193393,
+      "triangles": 150521,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/trailers/brantner/brantnerE8041.xml",
+      "runtime": "data/vehicles/trailers/brantner/brantnerE8041.runtime.i3d",
+      "linkedParts": 6,
+      "meshes": 63,
+      "vertices": 35552,
+      "triangles": 30380,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/steerable/deutz/deutzAgroStar661.xml",
+      "runtime": "data/vehicles/steerable/deutz/deutzAgroStar661.runtime.i3d",
+      "linkedParts": 4,
+      "meshes": 91,
+      "vertices": 175368,
+      "triangles": 140026,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/tools/koeckerling/koeckerlingTrio300M.xml",
+      "runtime": "data/vehicles/tools/koeckerling/koeckerlingTrio300M.runtime.i3d",
+      "linkedParts": 0,
+      "meshes": 16,
+      "vertices": 24282,
+      "triangles": 19178,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/tools/suer/suerSB1000.xml",
+      "runtime": "data/vehicles/tools/suer/suerSB1000.runtime.i3d",
+      "linkedParts": 0,
+      "meshes": 2,
+      "vertices": 1175,
+      "triangles": 962,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/tools/poettinger/poettingerVitasem302A.xml",
+      "runtime": "data/vehicles/tools/poettinger/poettingerVitasem302A.runtime.i3d",
+      "linkedParts": 0,
+      "meshes": 40,
+      "vertices": 26958,
+      "triangles": 18704,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/tools/suer/suerSB700.xml",
+      "runtime": "data/vehicles/tools/suer/suerSB700.runtime.i3d",
+      "linkedParts": 0,
+      "meshes": 2,
+      "vertices": 1178,
+      "triangles": 962,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/tools/kuhn/kuhnVariMaster153.xml",
+      "runtime": "data/vehicles/tools/kuhn/kuhnVariMaster153.runtime.i3d",
+      "linkedParts": 1,
+      "meshes": 42,
+      "vertices": 26935,
+      "triangles": 23765,
+      "skinned": 0
+    },
+    {
+      "config": "data/vehicles/steerable/buehrer/buehrer6135A.xml",
+      "runtime": "data/vehicles/steerable/buehrer/buehrer6135A.runtime.i3d",
+      "linkedParts": 4,
+      "meshes": 66,
+      "vertices": 57076,
+      "triangles": 42975,
+      "skinned": 0
+    }
+  ]
+}

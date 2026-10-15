@@ -130,6 +130,9 @@ rebuilt game world. Native GUI startup replaces the original engine startup.
 
 New-game smoke checks validate engine launch plans without spawning windows.
 The separate native engine tests perform GPU rendering. Interactive Start
-launches the terrain process; its free camera is independent of mission simulation.
+launches the native engine with `--play` and the selected difficulty. Its current
+experimental gameplay services and limits are documented in
+[GAMEPLAY_RUNTIME.md](GAMEPLAY_RUNTIME.md). Smoke launch plans still avoid
+spawning interactive windows.
 
 Aggregate metadata: [menu validation](../analysis/menu-validation.json).

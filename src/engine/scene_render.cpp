@@ -28,6 +28,7 @@ return float4(applyDistanceFog(c.rgb*(ambientColor.xyz+lit*visibility),v.world,e
 void psShadow(Out v){float alpha=diffuse.Sample(linearSampler,v.uv).a*tint.a;clip(alpha-0.35);}
 )";
 struct SceneRenderer::Impl {
+    ComPtr<ID3D11Device> graphics_device;
     ID3D11DeviceContext* context;
     ComPtr<ID3D11VertexShader> vs;ComPtr<ID3D11PixelShader> ps,shadow_ps;
     ComPtr<ID3D11InputLayout> layout;ComPtr<ID3D11Buffer> vertices,indices,instances,view,material;
@@ -35,10 +36,12 @@ struct SceneRenderer::Impl {
     std::map<std::filesystem::path,ComPtr<ID3D11ShaderResourceView>> textures;
     struct Draw {UINT first,count,base,instance_first,instance_count;fs15world::Material material;bool casts,receives;};
     std::vector<Draw> draws;
+    std::vector<unsigned> draw_groups;
     unsigned injection_count=0,animated=0;
     ComPtr<ID3D11Query> query;
     struct Instance {float world[16],normal[12];};
-    Impl(ID3D11Device* device,ID3D11DeviceContext* ctx,const fs15world::Terrain& scene,const std::filesystem::path& root):context(ctx){
+    Impl(ID3D11Device* graphics,ID3D11DeviceContext* ctx,const fs15world::Terrain& scene,const std::filesystem::path& root):graphics_device(graphics),context(ctx){
+        auto device=graphics;
         if(scene.groups.empty())return;
         D3D11_QUERY_DESC query_desc{};query_desc.Query=D3D11_QUERY_OCCLUSION;checked(device->CreateQuery(&query_desc,&query),"Original mesh visibility query");
         std::set<unsigned> effects;for(const auto& group:scene.groups)for(int id:group.materials)effects.insert(scene.materials.at(id).effect);
@@ -74,12 +77,12 @@ struct SceneRenderer::Impl {
         checked(device->CreateInputLayout(elements,10,vertex->GetBufferPointer(),vertex->GetBufferSize(),&layout),"Mesh input layout");
         auto buffer=[&](const void* data,size_t bytes,UINT bind,ComPtr<ID3D11Buffer>& target){
             if(bytes>0xffffffffu)throw std::runtime_error("Scene buffer exceeds D3D11 range");
-            D3D11_BUFFER_DESC desc{};desc.ByteWidth=static_cast<UINT>(bytes);desc.BindFlags=bind;desc.Usage=data?D3D11_USAGE_IMMUTABLE:D3D11_USAGE_DEFAULT;
+            D3D11_BUFFER_DESC desc{};desc.ByteWidth=static_cast<UINT>(bytes);desc.BindFlags=bind;desc.Usage=D3D11_USAGE_DEFAULT;
             D3D11_SUBRESOURCE_DATA initial{};initial.pSysMem=data;checked(device->CreateBuffer(&desc,data?&initial:nullptr,&target),"Mesh buffer");};
         std::vector<fs15world::Vertex> vv;std::vector<std::uint32_t> ii;std::vector<Instance> ww;
         std::vector<UINT> bases,firsts;
         for(const auto& mesh:scene.meshes){bases.push_back(static_cast<UINT>(vv.size()));firsts.push_back(static_cast<UINT>(ii.size()));vv.insert(vv.end(),mesh.vertices.begin(),mesh.vertices.end());ii.insert(ii.end(),mesh.indices.begin(),mesh.indices.end());}
-        for(const auto& group:scene.groups){
+        unsigned group_index=0;for(const auto& group:scene.groups){
             const auto& mesh=scene.meshes[group.mesh];UINT instance_first=static_cast<UINT>(ww.size());
             for(const auto& matrix:group.instances){Instance instance;std::copy(matrix.value,matrix.value+16,instance.world);XMFLOAT4X4 w;std::copy(matrix.value,matrix.value+16,&w._11);
                 XMVECTOR determinant;auto normal=XMMatrixTranspose(XMMatrixInverse(&determinant,XMLoadFloat4x4(&w)));
@@ -104,8 +107,10 @@ struct SceneRenderer::Impl {
                     checked(device->CreateShaderResourceView(texture.Get(),nullptr,&texture_view),"Original diffuse view");textures.emplace(mat.texture,std::move(texture_view));
                 }
                 draws.push_back({firsts[group.mesh]+mesh.subsets[s].first,mesh.subsets[s].count,bases[group.mesh],instance_first,static_cast<UINT>(group.instances.size()),mat,group.casts_shadow,group.receives_shadow});
+                draw_groups.push_back(group_index);
                 if(mat.effect==1||mat.effect==2)++animated;
             }
+            ++group_index;
         }
         buffer(vv.data(),vv.size()*sizeof(vv[0]),D3D11_BIND_VERTEX_BUFFER,vertices);buffer(ii.data(),ii.size()*4,D3D11_BIND_INDEX_BUFFER,indices);
         buffer(ww.data(),ww.size()*sizeof(Instance),D3D11_BIND_VERTEX_BUFFER,instances);buffer(nullptr,80,D3D11_BIND_CONSTANT_BUFFER,view);buffer(nullptr,48,D3D11_BIND_CONSTANT_BUFFER,material);
@@ -125,16 +130,27 @@ struct SceneRenderer::Impl {
             context->UpdateSubresource(material.Get(),0,nullptr,&m,0,0);auto texture=textures.at(d.material.texture).Get();context->PSSetShaderResources(0,1,&texture);context->DrawIndexedInstanced(d.count,d.instance_count,d.first,d.base,d.instance_first);}
         if(measure)context->End(query.Get());
     }
-    std::uint64_t visible_samples(){
+    void update_instances(const fs15world::Terrain& scene){
+        if(!instances)return;std::vector<Instance> values;
+        for(const auto& group:scene.groups)for(const auto& matrix:group.instances){Instance v;std::copy(matrix.value,matrix.value+16,v.world);XMFLOAT4X4 w;std::copy(matrix.value,matrix.value+16,&w._11);XMVECTOR det;auto m=XMMatrixTranspose(XMMatrixInverse(&det,XMLoadFloat4x4(&w)));if(std::abs(XMVectorGetX(det))<1e-12f)throw std::runtime_error("Singular dynamic scene transform");XMFLOAT4X4 n;XMStoreFloat4x4(&n,m);std::copy(&n._11,&n._11+12,v.normal);values.push_back(v);}
+        std::vector<UINT> firsts;UINT offset=0;for(const auto& g:scene.groups){firsts.push_back(offset);offset+=UINT(g.instances.size());}
+        for(size_t i=0;i<draws.size();++i){auto group=draw_groups[i];draws[i].instance_first=firsts.at(group);draws[i].instance_count=UINT(scene.groups.at(group).instances.size());}
+        if(values.empty())return;D3D11_BUFFER_DESC desc{};instances->GetDesc(&desc);const auto size=values.size()*sizeof(Instance);
+        if(size>UINT_MAX)throw std::runtime_error("Dynamic scene instance buffer exceeds limit");
+        if(size>desc.ByteWidth){instances.Reset();desc.ByteWidth=UINT(size);D3D11_SUBRESOURCE_DATA initial{};initial.pSysMem=values.data();checked(graphics_device->CreateBuffer(&desc,&initial,&instances),"Growing dynamic instances");}
+        else {D3D11_BOX box{0,0,0,UINT(size),1,1};context->UpdateSubresource(instances.Get(),0,&box,values.data(),0,0);}
+    }
+    std::uint64_t visible_samples(bool require_visible){
         if(draws.empty())return 0;std::uint64_t samples=0;HRESULT result;context->Flush();auto timeout=std::chrono::steady_clock::now()+std::chrono::seconds(5);
         while((result=context->GetData(query.Get(),&samples,sizeof(samples),0))==S_FALSE){if(std::chrono::steady_clock::now()>timeout)throw std::runtime_error("Original mesh visibility timeout");Sleep(1);}
-        checked(result,"Original mesh query");if(!samples)throw std::runtime_error("No original mesh pixels rasterized");return samples;
+        checked(result,"Original mesh query");if(!samples&&require_visible)throw std::runtime_error("No original mesh pixels rasterized");return samples;
     }
 };
 SceneRenderer::SceneRenderer(ID3D11Device* d,ID3D11DeviceContext* c,const fs15world::Terrain& s,const std::filesystem::path& r):impl(std::make_unique<Impl>(d,c,s,r)){}
 SceneRenderer::~SceneRenderer()=default;
+void SceneRenderer::update_instances(const fs15world::Terrain& s){impl->update_instances(s);}
 void SceneRenderer::draw(const XMMATRIX& v,const XMFLOAT3& eye,bool measure,bool shadow_pass){impl->draw(v,eye,measure,shadow_pass);}
 unsigned SceneRenderer::texture_count()const{return static_cast<unsigned>(impl->textures.size());}
 unsigned SceneRenderer::original_injections()const{return impl->injection_count;}
 unsigned SceneRenderer::animated_draws()const{return impl->animated;}
-std::uint64_t SceneRenderer::visible_samples(){return impl->visible_samples();}
+std::uint64_t SceneRenderer::visible_samples(bool require_visible){return impl->visible_samples(require_visible);}

@@ -7,6 +7,9 @@ It does not load the original GIANTS executable or recovered native code.
 Its resource pipeline reuses original GIANTS Engine 6 data and a verified mesh
 decoder. See [component provenance](RECONSTRUCTION_STRATEGY.md). Full engine
 startup and mission simulation remain incomplete.
+The new experimental gameplay path, controls, recovered rules and physics
+limits are described in [GAMEPLAY_RUNTIME.md](GAMEPLAY_RUNTIME.md). The sections
+below describe the retained scene-viewer rendering path.
 
 ## Resources and rendering
 
@@ -74,8 +77,8 @@ Lua sources. Mesh staging additionally needs Git and the
 
 The complete local package is `build/FS15EnvironmentAlpha`. Launch its
 `FS15MenuRebuilt.exe`, select Career, an empty slot, difficulty, map and Start.
-Start creates the terrain process. Difficulty and slot are retained by the
-frontend but do not configure simulation yet. Existing saved simulations
+Start now creates the experimental gameplay process and forwards difficulty.
+Slot selection remains in the frontend; no persistent session is written. Existing saved simulations
 remain read only and cannot start. No save is created.
 
 Controls: WASD/ZQSD or arrows to move, Shift for speed, Space/Page Up to rise,
@@ -91,7 +94,7 @@ remain excluded from GitHub.
 
 ## Validation
 
-The local build passes eleven CTest suites when native comparison inputs are present.
+The scene-viewer checks remain part of CTest alongside the newer gameplay tests.
 Two original-map suites initialize
 Direct3D 11, render nine frames, require positive GPU occlusion-query samples,
 and capture the actual color buffer before presentation. Separate queries require

@@ -1,4 +1,4 @@
-param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15EnvironmentAlpha')
+param([string]$GameDir = $env:FS15_GAME_DIR, [switch]$PrepareOnly, [string]$Destination = 'build\FS15GameplayAlpha')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 & (Join-Path $PSScriptRoot 'prepare-engine-assets.ps1') -GameDir $GameDir
@@ -52,13 +52,15 @@ $assetNames = @($runtimeLog | Where-Object { $_.StartsWith('ASSET ') } | ForEach
 # Native resource tracing adds binary meshes, object textures and terrain layers.
 foreach ($map in @('Map01','Map02')) {
     $engineReport = Join-Path $projectRoot "build/engine-assets-$map.json"
-    $engineArguments = '--root "{0}" --map {1} --smoke --report "{2}"' -f $projectRoot,$map,$engineReport
+    $engineArguments = '--root "{0}" --map {1} --play --smoke --report "{2}"' -f $projectRoot,$map,$engineReport
     $engineProcess = Start-Process -FilePath (Join-Path $projectRoot 'FS15EngineRebuilt.exe') -ArgumentList $engineArguments -Wait -PassThru -WindowStyle Hidden
     if ($engineProcess.ExitCode -ne 0) { throw "Native resource trace failed for $map" }
     $engineData = Get-Content -LiteralPath $engineReport -Raw | ConvertFrom-Json
     $assetNames += @($engineData.resources)
 }
-$assetNames = @($assetNames | Sort-Object -Unique)
+$sourceNames += @($assetNames | Where-Object { $_.StartsWith('dataS/') -and $_.EndsWith('.lua') })
+$sourceNames = @($sourceNames | Sort-Object -Unique)
+$assetNames = @($assetNames | Where-Object { -not $_.EndsWith('.lua') } | Sort-Object -Unique)
 $recovery = Get-Content -LiteralPath (Join-Path $projectRoot 'analysis\lua-recovery.json') -Raw | ConvertFrom-Json
 $manifestFiles = [System.Collections.Generic.List[object]]::new()
 function Copy-PackageFile([string]$Source, [string]$Relative) {
@@ -70,6 +72,7 @@ function Copy-PackageFile([string]$Source, [string]$Relative) {
 Copy-PackageFile $executable 'FS15MenuRebuilt.exe'
 Copy-PackageFile (Join-Path $projectRoot 'FS15EngineRebuilt.exe') 'FS15EngineRebuilt.exe'
 Copy-PackageFile (Join-Path $projectRoot 'src\menu\bootstrap.lua') 'bootstrap.lua'
+Copy-PackageFile (Join-Path $projectRoot 'src\engine\mission.lua') 'assets/src/engine/mission.lua'
 foreach ($line in ($runtimeLog | Where-Object { $_.StartsWith('ADAPTER ') })) {
     $adapter = $line.Substring(8)
     if ($adapter -notin @('career.lua','newgame.lua')) { throw "Unexpected authored adapter: $adapter" }
@@ -92,7 +95,7 @@ foreach ($name in $assetNames) {
     Copy-PackageFile (Join-Path $projectRoot ('recovered\gar\' + $name)) ('assets\' + $name)
 }
 $readme = @'
-FS15 rebuilt frontend milestone
+FS15 reconstructed gameplay alpha
 
 Double-click FS15MenuRebuilt.exe in this folder. Keep bootstrap.lua, career.lua,
 newgame.lua, lua/, assets/ and licenses/ alongside it. No Steam or game executable is
@@ -106,17 +109,27 @@ Career displays twenty slots and reads existing save metadata without changing
 files. Mouse wheel and keyboard navigate the original list. Empty slots reach
 the original three difficulty choices and the two base-map previews. Start
 opens FS15EngineRebuilt for a new selection: original terrain, buildings and
-trees, recovered binary meshes, diffuse textures and terrain layers. This is a
-scene reconstruction with simplified shaders, not a
-complete game session. Existing saved simulations still cannot be loaded.
+trees, recovered binary meshes, diffuse textures and terrain layers. It also
+loads the original starting fleet, crop density, field definitions and a recovered
+gameplay subset. This is an experimental reconstruction with approximate native
+services. Existing saved simulations still cannot be loaded.
 Credits/Back and Quit work. Other unimplemented screens report their destination.
-Vehicles, physics, mission simulation and multiplayer are not implemented.
+Vehicles, crops, silo/pipe transfers, seed refill and basic tool work run with
+partial native services. Full physics, suspension, articulation, crop growth,
+grain fill surfaces, unloading effects, fuel, audio and multiplayer are incomplete.
+There is no persistent session save/load yet: closing discards the session.
 Full GIANTS shadow cascades, moving tree skeletons, crop density rendering and
 complete terrain/object material behavior remain incomplete.
 Original main.lua is not executed. Save deletion/writes are disabled.
 
-WASD/ZQSD or arrows move; mouse drag looks; Shift is faster; Space/Ctrl change
-height; Home resets; Escape closes the map window. --view overview selects the
+WASD/ZQSD or arrows drive; Space brakes; Tab changes vehicle. E attaches a nearby
+compatible tool; B starts/stops work; R fills at a compatible silo/supply station;
+I unloads at a tipping station; O opens/closes the combine pipe. Mouse drag/wheel
+orbit/zoom the following camera. F8 selects the earlier free camera (Shift is
+faster; Space/Ctrl change height). Escape closes the map window.
+Normal Start uses original fleet placements. --scenario harvest and --scenario silo
+are explicit disposable test layouts, relocating original equipment for trials.
+--scene restores scene-viewer mode. --view overview selects the
 whole-map camera; default --view original uses the camera stored in the I3D.
 F5/F6 step the environment hour forward/back. F7 toggles the local shadow map.
 Original sky textures, sky mesh, sampled Environment curves and sky/wind/flag/
@@ -132,7 +145,7 @@ $readmePath = Join-Path $packageRoot 'README.txt'
 $readme | Set-Content -LiteralPath $readmePath -Encoding utf8
 $manifestFiles.Add(@{ path='README.txt'; sha256=(Get-FileHash -LiteralPath $readmePath).Hash.ToLower(); bytes=(Get-Item -LiteralPath $readmePath).Length })
 $manifest = @{
-    scope='Recovered frontend and original map/sky/shader resources; local shadows and environment preview, no mission simulation'
+    scope='Recovered frontend and experimental gameplay subset; original fleet/crops and partial authored native services'
     originalEngineLoaded=$false
     originalMainExecuted=$false
     recoveredSources=$sourceNames.Count
@@ -162,6 +175,7 @@ foreach ($name in $captureNames) {
     }
 }
 & (Join-Path $PSScriptRoot 'verify-engine-package.ps1') -PackageRoot $packageRoot
+& (Join-Path $PSScriptRoot 'verify-gameplay-package.ps1') -PackageRoot $packageRoot
 $zipPath = Join-Path $projectRoot 'build\FS15MenuRebuilt-local.zip'
 $zipPaths = @($manifestFiles | ForEach-Object { Join-Path $packageRoot $_.path }) + @(Join-Path $packageRoot 'MENU-MANIFEST.json')
 # Compress the directory structure, keeping the folder runnable after extraction.

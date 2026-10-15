@@ -25,6 +25,8 @@
 #include "environment.h"
 #include "shadows.h"
 #include "render_shared.h"
+#include "mission.h"
+#include "hud.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -36,6 +38,9 @@ static bool shadows_enabled=true;
 static std::array<bool,256> keys{};
 static POINT last_mouse{};
 static std::ofstream log_file;
+static std::unique_ptr<MissionRuntime> mission;
+static std::vector<const char*> mission_actions;
+static bool follow_vehicle=true;
 static void log(const std::string& message){log_file<<message<<'\n';log_file.flush();OutputDebugStringA((message+"\n").c_str());}
 static void check(HRESULT result,const char* operation){if(FAILED(result))throw std::runtime_error(std::string(operation)+" failed (HRESULT "+std::to_string(static_cast<unsigned long>(result))+")");}
 static std::wstring wide(const std::string& text){if(text.empty())return {};int n=MultiByteToWideChar(CP_UTF8,0,text.data(),int(text.size()),nullptr,0);std::wstring out(n,0);MultiByteToWideChar(CP_UTF8,0,text.data(),int(text.size()),out.data(),n);return out;}
@@ -118,6 +123,7 @@ class Renderer {
     std::unique_ptr<EnvironmentRenderer> environment;
     std::unique_ptr<ShadowRenderer> shadows;
     bool has_shadows=false;
+    std::unique_ptr<MissionHud> hud;
 public:
     D3D_FEATURE_LEVEL feature_level{};
     bool software=false;
@@ -185,6 +191,7 @@ public:
         log("ENVIRONMENT_READY recovered_sky="+std::to_string(environment->ready())+" original_injections="+std::to_string(original_injections())+" animated_draws="+std::to_string(animated_draws()));
         log("TERRAIN_LAYERS_READY count="+std::to_string(terrain_material->layer_count()));
         log("SCENE_GPU_READY meshes="+std::to_string(terrain.meshes.size())+" instances="+std::to_string(terrain.rendered_instances)+" textures="+std::to_string(scene->texture_count()));
+        if(mission){mission->initialize_graphics(device.Get(),context.Get());hud=std::make_unique<MissionHud>(device.Get());}
     }
     void draw(bool measure=false,bool present=true) {
         struct View { XMFLOAT4X4 matrix;XMFLOAT4 eye; } data;
@@ -194,7 +201,7 @@ public:
         const auto shadow_vp=shadows->update(context.Get(),lighting,camera.position,forward,animation_time,shadows_enabled);
         auto bind_terrain=[&](){UINT stride=sizeof(fs15world::Vertex),offset=0;auto vb=vertices.Get();context->IASetVertexBuffers(0,1,&vb,&stride,&offset);context->IASetIndexBuffer(indices.Get(),DXGI_FORMAT_R32_UINT,0);context->IASetInputLayout(layout.Get());context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);context->VSSetShader(vertex_shader.Get(),nullptr,0);auto b=constants.Get();context->VSSetConstantBuffers(0,1,&b);};
         if(shadows_enabled&&has_shadows){
-            shadows->begin(context.Get());XMStoreFloat4x4(&data.matrix,shadow_vp);data.eye={camera.position.x,camera.position.y,camera.position.z,1};context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);bind_terrain();context->PSSetShader(nullptr,nullptr,0);context->DrawIndexed(index_count,0,0);scene->draw(shadow_vp,camera.position,false,true);
+            shadows->begin(context.Get());XMStoreFloat4x4(&data.matrix,shadow_vp);data.eye={camera.position.x,camera.position.y,camera.position.z,1};context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);bind_terrain();context->PSSetShader(nullptr,nullptr,0);context->DrawIndexed(index_count,0,0);scene->draw(shadow_vp,camera.position,false,true);if(mission)mission->draw(shadow_vp,camera.position,true);
         }
         XMStoreFloat4x4(&data.matrix,camera.view()*projection);data.eye={camera.position.x,camera.position.y,camera.position.z,1};
         context->UpdateSubresource(constants.Get(),0,nullptr,&data,0,0);
@@ -209,7 +216,7 @@ public:
         auto t=texture_view.Get();auto s=sampler.Get();context->PSSetShaderResources(0,1,&t);context->PSSetSamplers(0,1,&s);
         terrain_material->bind(context.Get());
         shadows->bind_lighting(context.Get());
-        if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());scene->draw(camera.view()*projection,camera.position,measure);
+        if(measure)context->Begin(query.Get());context->DrawIndexed(index_count,0,0);if(measure)context->End(query.Get());scene->draw(camera.view()*projection,camera.position,measure);if(mission){mission->draw(camera.view()*projection,camera.position,false,measure);hud->draw(context.Get(),mission->status());}
         if(present)check(swap->Present(smoke?0:1,0),"Present 3D frame");
     }
     void verify_visibility() {
@@ -235,13 +242,22 @@ public:
 
 static LRESULT CALLBACK window_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
     switch(message) {
-    case WM_KEYDOWN:if(wparam<keys.size())keys[wparam]=true;if(wparam==VK_ESCAPE)DestroyWindow(window);if(wparam==VK_HOME)camera.reset();if(!(lparam&(1L<<30))){if(wparam==VK_F5)environment_hour=std::fmod(environment_hour+1,24.0f);if(wparam==VK_F6)environment_hour=std::fmod(environment_hour+23,24.0f);if(wparam==VK_F7)shadows_enabled=!shadows_enabled;}return 0;
+    case WM_KEYDOWN:
+        if(wparam<keys.size())keys[wparam]=true;
+        if(wparam==VK_ESCAPE)DestroyWindow(window);if(wparam==VK_HOME)camera.reset();
+        if(!(lparam&(1L<<30))){
+            if(wparam==VK_F5)environment_hour=std::fmod(environment_hour+1,24.0f);
+            if(wparam==VK_F6)environment_hour=std::fmod(environment_hour+23,24.0f);
+            if(wparam==VK_F7)shadows_enabled=!shadows_enabled;
+            if(mission){const std::pair<WPARAM,const char*> actions[]{{VK_TAB,"next"},{'E',"attach"},{'R',"fill"},{'I',"tip"},{'B',"work"},{'O',"pipe"},{VK_F8,"camera"}};for(auto action:actions)if(wparam==action.first)mission_actions.push_back(action.second);}
+        }return 0;
     case WM_KEYUP:if(wparam<keys.size())keys[wparam]=false;return 0;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:rmb=true;last_mouse={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);return 0;
     case WM_LBUTTONUP:
     case WM_RBUTTONUP:rmb=false;ReleaseCapture();return 0;
-    case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};camera.yaw-=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);last_mouse=now;}return 0;
+    case WM_MOUSEMOVE:if(rmb){POINT now{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};if(mission&&follow_vehicle)mission->orbit(-(now.x-last_mouse.x)*0.004f,(now.y-last_mouse.y)*0.004f);else{camera.yaw-=(now.x-last_mouse.x)*0.004f;camera.pitch=std::clamp(camera.pitch-(now.y-last_mouse.y)*0.004f,-1.5f,1.5f);}last_mouse=now;}return 0;
+    case WM_MOUSEWHEEL:if(mission&&follow_vehicle)mission->zoom(-GET_WHEEL_DELTA_WPARAM(wparam)/120.0f);return 0;
     case WM_KILLFOCUS:keys.fill(false);rmb=false;ReleaseCapture();return 0;
     case WM_DESTROY:done=true;PostQuitMessage(0);return 0;
     }
@@ -252,12 +268,17 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     SetProcessDPIAware();HRESULT com=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);HWND window=nullptr;int result=0;
     try {
         check(com,"Engine COM initialization");auto root=exe_directory();if(!fs::exists(root/"assets/data/maps/map01.i3d")&&!fs::exists(root/"recovered/gar/data/maps/map01.i3d"))root=root.parent_path().parent_path();
-        std::string map="Map01";fs::path capture,report;bool warp=false,original_view=true;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
+        std::string map="Map01",scenario;fs::path capture,report;bool warp=false,original_view=true,play=false,mission_test=false,scene_only=false;int difficulty=2;int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);
         XMFLOAT3 explicit_camera{},explicit_target{};bool has_camera=false,has_target=false;
         for(int i=1;i<argc;++i){std::wstring arg=argv[i];
             if(arg==L"--root"&&i+1<argc)root=fs::absolute(argv[++i]);
             else if(arg==L"--map"&&i+1<argc){std::wstring m=argv[++i];if(m!=L"Map01"&&m!=L"Map02")throw std::runtime_error("Only Map01/Map02 are supported");map=m==L"Map01"?"Map01":"Map02";}
             else if(arg==L"--smoke")smoke=true;
+            else if(arg==L"--play")play=true;
+            else if(arg==L"--scene")scene_only=true;
+            else if(arg==L"--mission-test"){play=true;mission_test=true;}
+            else if(arg==L"--scenario"&&i+1<argc){std::wstring s=argv[++i];if(s!=L"harvest"&&s!=L"silo")throw std::runtime_error("Scenario must be harvest or silo");scenario=s==L"harvest"?"harvest":"silo";play=true;}
+            else if(arg==L"--difficulty"&&i+1<argc){difficulty=std::stoi(argv[++i]);if(difficulty<1||difficulty>3)throw std::runtime_error("Difficulty must be 1..3");}
             else if(arg==L"--warp")warp=true;
             else if(arg==L"--no-shadows")shadows_enabled=false;
             else if((arg==L"--hour"||arg==L"--time")&&i+1<argc){size_t end;std::wstring text=argv[++i];float value=std::stof(text,&end);if(end!=text.size()||!std::isfinite(value)||value<0||(arg==L"--hour"&&value>=24))throw std::runtime_error("Invalid environment time");if(arg==L"--hour")environment_hour=value;else animation_time=value;}
@@ -267,13 +288,14 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             else if(arg==L"--report"&&i+1<argc)report=fs::absolute(argv[++i]);
             else throw std::runtime_error("Usage: FS15EngineRebuilt --root PATH --map Map01|Map02 [--smoke] [--warp] [--capture PNG] [--report JSON]");
         }
-        LocalFree(argv);fs::create_directories(root/"logs");log_file.open(root/"logs"/("engine-"+map+".log"));
+        LocalFree(argv);if(!smoke&&!scene_only)play=true;fs::create_directories(root/"logs");log_file.open(root/"logs"/("engine-"+map+".log"));
         if(!log_file)throw std::runtime_error("Cannot open engine log");
         log("ENGINE_BOOT authored Win32/D3D11 runtime; original engine not loaded");
         auto terrain=fs15world::load_terrain(root,map);
         log("I3D_READY nodes="+std::to_string(terrain.nodes.size())+" shape_nodes="+std::to_string(terrain.shape_nodes));
         camera.initialize(terrain,original_view);if(has_camera!=has_target)throw std::runtime_error("Use --camera and --look-at together");if(has_camera)camera.look_at(explicit_camera,explicit_target);auto home=camera.position;camera.move(10,0,0,1);bool camera_test=camera.position.x!=home.x||camera.position.y!=home.y||camera.position.z!=home.z;camera.reset();
         if(!camera_test)throw std::runtime_error("Camera movement check failed");
+        if(play){mission=std::make_unique<MissionRuntime>(root,terrain,difficulty);if(!scenario.empty())mission->action(("scenario-"+scenario).c_str());XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);log("MISSION_READY vehicles="+std::to_string(mission->vehicle_count()));}
         WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
         if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
         DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;RECT rect{0,0,int(width),int(height)};AdjustWindowRect(&rect,style,FALSE);
@@ -281,12 +303,15 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         window=CreateWindowW(wc.lpszClassName,title.c_str(),style,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,instance,nullptr);
         if(!window)throw std::runtime_error("Cannot create engine window");
         Renderer render(window,terrain,warp,root);if(!smoke)ShowWindow(window,show);
+        if(smoke&&scenario=="harvest"){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
+        if(mission_test){for(int i=0;i<300;++i)mission->update(1.0f/60,1,0,false);mission->action("selfcheck");XMFLOAT3 eye,target;if(mission->camera(eye,target))camera.look_at(eye,target);}
         render.draw(true,!smoke);render.verify_visibility();
+        auto vehicle_samples=mission?mission->visible_samples():0;if(mission&&!vehicle_samples)throw std::runtime_error("No original vehicle pixels rasterized");
         // Capture before Present: discard swap chains need not preserve content.
         if(!capture.empty()){render.draw(false,false);render.capture(capture);}
         if(report.empty())report=root/"logs"/("engine-"+map+".json");
         std::ofstream metadata(report);if(!metadata)throw std::runtime_error("Cannot write engine validation report");
-        metadata<<"{\n\"scope\":\"Original terrain and binary scene meshes; simplified materials, no physics\",\n"
+        metadata<<"{\n\"scope\":\""<<(mission?"Recovered gameplay subset; original fleet/crops, approximate native services":"Original terrain and binary scene meshes; simplified materials, no physics")<<"\",\n"
             <<"\"map\":\""<<map<<"\",\n\"ready\":true,\n\"original_engine_loaded\":false,\n"
             <<"\"driver\":\""<<(render.software?"WARP":"hardware")<<"\",\n\"feature_level\":"<<render.feature_level<<",\n"
             <<"\"scene_nodes\":"<<terrain.nodes.size()<<",\n\"source_shape_nodes\":"<<terrain.shape_nodes<<",\n\"skipped_shape_nodes\":"<<terrain.skipped_instances<<",\n"
@@ -301,18 +326,26 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
             <<"\"vertices\":"<<terrain.vertices.size()<<",\n\"triangles\":"<<terrain.indices.size()/3<<",\n"
             <<"\"visible_gpu_samples\":"<<render.samples<<",\n\"visible_object_gpu_samples\":"<<render.object_samples<<",\n\"camera_math_check\":true,\n\"first_instance_world\":[";
         if(!terrain.groups.empty())for(unsigned i=0;i<16;++i){if(i)metadata<<',';metadata<<terrain.groups[0].instances[0].value[i];}
-        auto resources=terrain.used_resources;resources.insert(resources.end(),render.environment_resources().begin(),render.environment_resources().end());std::sort(resources.begin(),resources.end());resources.erase(std::unique(resources.begin(),resources.end()),resources.end());
-        metadata<<"],\n\"resources\":[";for(size_t i=0;i<resources.size();++i){if(i)metadata<<',';metadata<<std::quoted(resources[i].generic_u8string());}
+        auto resources=terrain.used_resources;resources.insert(resources.end(),render.environment_resources().begin(),render.environment_resources().end());if(mission)resources.insert(resources.end(),mission->resources().begin(),mission->resources().end());std::sort(resources.begin(),resources.end());resources.erase(std::unique(resources.begin(),resources.end()),resources.end());
+        metadata<<"],\n\"visible_vehicle_gpu_samples\":"<<vehicle_samples<<",\n\"mission\":"<<(mission?mission->report():"null")<<",\n\"resources\":[";for(size_t i=0;i<resources.size();++i){if(i)metadata<<',';metadata<<std::quoted(resources[i].generic_u8string());}
         metadata<<"]\n}\n";metadata.close();
-        log("ENGINE_READY terrain geometry and texture rendered; free camera initialized");
+        log(mission?"ENGINE_READY recovered gameplay subset running":"ENGINE_READY terrain geometry and texture rendered; free camera initialized");
         if(smoke){for(int frame=0;frame<8;++frame)render.draw();log("ENGINE_SMOKE_OK frames=9");}
         else {
             auto previous=std::chrono::steady_clock::now();MSG message{};
             while(!done){while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}if(done)break;
                 auto now=std::chrono::steady_clock::now();float dt=std::min(0.1f,std::chrono::duration<float>(now-previous).count());previous=now;
-                if(IsIconic(window)){Sleep(25);continue;}camera.update(dt);animation_time+=dt;render.draw();
+                if(IsIconic(window)){Sleep(25);continue;}
+                if(mission){
+                    for(auto action:mission_actions)mission->action(action);mission_actions.clear();
+                    mission->update(dt,float(keys['W']||keys['Z']||keys[VK_UP])-float(keys['S']||keys[VK_DOWN]),float(keys['A']||keys['Q']||keys[VK_LEFT])-float(keys['D']||keys[VK_RIGHT]),keys[VK_SPACE]);
+                    XMFLOAT3 eye,target;follow_vehicle=mission->camera(eye,target);if(follow_vehicle)camera.look_at(eye,target);else camera.update(dt);
+                    static float status_time=0;status_time+=dt;if(status_time>0.25f){auto status=mission->status();status=status.substr(0,status.find(L'\n'));SetWindowTextW(window,(L"FS15 - "+status).c_str());status_time=0;}
+                }
+                else camera.update(dt);animation_time+=dt;render.draw();
             }
         }
+        if(mission){std::ofstream final_report(root/"logs"/("mission-"+map+"-final.json"));final_report<<mission->report()<<'\n';mission.reset();}
     }catch(const std::exception& error){log(std::string("FATAL ")+error.what());if(!smoke)MessageBoxW(window,wide(error.what()).c_str(),L"Reconstructed engine error",MB_OK|MB_ICONERROR);result=1;}
-    if(window&&IsWindow(window))DestroyWindow(window);log("ENGINE_SHUTDOWN exit="+std::to_string(result));if(SUCCEEDED(com))CoUninitialize();return result;
+    mission.reset();if(window&&IsWindow(window))DestroyWindow(window);log("ENGINE_SHUTDOWN exit="+std::to_string(result));if(SUCCEEDED(com))CoUninitialize();return result;
 }

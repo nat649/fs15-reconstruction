@@ -8,6 +8,15 @@ and machine-specific analysis outputs remain local.
 
 ## Compiled components
 
+The new [gameplay alpha](../docs/GAMEPLAY_RUNTIME.md) loads original starting
+fleets and field/crop data, executes recovered motor/wheel and farm-transfer
+rules, and supports basic cutting/cultivation/sowing through a partial native
+bridge. Both maps pass 34 gameplay assertions. The RLE16 leaf matches original
+code in 107 cases / 35,133,356 values, including both full fruit maps. Full
+GE6/PhysX behavior, complete specialization startup and persistent saves remain
+unfinished. Explicit harvest/silo scenarios relocate original equipment only
+for reproducible trials; normal new-game placement uses original templates.
+
 A newly compiled **FS15MenuRebuilt.exe** now launches a visible main menu
 without starting the original game engine or Steam. It executes **36
 recovered Lua sources** with authored XML/rendering/input/read-only save services,
@@ -170,7 +179,7 @@ Virtual addresses use the x64 image's preferred base `0x140000000`.
 | `0x140096580`, `0x140098630` | Archive-related routines with an MD5 collision diagnostic; format unconfirmed |
 | `0x14028e3d0` | Selects decoding variants for one- or two-byte input elements |
 | `0x14028f430` | RLE8 decoder reconstructed and compared with the original |
-| `0x14028f770` | Two-byte input variant; pseudocode available, not reconstructed |
+| `0x14028f770` | Reconstructed RLE16; 107 differential comparisons, both original fruit maps included |
 | `0x14027d5f0` | Archive factory; GAR is attempted before other formats |
 | `0x1402a6d70` | GAR header/index loading and original cipher setup |
 | `0x1402e6e60`, `0x1402e7500` | Original cipher initializer and buffer decoder used by the local oracle |

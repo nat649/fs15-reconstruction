@@ -1,19 +1,19 @@
 {
-  "identicalRender": true,
-  "nativeEngineDependency": false,
-  "scope": "Recovered frontend and original map/sky/shader resources; local shadows and environment preview, no mission simulation",
-  "recoveredAssets": 325,
-  "saveMetadataReadOnly": true,
-  "recoveredSources": 36,
-  "workspaceSmokePassed": true,
-  "packageSha256": "56296c5ed4312c928da90892332b2e85cefeb7fb08f5066a67024c080311d754",
-  "sourceHashesVerified": true,
-  "packageSmokePassed": true,
-  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
   "matchingScreenCaptures": [
     "CareerScreen",
     "CreditsScreen",
     "DifficultyScreen",
     "MapSelectionScreen"
-  ]
+  ],
+  "identicalRender": true,
+  "saveMetadataReadOnly": true,
+  "recoveredAssets": 407,
+  "recoveredSources": 58,
+  "packageSha256": "d669a03e7fa5d133e813fdf92bb7512fed21ba0d01c0530ed6ceb58552c7a93c",
+  "sourceHashesVerified": true,
+  "imageSha256": "66817ae18b43a1c61e4ef5c53e5bdb06a224ab3dbb8a6eed238f8cf13e5e6d3b",
+  "scope": "Recovered frontend and experimental gameplay subset; original fleet/crops and partial authored native services",
+  "nativeEngineDependency": false,
+  "workspaceSmokePassed": true,
+  "packageSmokePassed": true
 }

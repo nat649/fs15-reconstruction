@@ -5,7 +5,8 @@ Simulator 15 for Windows**, based on a locally installed copy of version
 **1.4.2.0**.
 
 **This is not a complete game rebuild. The recovered frontend and original
-map scenes run in a compiled native host; the full engine and farming simulation remain incomplete.**
+map scenes and an experimental gameplay subset run in a compiled native host;
+the full engine and farming simulation remain incomplete.**
 
 The project follows decompilation and reconstruction of the installed GIANTS
 Engine 6 game. Original scripts, geometry, textures, scene transforms and native
@@ -13,6 +14,16 @@ routines are reused or examined where practical. See the
 [reconstruction strategy](docs/RECONSTRUCTION_STRATEGY.md) for component provenance.
 
 ## Current results
+
+- **Experimental gameplay:** original starting fleets, selectable/drivable
+  tractors and combine, animated wheels, compatible implement attachment,
+  original field/crop data, cutting/cultivation/sowing, silo filling, tipping
+  stations, combine-to-trailer transfer and seed refilling now have a running
+  native/Lua bridge. Physics, density services and client rendering remain
+  partial. No persistent session saves yet. See [gameplay scope and controls](docs/GAMEPLAY_RUNTIME.md).
+- **Original density recovery:** the reconstructed 16-bit RLE leaf matches
+  original GE6 in **107 comparisons / 35,133,356 values**, including both
+  4096-square fruit maps. Crop block meshes and density states are reused.
 
 - **Rebuilt frontend executable:** opens the recovered `MainScreen` in a
   Windows window without starting the original game executable or Steam.
@@ -33,7 +44,7 @@ routines are reused or examined where practical. See the
 - **Recovered environment/shaders:** the original sky dome/textures, sampled
   Lua environment curves and five original shader injection bodies now run in
   the host. Flags and bushes animate, the hour changes sky/light/fog, and a local
-  shadow map casts building/vegetation shadows. Eleven CTest suites pass,
+  shadow map casts building/vegetation shadows. Dedicated CTest suites cover this,
   including fixed-image motion/night/shadow comparisons. Full GIANTS cascades
   and mission weather remain incomplete. See [environment notes](docs/ENVIRONMENT_RUNTIME.md).
 - **Reconstructed C++ launcher:** reads the game's startup XML, chooses the
@@ -64,6 +75,24 @@ Track completed work and remaining milestones in the
 [project checklist](PROJECT_CHECKLIST.md).
 
 ## Current 3D renders
+
+### Experimental harvest scenarios
+
+Original combine/cutter, original owned fields and density data. These explicit
+test layouts relocate equipment; normal Career uses original fleet placements.
+The captured runs harvested 140.4 L / 124.8 L. Physics, crop placement and native
+services remain partial. All sixteen CTest suites pass, including the gameplay
+and native RLE comparisons.
+
+![Bjornholm original crop harvest scenario](docs/screenshots/gameplay-harvest-map01.png)
+
+![Westbridge Hills original crop harvest scenario](docs/screenshots/gameplay-harvest-map02.png)
+
+### Original scene and environment captures
+
+Gameplay scenario captures and their limitations are described in
+[the gameplay notes](docs/GAMEPLAY_RUNTIME.md). The earlier scene captures below
+remain useful for map/environment comparison.
 
 Captured directly from the reconstructed scene runtime. Buildings, trees,
 roads and props use recovered original meshes, placements and diffuse textures.
@@ -165,17 +194,17 @@ After script/asset recovery below, run:
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR -PrepareOnly
 .\scripts\setup_shapes_tools.ps1
 & 'C:\path\to\python.exe' scripts\prepare_scene.py --game-dir $env:FS15_GAME_DIR
+& 'C:\path\to\python.exe' scripts\prepare_mission.py --game-dir $env:FS15_GAME_DIR
 .\scripts\build.ps1 -PythonExe 'C:\path\to\python.exe'
 .\scripts\package-menu.ps1 -GameDir $env:FS15_GAME_DIR
-.\build\FS15EnvironmentAlpha\FS15MenuRebuilt.exe
+.\build\FS15GameplayAlpha\FS15MenuRebuilt.exe
 ```
 
 The mesh preparation tools require Git and the .NET 10 SDK with the ASP.NET
 reference pack; the packaged native runtime does not require .NET.
 Preparation copies original files and stages geometry locally before the
-build's menu test runs. The menu target is enabled when
-the pinned local LuaJIT static library exists. To build the other components
-without it, use `-DFS15_BUILD_MENU=OFF` in CMake.
+build's menu/gameplay tests run. The engine's recovered gameplay bridge and the
+frontend require the pinned local LuaJIT static library.
 
 The local folder contains both executables, bootstrap, recovered Lua sources,
 assets and LuaJIT copyright notice. A ZIP is generated at
@@ -188,11 +217,14 @@ Mouse, wheel and arrow/Enter input use the recovered GUI's hit testing, focus
 and callbacks. Career shows twenty slots, existing money/duration/map/date
 metadata, and explicit unavailable labels for unsupported metadata. Save
 files are read only; Delete is disabled. An empty slot opens the recovered
-Difficulty and Map Selection screens. Start opens the native terrain window
-with original buildings and trees, without creating a save or starting simulation.
+Difficulty and Map Selection screens. Start opens a new experimental session
+with original map/fleet/crop data and partial native gameplay services. It creates
+no persistent save.
 Credits/Back and Quit also work.
-Use WASD/ZQSD or arrows to move, mouse drag to look, Space/Ctrl for height,
-Shift for speed and Home to reset the view.
+Use WASD/ZQSD or arrows to drive, Space to brake, Tab to change vehicle, E to
+attach, B to work, R to fill, I to tip and O for the combine pipe. Mouse drag/wheel
+orbit/zoom the camera. F8 opens the earlier free camera. See the
+[gameplay notes](docs/GAMEPLAY_RUNTIME.md) for limitations and test scenarios.
 F5/F6 step the preview hour; F7 toggles local shadows.
 
 Interactive runs read the local Windows Documents/My Games/FarmingSimulator2015
@@ -201,11 +233,11 @@ slots. Smoke tests default to empty slots and inject authored metadata only
 for deterministic input checks. Preview a screen explicitly:
 
 ```powershell
-.\build\FS15EnvironmentAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
+.\build\FS15GameplayAlpha\FS15MenuRebuilt.exe --empty-saves --screen MapSelectionScreen
 ```
 
 Other screens report their requested destination. The full `main.lua` startup, complete game worlds,
-physics, networking, audio and multiplayer remain outside this milestone.
+native physics parity, networking, audio and multiplayer remain unfinished.
 See [menu reconstruction notes](docs/MENU_RUNTIME.md).
 
 ## Reproduce the local analysis
@@ -301,7 +333,8 @@ playable standalone game. See [Lua recovery notes](docs/LUA_RECOVERY.md).
 
 Investigate the 216 Lua round-trip differences, reconstruct the GAR cipher
 without original-code execution, and continue documenting the Lua/native
-interfaces and extending the menu runtime toward game startup.
+interfaces, original physics/component joints, complete farming behavior and
+persistent sessions. The current native gameplay bridge is documented above.
 
 The RLE routine does not implement the complete GRLE file format, physics,
 rendering, or game simulation. Recovered game assets and Lua sources are

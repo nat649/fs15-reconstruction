@@ -8,8 +8,10 @@ compiled Direct3D 11 scene host for either base map. It renders original
 height data, decoded buildings/trees/props, diffuse textures and terrain layers
 at their original hierarchical transforms, with a free camera.
 Original sky/shader resources, recovered hourly environment curves and a local
-shadow service are also running; mission simulation remains incomplete.
-Full gameplay is still unimplemented. See [engine validation](analysis/engine-validation.json),
+shadow service are also running. A gameplay subset now connects original
+fleets/crops and recovered motor, field and transfer rules to partial native
+services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_RUNTIME.md),
+[engine validation](analysis/engine-validation.json),
 [menu validation](analysis/menu-validation.json) and
 [detailed status](analysis/STATUS.md).
 
@@ -28,7 +30,9 @@ Full gameplay is still unimplemented. See [engine validation](analysis/engine-va
 - [x] Compile the reconstructed Windows launcher and check its behavior.
 - [x] Reconstruct the RLE8-to-bit-vector routine in C++.
 - [x] Compare RLE8 with the original routine in 266 cases / 853,086 values.
-- [ ] Reconstruct the 16-bit RLE variant and complete GRLE handling.
+- [x] Reconstruct the 16-bit RLE leaf and compare 107 cases / 35,133,356 values.
+- [x] Read the observed version-1 GRLE8/16 grids with bounds and size checks.
+- [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.
 
 ## Archive and script recovery
@@ -102,8 +106,29 @@ Full gameplay is still unimplemented. See [engine validation](analysis/engine-va
 - [ ] Recover remaining GIANTS terrain/object shaders, shadow cascades and animated tree skeletons.
 - [ ] Restore distance-based LOD, culling, crop density and terrain detail rendering.
 - [ ] Execute the complete mission startup and game-world services.
+- [x] Stage both original starting fleets, eleven configurations and linked wheel models locally.
+- [x] Render thirteen / twelve original starting objects and switch among motor vehicles.
+- [x] Execute recovered motor curves, gearing, pedal/brake and wheel-control Lua.
+- [x] Drive through temporary terrain/contact services and animate original wheel nodes.
+- [x] Block centre-capsule movement against original static wall/trunk triangles.
+- [x] Attach compatible nearby tools with a temporary kinematic hitch service.
+- [x] Recover original field ownership/parallelograms and both 4096-square fruit grids.
+- [x] Render original crop blocks/textures from recovered type and growth state.
+- [x] Execute recovered harvest, cultivation and sowing functions on the exercised density interface.
+- [x] Harvest original mature crops with original combine/cutter work areas in reproducible map scenarios.
+- [x] Fill trailers at original silo triggers with stock/capacity/type conservation.
+- [x] Discharge through recovered trailer and tipping-station rules.
+- [x] Transfer grain through the original combine pipe animation/raycast and recovered unloading rules.
+- [x] Refill the original seed tool at original supply triggers and charge the original unit price.
+- [x] Exercise 34 gameplay assertions on each map and native collision/GRLE fixtures.
+- [x] Observe packaged silo filling through R, 5,000 L conservation, E detach/attach, Tab and camera orbit in a live window.
+- [x] Observe Career Start opening the new gameplay path and attach/activate the original starting cutter through E/B.
+- [ ] Observe and validate a complete field-to-silo cycle through live user input.
 - [ ] Reconstruct physics and vehicle simulation.
 - [ ] Implement terrain, crops and farming interactions.
+- [ ] Complete native drivetrain, suspension, articulation and vehicle/implement collisions.
+- [ ] Restore exact foliage/detail rendering, grain fill surfaces and unloading effects.
+- [ ] Implement crop growth, fertilizer/straw behavior and the complete specialization pipeline.
 - [ ] Reconstruct audio playback and mixing.
 - [ ] Implement save/load and validate a complete single-player session.
 - [ ] Reconstruct networking and multiplayer behavior.

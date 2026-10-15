@@ -253,7 +253,7 @@ static int launch_world(lua_State* state) {
                 // GUI tests check this plan; native tests rasterize both maps.
                 log_line("WORLD_LAUNCH_PLAN map="+id+" mode=original-map-scene");
             }else {
-                auto command=quote_argument(executable.wstring())+L" --root "+quote_argument(resource_root.wstring())+L" --map "+wide(id);
+                auto command=quote_argument(executable.wstring())+L" --root "+quote_argument(resource_root.wstring())+L" --map "+wide(id)+L" --play --difficulty "+std::to_wstring(difficulty);
                 STARTUPINFOW startup{};startup.cb=sizeof(startup);PROCESS_INFORMATION process{};
                 if(!CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,FALSE,0,nullptr,resource_root.c_str(),&startup,&process))
                     throw std::runtime_error("Cannot launch terrain runtime: "+std::to_string(GetLastError()));

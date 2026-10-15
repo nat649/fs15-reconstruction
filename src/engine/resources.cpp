@@ -58,9 +58,10 @@ static float number(const Attributes& a,const char* key,float fallback) {
 }
 static std::array<float,3> vector3(const Attributes& a,const char* key,std::array<float,3> fallback={0,0,0}) {
     auto text=value(a,key);if(text.empty())return fallback;
-    std::istringstream stream(text);std::array<float,3> out{};
-    if(!(stream>>out[0]>>out[1]>>out[2])||!std::isfinite(out[0])||!std::isfinite(out[1])||!std::isfinite(out[2]))
-        throw std::runtime_error("Invalid I3D vector");
+    std::istringstream stream(text);std::array<double,3> precise{};std::array<float,3> out{};
+    if(!(stream>>precise[0]>>precise[1]>>precise[2]))
+        throw std::runtime_error(std::string("Invalid I3D vector ")+key+": "+text);
+    for(size_t i=0;i<3;++i){if(!std::isfinite(precise[i])||std::abs(precise[i])>std::numeric_limits<float>::max())throw std::runtime_error("I3D vector outside float range");out[i]=static_cast<float>(precise[i]);}
     return out;
 }
 static std::filesystem::path resource(const std::filesystem::path& root,const std::filesystem::path& relative) {
@@ -143,13 +144,11 @@ WeightImage load_weight(const std::filesystem::path& filename) {
     check(factory->CreateFormatConverter(&converter),"Weight converter");check(converter->Initialize(frame.Get(),GUID_WICPixelFormat8bppGray,WICBitmapDitherTypeNone,nullptr,0,WICBitmapPaletteTypeCustom),"Weight gray conversion");
     image.pixels.resize(size_t(image.width)*image.height);check(converter->CopyPixels(nullptr,image.width,static_cast<UINT>(image.pixels.size()),image.pixels.data()),"Weight pixels");return image;
 }
-Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id) {
-    if(map_id!="Map01"&&map_id!="Map02")throw std::runtime_error("Only Map01 and Map02 are currently supported");
+static Terrain load_scene_impl(const std::filesystem::path& root,const std::string& map_id,const std::filesystem::path& relative,bool require_terrain) {
     Terrain out;out.map_id=map_id;
     const auto stem=map_id=="Map01"?"map01":"map02";
-    const auto relative=std::filesystem::path("data/maps")/(std::string(stem)+".i3d");
     out.scene_file=resource(root,relative);
-    out.meshes=load_meshes(root,relative.parent_path()/(std::string(stem)+".meshes"));
+    auto mesh_relative=relative;mesh_relative.replace_extension(".meshes");out.meshes=load_meshes(root,mesh_relative);
     std::map<unsigned,unsigned> mesh_ids;for(unsigned i=0;i<out.meshes.size();++i)if(!mesh_ids.emplace(out.meshes[i].id,i).second)throw std::runtime_error("Duplicate mesh ID");
     std::map<std::tuple<unsigned,std::vector<int>,bool,bool>,unsigned> group_ids;
     ComPtr<IStream> input;ComPtr<IXmlReader> xml;
@@ -158,7 +157,8 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
     check(xml->SetProperty(XmlReaderProperty_DtdProcessing,DtdProcessing_Prohibit),"Reject I3D DTD");
     check(xml->SetProperty(XmlReaderProperty_MaxElementDepth,512),"I3D depth limit");check(xml->SetInput(input.Get()),"I3D stream");
     std::map<int,std::string> files;std::vector<std::pair<UINT,int>> parents;
-    bool scene=false,terrain_found=false;int height_id=0,current_material=-1;UINT scene_depth=0,material_depth=0;
+    bool scene=false,terrain_found=false;int height_id=0,current_material=-1,user_node=-1;UINT scene_depth=0,material_depth=0;
+    std::map<int,int> node_ids;
     XmlNodeType kind;HRESULT result;
     while((result=xml->Read(&kind))==S_OK) {
         UINT depth=0;xml->GetDepth(&depth);
@@ -170,6 +170,14 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
         }
         if(kind!=XmlNodeType_Element)continue;
         const auto tag=name(xml.Get());
+        if(tag=="FoliageSubLayer"){
+            auto a=attributes(xml.Get());FoliageLayer layer;layer.name=value(a,"name");layer.type=unsigned(number(a,"densityMapTypeIndex",0));layer.offset=unsigned(number(a,"densityMapChannelOffset",0));layer.channels=unsigned(number(a,"numDensityMapChannels",0));layer.material=std::stoi(value(a,"materialId","0"));layer.blocks=number(a,"numBlocksPerUnit",1);
+            auto list=[&](const char* key){std::vector<float> out;std::istringstream stream(value(a,key));std::string part;while(std::getline(stream,part,';'))out.push_back(part.empty()?0:std::stof(part));return out;};
+            auto shapes=list("blockShapeId");for(float v:shapes)layer.shapes.push_back(unsigned(v));layer.widths=list("width");layer.heights=list("height");layer.states=unsigned(number(a,"numStates",1));
+            if(layer.type&&layer.offset<16&&layer.channels<=8)out.foliage.push_back(std::move(layer));continue;
+        }
+        if(tag=="UserAttribute"){auto a=attributes(xml.Get());auto at=node_ids.find(std::stoi(value(a,"nodeId","0")));user_node=at==node_ids.end()?-1:at->second;continue;}
+        if(tag=="Attribute"&&user_node>=0){auto a=attributes(xml.Get());out.nodes[user_node].attributes[value(a,"name")]=value(a,"value");continue;}
         if(tag=="Scene"){scene=true;scene_depth=depth;continue;}
         if(tag=="File") {
             auto a=attributes(xml.Get());files.emplace(std::stoi(value(a,"fileId")),value(a,"filename"));continue;
@@ -224,14 +232,17 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
             if(out.sun.resolution<64||out.sun.resolution>4096||out.sun.distance<=0||out.sun.extrusion<=0)throw std::runtime_error("Unsupported original sun shadow settings");
         }
         node.id=std::stoi(value(a,"nodeId","0"));node.parent=parents.empty()?-1:parents.back().second;
+        node.collidable=tag=="Shape"&&(value(a,"static")=="true"||value(a,"dynamic")=="true")&&value(a,"trigger")!="true"&&value(a,"collisionMask","1")!="0";
         auto translation=vector3(a,"translation");std::copy(translation.begin(),translation.end(),node.translation);
         auto rotation=vector3(a,"rotation"),scale=vector3(a,"scale",{1,1,1});
+        for(int k=0;k<3;++k){node.rotation[k]=DirectX::XMConvertToRadians(rotation[k]);node.scale[k]=scale[k];}
         using namespace DirectX;
         auto local=XMMatrixScaling(scale[0],scale[1],scale[2])*XMMatrixRotationX(XMConvertToRadians(rotation[0]))*XMMatrixRotationY(XMConvertToRadians(rotation[1]))*XMMatrixRotationZ(XMConvertToRadians(rotation[2]))*XMMatrixTranslation(translation[0],translation[1],translation[2]);
         if(node.parent>=0){XMFLOAT4X4 parent;std::copy(out.nodes[node.parent].world,out.nodes[node.parent].world+16,&parent._11);local=local*XMLoadFloat4x4(&parent);}
         XMFLOAT4X4 world;XMStoreFloat4x4(&world,local);std::copy(&world._11,&world._11+16,node.world);
         node.visible=value(a,"visibility","true")!="false"&&!lower_lod(node.name)&&(node.parent<0||out.nodes[node.parent].visible);
         const auto index=static_cast<int>(out.nodes.size());out.nodes.push_back(std::move(node));
+        node_ids[out.nodes.back().id]=index;if(out.nodes.back().parent>=0)out.nodes[out.nodes.back().parent].children.push_back(index);
         if(!xml->IsEmptyElement())parents.emplace_back(depth,index);
         if(tag=="Shape"){
             ++out.shape_nodes;auto mesh=mesh_ids.find(static_cast<unsigned>(std::stoul(value(a,"shapeId","0"))));
@@ -242,6 +253,7 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
                 const auto key=std::make_tuple(mesh->second,material_ids,casts,receives);auto group=group_ids.find(key);unsigned group_index;
                 if(group==group_ids.end()){group_index=static_cast<unsigned>(out.groups.size());group_ids.emplace(key,group_index);out.groups.push_back({mesh->second,material_ids,{},casts,receives});}else group_index=group->second;
                 Matrix matrix;std::copy(out.nodes.back().world,out.nodes.back().world+16,matrix.value);out.groups[group_index].instances.push_back(matrix);
+                out.groups[group_index].nodes.push_back(index);
                 ++out.rendered_instances;out.object_triangles+=out.meshes[mesh->second].indices.size()/3;
             }else ++out.skipped_instances;
         }
@@ -254,11 +266,14 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
         }
     }
     check(result,"Parse I3D");
-    if(!terrain_found||!files.count(height_id)||out.height_scale<=0||out.units_per_pixel<=0)throw std::runtime_error("I3D terrain definition is incomplete");
+    if(require_terrain&&(!terrain_found||!files.count(height_id)||out.height_scale<=0||out.units_per_pixel<=0))throw std::runtime_error("I3D terrain definition is incomplete");
     out.file_references=static_cast<unsigned>(files.size());
+    std::set<std::filesystem::path> used{relative};
+    if(terrain_found){
     out.height_file=resource(root,relative.parent_path()/std::filesystem::u8path(files.at(height_id)));
     out.texture_file=resource(root,relative.parent_path()/stem/"pda_map_H.dds");
     auto heights=height_pixels(out.height_file,out.source_width,out.source_height);
+    out.heights=heights;
     out.width=(out.source_width-1)*out.units_per_pixel;out.depth=(out.source_height-1)*out.units_per_pixel;
     auto extrema=std::minmax_element(heights.begin(),heights.end());
     out.min_height=*extrema.first*out.height_scale/65535.0f;out.max_height=*extrema.second*out.height_scale/65535.0f;
@@ -290,12 +305,33 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
     for(unsigned z=0;z<nz-1;++z)for(unsigned x=0;x<nx-1;++x) {
         unsigned a=z*nx+x,b=a+1,c=a+nx,d=c+1;out.indices.insert(out.indices.end(),{a,c,b,b,c,d});
     }
-    std::set<std::filesystem::path> used{relative,(relative.parent_path()/std::filesystem::u8path(files.at(height_id))).lexically_normal(),relative.parent_path()/stem/"pda_map_H.dds"};
-    if(!out.meshes.empty())used.insert(relative.parent_path()/(std::string(stem)+".meshes"));
+    used.insert((relative.parent_path()/std::filesystem::u8path(files.at(height_id))).lexically_normal());used.insert(relative.parent_path()/stem/"pda_map_H.dds");
+    }
+    if(!out.meshes.empty())used.insert(mesh_relative);
     for(const auto& group:out.groups)for(int id:group.materials){auto found=out.materials.find(id);if(found!=out.materials.end()){if(!found->second.texture.empty())used.insert(found->second.texture);if(!found->second.original_shader.empty())used.insert(found->second.original_shader);}}
     for(const auto& layer:out.layers){used.insert(layer.detail);used.insert(layer.weight);}
     out.used_resources.assign(used.begin(),used.end());
     return out;
+}
+Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id){
+    if(map_id!="Map01"&&map_id!="Map02")throw std::runtime_error("Only Map01 and Map02 are currently supported");
+    return load_scene_impl(root,map_id,std::filesystem::path("data/maps")/(map_id=="Map01"?"map01.i3d":"map02.i3d"),true);
+}
+Terrain load_scene(const std::filesystem::path& root,const std::filesystem::path& relative){return load_scene_impl(root,"",relative,false);}
+void update_transforms(Terrain& scene,const Matrix& root){
+    using namespace DirectX;XMFLOAT4X4 r;std::copy(root.value,root.value+16,&r._11);
+    for(auto& node:scene.nodes){auto m=XMMatrixScaling(node.scale[0],node.scale[1],node.scale[2])*XMMatrixRotationX(node.rotation[0])*XMMatrixRotationY(node.rotation[1])*XMMatrixRotationZ(node.rotation[2])*XMMatrixTranslation(node.translation[0],node.translation[1],node.translation[2]);
+        if(node.parent>=0){XMFLOAT4X4 p;std::copy(scene.nodes[node.parent].world,scene.nodes[node.parent].world+16,&p._11);m=m*XMLoadFloat4x4(&p);}else m=m*XMLoadFloat4x4(&r);
+        XMFLOAT4X4 w;XMStoreFloat4x4(&w,m);std::copy(&w._11,&w._11+16,node.world);
+    }
+    for(auto& group:scene.groups)for(size_t i=0;i<group.nodes.size();++i)std::copy(scene.nodes[group.nodes[i]].world,scene.nodes[group.nodes[i]].world+16,group.instances[i].value);
+}
+float terrain_height(const Terrain& t,float x,float z){
+    if(t.heights.empty())throw std::runtime_error("Terrain height service unavailable");
+    const float px=std::clamp(x/t.units_per_pixel+(t.source_width-1)*0.5f,0.0f,float(t.source_width-1)),pz=std::clamp(z/t.units_per_pixel+(t.source_height-1)*0.5f,0.0f,float(t.source_height-1));
+    const unsigned ix=unsigned(px),iz=unsigned(pz);const float a=px-ix,b=pz-iz;
+    auto at=[&](unsigned xx,unsigned zz){return t.heights[size_t(std::min(zz,t.source_height-1))*t.source_width+std::min(xx,t.source_width-1)]*t.height_scale/65535.0f;};
+    return (1-b)*((1-a)*at(ix,iz)+a*at(ix+1,iz))+b*((1-a)*at(ix,iz+1)+a*at(ix+1,iz+1));
 }
 static std::uint32_t u32(const std::vector<std::uint8_t>& bytes,size_t offset) {
     if(offset+4>bytes.size())throw std::runtime_error("Truncated DDS header");

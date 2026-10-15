@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "original_function": "0x14028f770",
+  "reference_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "differential_cases": 107,
+  "decoded_samples": 35133356,
+  "real_density_maps": [
+    {
+      "source_sha256": "c6ac35039484eb54c11420000cfe24a2ddb6b19c34675ad3a069baf862c5356f",
+      "width": 4096,
+      "height": 4096,
+      "decoded_sha256": "ddc42bdfafabf397b9932529d0594f7de2b62b992a172b2b9a55229176adddd0"
+    },
+    {
+      "source_sha256": "0d476a758ca4be088af0167c5a082b2391474573d9c80a09f2a26ceab69e600b",
+      "width": 4096,
+      "height": 4096,
+      "decoded_sha256": "cf62f0a90299ba7020a22fa7aa2d38f087e6501ad7aabd7df5dec58c3b63e92b"
+    }
+  ],
+  "scope": "Original 16-bit RLE leaf, bit widths 1..16, strides through 32, extended runs and 64 KiB boundaries"
+}
