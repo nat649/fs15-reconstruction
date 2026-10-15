@@ -22,7 +22,7 @@
       "pause_and_focus_checks": true,
       "original_bytecode_matches": true,
       "simulation_ticks": 300,
-      "image_sha256": "0881d335cb0fac4144a31ece14b201cbfd168e1d11f4cf93be326904af0d83e9"
+      "image_sha256": "d71b62a636cd7def1888036e0f28344ead4ae3acbaaf98b9662f8f31eabc58ec"
     },
     {
       "map": "Map01",
@@ -36,7 +36,7 @@
       "pause_and_focus_checks": true,
       "original_bytecode_matches": true,
       "simulation_ticks": 240,
-      "image_sha256": "9c87169faf4227b8694644efd345780ad3f2bb0857f797c1542d28ad30c75fb3"
+      "image_sha256": "1f658b0797413a8b284860c9fa8038d13d4a836ebaea0852e5338e88f0f4036a"
     },
     {
       "map": "Map02",
@@ -50,7 +50,7 @@
       "pause_and_focus_checks": true,
       "original_bytecode_matches": true,
       "simulation_ticks": 300,
-      "image_sha256": "ea03eb854f5b6093b440772abf0ef18d0c7d665af3b18770517fc3bf255b8f80"
+      "image_sha256": "488b62b0fd7e604c408b20c5bad120f60834bb98fda30bb4aac2175ab64905bc"
     },
     {
       "map": "Map02",
@@ -64,12 +64,12 @@
       "pause_and_focus_checks": true,
       "original_bytecode_matches": true,
       "simulation_ticks": 240,
-      "image_sha256": "388e112e4bb5d786b74b4fd8a9d1962a2759d11a706755ec4f88e33ffca24482"
+      "image_sha256": "fa31a37c74dcc703096c549ae35787053e490e368114e80a38e61d658743dd28"
     }
   ],
   "gameplay_assertions_per_map": 43,
   "input_manifest_sha256": "9e30b541d926a419c72806e133b90547d2494a3b2145c618f76a1c3be4eb48e4",
   "authored_host_script_sha256": "ab7c8bab74ebc9b87a3eca0b9fc48f0056cd4c9c575e0f7c64dfb56e0558cb7c",
-  "native_host_sha256": "80c4f03d87b7ce58c316d639e40fa99957b8050592e62de8ce38dc7d7b141587",
+  "native_host_sha256": "0b1a51c8d24e985073c06268ed698957f994ba2d6a5dc76b4dcca9b1fdd446be",
   "scope": "Whole original Lua chunks versus recovered sources in the same authored native host; source slices remain shared; no full GE6/PhysX parity"
 }

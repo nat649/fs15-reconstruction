@@ -1,5 +1,7 @@
-// Authored I3D metadata/terrain resource loader. No original engine code is used.
+// Authored I3D metadata/terrain loader with reconstructed native TRS/affine math.
 #include "resources.h"
+#include "../core/scene_trs.h"
+#include "../core/scene_math.h"
 #include <windows.h>
 #include <objidl.h>
 #include <wincodec.h>
@@ -237,9 +239,10 @@ static Terrain load_scene_impl(const std::filesystem::path& root,const std::stri
         auto rotation=vector3(a,"rotation"),scale=vector3(a,"scale",{1,1,1});
         for(int k=0;k<3;++k){node.rotation[k]=DirectX::XMConvertToRadians(rotation[k]);node.scale[k]=scale[k];}
         using namespace DirectX;
-        auto local=XMMatrixScaling(scale[0],scale[1],scale[2])*XMMatrixRotationX(XMConvertToRadians(rotation[0]))*XMMatrixRotationY(XMConvertToRadians(rotation[1]))*XMMatrixRotationZ(XMConvertToRadians(rotation[2]))*XMMatrixTranslation(translation[0],translation[1],translation[2]);
-        if(node.parent>=0){XMFLOAT4X4 parent;std::copy(out.nodes[node.parent].world,out.nodes[node.parent].world+16,&parent._11);local=local*XMLoadFloat4x4(&parent);}
-        XMFLOAT4X4 world;XMStoreFloat4x4(&world,local);std::copy(&world._11,&world._11+16,node.world);
+        float local[16];
+        if(!fs15_compose_trs(node.rotation,node.scale,node.translation,local,16))throw std::runtime_error("Recovered I3D TRS composition failed");
+        if(node.parent>=0){if(!fs15_affine_multiply(out.nodes[node.parent].world,16,local,16,node.world,16))throw std::runtime_error("Recovered I3D parent composition failed");}
+        else std::copy(local,local+16,node.world);
         node.local_visible=value(a,"visibility","true")!="false";
         node.lod_visible=!lower_lod(node.name)&&(node.parent<0||out.nodes[node.parent].lod_visible);
         node.visible=node.local_visible&&node.lod_visible&&(node.parent<0||out.nodes[node.parent].visible);
@@ -321,10 +324,10 @@ Terrain load_terrain(const std::filesystem::path& root,const std::string& map_id
 }
 Terrain load_scene(const std::filesystem::path& root,const std::filesystem::path& relative,bool dynamic_visibility){return load_scene_impl(root,"",relative,false,dynamic_visibility);}
 void update_transforms(Terrain& scene,const Matrix& root){
-    using namespace DirectX;XMFLOAT4X4 r;std::copy(root.value,root.value+16,&r._11);
-    for(auto& node:scene.nodes){auto m=XMMatrixScaling(node.scale[0],node.scale[1],node.scale[2])*XMMatrixRotationX(node.rotation[0])*XMMatrixRotationY(node.rotation[1])*XMMatrixRotationZ(node.rotation[2])*XMMatrixTranslation(node.translation[0],node.translation[1],node.translation[2]);
-        if(node.parent>=0){XMFLOAT4X4 p;std::copy(scene.nodes[node.parent].world,scene.nodes[node.parent].world+16,&p._11);m=m*XMLoadFloat4x4(&p);}else m=m*XMLoadFloat4x4(&r);
-        XMFLOAT4X4 w;XMStoreFloat4x4(&w,m);std::copy(&w._11,&w._11+16,node.world);
+    for(auto& node:scene.nodes){float local[16];
+        if(!fs15_compose_trs(node.rotation,node.scale,node.translation,local,16))throw std::runtime_error("Recovered animated TRS composition failed");
+        const float* parent=node.parent>=0?scene.nodes[node.parent].world:root.value;
+        if(!fs15_affine_multiply(parent,16,local,16,node.world,16))throw std::runtime_error("Recovered animated hierarchy composition failed");
     }
     update_visibility(scene);
 }

@@ -59,6 +59,20 @@ FS15_CORE_API int fs15_scene_state_update(const FS15SceneStateArena*,size_t,unsi
 /* Recovered matrix vtable setters: plain copy vs TRS copy + dirty bit 0x80.
  * This does not propagate world changes or rebuild the cached TRS fields. */
 FS15_CORE_API int fs15_scene_set_local_matrix(const FS15SceneStateArena*,size_t,const float*,size_t);
+enum FS15SceneTRSOperation {
+    FS15_SCENE_TRS_REFRESH=0,FS15_SCENE_TRS_REBUILD=1,
+    FS15_SCENE_SET_TRANSLATION=2,FS15_SCENE_SET_ROTATION=3,FS15_SCENE_SET_SCALE=4,
+    FS15_SCENE_GET_TRANSLATION=5,FS15_SCENE_GET_ROTATION=6,FS15_SCENE_GET_SCALE=7
+};
+/* Recovered cache/rebuild and six complete Lua-frame adapters. Getter frames
+ * use values +0xf0/+0x100/+0x110, uint16 numeric tags at +8. Setter inputs are
+ * at +0/+0x10/+0x20. Refresh/rebuild accept a null frame. Notifications are
+ * staged as above. Rebuild propagates mask 1 with original origin=0.
+ * setScale preserves the native store/rebuild behavior even on dynamic nodes;
+ * scale_warning reports its diagnostic condition instead of invoking the
+ * unrecovered native logger. Math uses the platform libm; see scene_trs.h. */
+FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena*,size_t,unsigned,
+    void*,size_t,FS15SceneNotification*,size_t,size_t*,int*);
 #ifdef __cplusplus
 }
 static_assert(sizeof(void*)==8,"Observed scene layout requires 64-bit pointers");

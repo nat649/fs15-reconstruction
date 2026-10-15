@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_trs_and_lua_updates', ['0x14009de00','0x14009d8c0','0x140057980','0x14009e520',
+        '0x14010fd00','0x1400e51f0','0x1400e60c0','0x1400e6610','0x1400e5260',
+        '0x1400e6130','0x1400e6750'], 'analysis/scene-trs-validation.json'),
     ('scene_state_and_dispatch', ['0x1400b1b00','0x1400b6160','0x1400b61f0',
         '0x1400b15d0','0x14010fce0'], 'analysis/scene-state-validation.json'),
     ('scene_math_and_transforms', ['0x14009da60','0x14009e160','0x14009e0a0','0x14009df40',

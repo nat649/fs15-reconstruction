@@ -37,7 +37,8 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 | Motor, wheel and farm-transfer rules | Recovered Lua | Executed with partial native services; no full PhysX integration |
 | Vehicle animation and trailer state transitions | Recovered AnimatedVehicle / Trailer / SpecializationUtil | Original XML loader, timing, visibility, discharge and closure; 777 matching original-bytecode fixture samples |
 | Native engine catalogue | Ghidra export plus explicit binding/vtable discovery | All 11,635 eligible functions exported locally; 30 binding targets and four scene-vtable targets discovered; analysis rather than compilable recovered engine source |
-| Portable recovered core | Reconstructed native RLE/tire math, wheel lookup/read adapters, bit operations, affine/quaternion math and scene state/transforms | 35 bounded native entries compiled as C++17; coordinate adapters run in ReFarm through an authored matrix bridge; state propagation is a separately validated component; no complete engine or Switch startup |
+| Portable recovered core | Reconstructed native RLE/tire math, wheel lookup/read adapters, bit operations, affine/quaternion math and scene state/TRS/transforms | 46 bounded native entries compiled as C++17; coordinate and TRS/affine composition run in ReFarm; complete scene ownership/startup remains open |
+| Trigonometric math backend | Platform C++ math library | Recovered TRS algorithms call sin/cos/atan2/sqrt; original CRT math bodies are not recovered; Windows fixture outputs match bit for bit |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
 | Simulation scheduling and pause | Authored host code | Fixed 60 Hz gameplay updates, bounded stall recovery and pause/input clearing; not recovered GE6 physics timing |

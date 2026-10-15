@@ -5,6 +5,7 @@
 #include "simulation_clock.h"
 #include "../core/transform.h"
 #include "../core/scene_graph.h"
+#include "../core/scene_trs.h"
 #include "../menu/xml_bridge.h"
 #include <lua.hpp>
 #include <DirectXCollision.h>
@@ -122,7 +123,9 @@ struct MissionRuntime::Impl {
         else lua_pushstring(l,at->second.c_str());return 1;
     }
     static int height(lua_State* l){auto& s=self(l);lua_pushnumber(l,fs15world::terrain_height(s.terrain,float(luaL_checknumber(l,1)),float(luaL_checknumber(l,2))));return 1;}
-    static int pose(lua_State* l){auto& s=self(l);int i=int(luaL_checkinteger(l,1))-1;if(i<0||size_t(i)>=s.bodies.size())throw std::runtime_error("Invalid vehicle index");auto& b=s.bodies[i];b.position={float(luaL_checknumber(l,2)),float(luaL_checknumber(l,3)),float(luaL_checknumber(l,4))};b.yaw=float(luaL_checknumber(l,6));XMFLOAT4X4 w;XMStoreFloat4x4(&w,XMMatrixRotationX(float(luaL_checknumber(l,5)))*XMMatrixRotationY(b.yaw)*XMMatrixRotationZ(float(luaL_checknumber(l,7)))*XMMatrixTranslation(b.position.x,b.position.y,b.position.z));fs15world::Matrix m;std::copy(&w._11,&w._11+16,m.value);fs15world::update_transforms(b.scene,m);return 0;}
+    static int pose(lua_State* l){auto& s=self(l);int i=int(luaL_checkinteger(l,1))-1;if(i<0||size_t(i)>=s.bodies.size())throw std::runtime_error("Invalid vehicle index");auto& b=s.bodies[i];b.position={float(luaL_checknumber(l,2)),float(luaL_checknumber(l,3)),float(luaL_checknumber(l,4))};b.yaw=float(luaL_checknumber(l,6));
+        const float rotation[]={float(luaL_checknumber(l,5)),b.yaw,float(luaL_checknumber(l,7))},scale[]={1,1,1},translation[]={b.position.x,b.position.y,b.position.z};
+        fs15world::Matrix m;if(!fs15_compose_trs(rotation,scale,translation,m.value,16))throw std::runtime_error("Recovered vehicle pose composition failed");fs15world::update_transforms(b.scene,m);return 0;}
     static int find_callbacks(lua_State* l){auto& s=self(l);std::string callback=luaL_checkstring(l,1);lua_newtable(l);int count=0;for(size_t i=0;i<s.terrain.nodes.size();++i){auto at=s.terrain.nodes[i].attributes.find("onCreate");if(at!=s.terrain.nodes[i].attributes.end()&&at->second==callback){lua_pushinteger(l,s.map_handle(int(i)));lua_rawseti(l,-2,++count);}}return 1;}
     static BoundingBox box(const Ref& r){const auto& node=r.scene->nodes[r.index];if(node.mesh<0)throw std::runtime_error("Trigger needs an original mesh");const auto& vertices=r.scene->meshes[node.mesh].vertices;BoundingBox local,world;BoundingBox::CreateFromPoints(local,vertices.size(),reinterpret_cast<const XMFLOAT3*>(vertices.data()),sizeof(fs15world::Vertex));XMFLOAT4X4 w;std::copy(node.world,node.world+16,&w._11);local.Transform(world,XMLoadFloat4x4(&w));return world;}
     static int overlap(lua_State* l){auto& s=self(l);auto a=s.node(int(luaL_checkinteger(l,1))),b=s.node(int(luaL_checkinteger(l,2)));lua_pushboolean(l,box(a).Intersects(box(b)));return 1;}

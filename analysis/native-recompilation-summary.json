@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11600,
-  "validated_component_path_entries": 35,
+  "pseudocode_only": 11589,
+  "validated_component_path_entries": 46,
   "components": [
+    {
+      "name": "scene_trs_and_lua_updates",
+      "entries": 11,
+      "evidence": "analysis/scene-trs-validation.json"
+    },
     {
       "name": "scene_state_and_dispatch",
       "entries": 5,

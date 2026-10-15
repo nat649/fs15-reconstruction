@@ -62,7 +62,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Connect recovered local/world coordinate adapters to ReFarm's existing world matrices and repeat 24 two-map gameplay reliability runs.
 - [x] Recover bounded base/TRS dirty-state propagation, clip/mask inheritance, observer tracking and matrix setters; match 12,000 complete node arenas and 7,200 notification traces.
 - [x] Check the world-preserving child path in 185 observed local-matrix changes, with singular-parent rejection in authored tests.
-- [x] Track 35 bounded reconstructed native entries separately from 11,600 pseudocode-only entries, with source-pinned evidence.
+- [x] Recover axis rotation, TRS composition/decomposition, lazy cache/rebuild and six Lua getter/setter frames; compare 18,000 math results and 7,200 complete node arenas.
+- [x] Integrate recovered TRS/affine math into ReFarm's I3D node hierarchy, animation updates and vehicle-root poses.
+- [x] Track 46 bounded reconstructed native entries separately from 11,589 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

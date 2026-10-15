@@ -2,6 +2,7 @@
 #include "scene_state.h"
 #include "scene_math.h"
 #include "scene_graph.h"
+#include "scene_trs.h"
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -67,6 +68,22 @@ struct State {
     void world(size_t i) {
         if(!fs15_scene_update_world(nodes.data(),nodes.size()*sizeof(nodes[0]),sizeof(nodes[0]),i))
             throw std::runtime_error("Invalid world chain");
+    }
+    void refresh_trs(size_t i) {
+        auto& node=nodes[i];float scale[3],rotation[3];
+        if(!fs15_matrix_scale(node.local,16,scale,3)||!fs15_matrix_euler(node.local,16,scale,rotation,3))
+            throw std::runtime_error("Invalid native TRS cache input");
+        std::memcpy(node.translation,node.local+12,12);
+        std::memcpy(node.rotation,rotation,12);std::memcpy(node.scale,scale,12);
+        node.flags&=~uint32_t(0x80);
+    }
+    void rebuild_trs(size_t i) {
+        auto& node=nodes[i];if(node.flags&0x80)refresh_trs(i);
+        float local[16];
+        if(!fs15_compose_trs(node.rotation,node.scale,node.translation,local,16))throw std::runtime_error("Invalid TRS composition");
+        set_matrix(i,local);
+        std::vector<bool> visited(count);propagate(i,1,0,visited);
+        node.flags&=~uint32_t(0x80);
     }
     void commit() {
         for(size_t i=0;i<count;++i) {
@@ -176,4 +193,44 @@ extern "C" FS15_CORE_API int fs15_scene_set_local_matrix(const FS15SceneStateAre
     if(!arena||!matrix||count<16)return 0;
     try {State state(*arena,index);state.set_matrix(index,matrix);state.commit();return 1;}
     catch(...){return 0;}
+}
+
+extern "C" FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena* arena,
+    size_t index,unsigned operation,void* frame,size_t frame_bytes,FS15SceneNotification* events,
+    size_t capacity,size_t* notification_count,int* scale_warning) {
+    if(!arena||!notification_count||!scale_warning||operation>FS15_SCENE_GET_SCALE||
+        !range(events,capacity,sizeof(*events))||(operation>=2&&(!frame||frame_bytes<(operation>=5?0x11a:0x24))))return 0;
+    try {
+        State state(*arena,index);auto& node=state.nodes[index];int warning=0;
+        float values[3]{};
+        if(operation>=2&&operation<=4) {
+            for(unsigned i=0;i<3;++i)std::memcpy(values+i,static_cast<const uint8_t*>(frame)+i*16,4);
+            for(float value:values)if(!std::isfinite(value))throw std::runtime_error("Nonfinite Lua TRS input");
+            if(operation==FS15_SCENE_SET_SCALE&&(state.properties(index)&0x88)==0x88&&
+                (values[0]!=1||values[1]!=1||values[2]!=1))warning=1;
+        }
+        if(operation==FS15_SCENE_TRS_REFRESH)state.refresh_trs(index);
+        else if(operation==FS15_SCENE_TRS_REBUILD)state.rebuild_trs(index);
+        else {
+            if(node.flags&0x80)state.refresh_trs(index);
+            if(operation<=4) {
+                float* target=operation==2?node.translation:operation==3?node.rotation:node.scale;
+                std::memcpy(target,values,12);state.rebuild_trs(index);
+            }else {
+                const float* source=operation==5?node.translation:operation==6?node.rotation:node.scale;
+                for(unsigned i=0;i<3;++i)if(!std::isfinite(source[i]))throw std::runtime_error("Nonfinite cached TRS output");
+                std::memcpy(values,source,12);
+            }
+        }
+        *notification_count=state.events.size();
+        if(state.events.size()>capacity)return 0;
+        state.commit();
+        if(operation>=5)for(unsigned i=0;i<3;++i) {
+            const uint16_t type=3;
+            std::memcpy(static_cast<uint8_t*>(frame)+0xf0+i*16,values+i,4);
+            std::memcpy(static_cast<uint8_t*>(frame)+0xf8+i*16,&type,2);
+        }
+        if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
+        *scale_warning=warning;return 1;
+    }catch(...){return 0;}
 }

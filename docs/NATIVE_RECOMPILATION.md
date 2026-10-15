@@ -25,9 +25,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Cached hierarchical world transforms | `0x1400b1a50` | 1,200 complete node-arena comparisons across dirty/cached parent chains |
 | Four Lua local/world point/direction adapters | `0x1400e5330`, `0x1400e5410`, `0x1400e54e0`, `0x1400e55f0` | 4,799 complete script frames and their 4,799 node arenas; integrated into ReFarm through an authored world-matrix bridge |
 | Scene state, observer tracking, inherited flag and base/TRS matrix setters | Five native entries; two constructor-observed vtables | 12,000 complete node arenas and 7,200 side-effect-free notification traces; includes 185 world-preserving child matrix changes |
+| TRS math/cache/rebuild and six Lua getters/setters | Eleven native entries | 18,000 math results, 7,200 complete node arenas and notification traces; all recorded Windows floats bit-identical, with explicit platform-libm boundary |
 
-Those are **35 native entries with bounded reconstructed paths**. They are not
-35 completely proven engine functions or a percentage of GE6 completion.
+Those are **46 native entries with bounded reconstructed paths**. They are not
+46 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -111,6 +112,12 @@ partial `0x170`-byte node layout, bounded pointer views and ordered notification
 output. It does not execute arbitrary original vtables/callbacks or allocate
 engine objects. Its staged failure guards and maximum descendant depth are
 authored. See [state recovery scope and remaining lifecycle work](SCENE_STATE_RECOVERY.md).
+
+The [TRS update component](SCENE_TRS_RECOVERY.md) recovers lazy cache refresh,
+matrix rebuilding, the original origin-zero propagation call, and six complete
+Lua setter/getter frames. Its matrix/Euler flow is recovered; trig and square-root
+functions use platform libm, with a recorded numeric gate. ReFarm now uses these
+recovered composition/affine routines for I3D node transforms and vehicle poses.
 
 ## Discovery and recovery ledger
 

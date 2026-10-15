@@ -4,7 +4,8 @@
 It opens a native window, creates a device, swap chain, depth buffer and shaders,
 uploads original terrain/object geometry and textures, and runs a free-camera render loop.
 It does not load the original GIANTS executable. Bounded native routines recovered
-into C++ provide GRLE decoding and Lua affine point transforms; the rest of the
+into C++ provide GRLE decoding, Lua coordinate conversions and original TRS/affine
+composition for I3D hierarchy, animated nodes and vehicle poses; the rest of the
 host is authored and does not constitute a rebuilt GE6 engine.
 Its resource pipeline reuses original GIANTS Engine 6 data and a verified mesh
 decoder. See [component provenance](RECONSTRUCTION_STRATEGY.md). Full engine

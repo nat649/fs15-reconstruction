@@ -11,11 +11,12 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,200 entries, 11,635 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 35 native entries with validated bounded paths | Remaining 11,600 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 46 native entries with validated bounded paths | Remaining 11,589 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 16 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 30 have validated components | 2,848 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| TRS updates | Eleven entries, 18,000 math results and 7,200 complete scene arenas; integrated TRS/affine composition in ReFarm | Platform libm, logger/observer callback effects and full object lifecycle remain separate boundaries |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 41 have validated components | 2,837 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,311 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |

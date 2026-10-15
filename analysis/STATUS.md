@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 35 bounded reconstructed entries from 11,600 pseudocode-only entries. This is host component
+separates 46 bounded reconstructed entries from 11,589 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,8 +37,18 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has three asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. Seven native differential suites also pass.
+has four asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. Eight native differential suites also pass.
+
+Eleven additional TRS entries now reconstruct axis rotation, composition,
+Euler extraction, lazy cache refresh, rebuild propagation and six Lua
+setters/getters. The Windows run matches all 18,000 math comparisons and 7,200
+complete scene arenas, with exact flags/events/metadata and bit-identical float
+regions. Platform libm remains an explicit dependency rather than reconstructed
+CRT math. ReFarm's original I3D hierarchy, animated nodes and vehicle-root poses
+now use recovered TRS/affine composition. Both maps repeat all 24 reliability
+runs and match packaged scene/fleet/discharge renders after integration. See
+[TRS scope](../docs/SCENE_TRS_RECOVERY.md).
 
 The additional scene-state component recovers five native paths with a partial
 typed node layout and known base/TRS dispatch. All 12,000 complete synthetic
