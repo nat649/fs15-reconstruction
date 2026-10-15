@@ -8,9 +8,11 @@ reconstructed game.
 
 ## Local native entry point
 
-After local script recovery and launcher compilation, double-click
-`Launch FS15.cmd`. First-time installation selection, or a nonstandard Steam
-client, can be passed explicitly:
+After local script recovery and launcher compilation, build the graphical
+launcher with `scripts/build-launcher.ps1`, then double-click `Launch FS15.cmd`.
+Its default mode activates three recovered wheel helpers after parity checks.
+See [the unified launcher](UNIFIED_LAUNCHER.md). Command-line baseline startup
+and a nonstandard Steam client can still be selected explicitly:
 
 ```powershell
 scripts/launch-native.ps1 -GameDir $env:FS15_GAME_DIR
@@ -56,7 +58,9 @@ found in the captured log. See [aggregate evidence](../analysis/native-engine-va
 
 These observations establish native engine use and recovered-source execution.
 They do not establish complete reconstructed gameplay: original global game
-classes still provide the playable simulation.
+classes still provide most of the playable simulation. The later hybrid check
+on Westbridge Hills additionally activated `getTireType`, `getTireFriction` and
+`getGroundType`, and recorded all three being called by native vehicles.
 
 Preparation starts with `native_boot_verified=false` and
 `recovered_script_execution_verified=false`. After mission loading, record
@@ -79,7 +83,10 @@ The observed FS15 mod loader accepts `descVersion=21` and loads
 single-player probe captures the original WheelsUtil table, loads the recovered
 WheelsUtil source into the isolated mod environment, and compares 104 pure
 tire-friction/ground-classification cases. Original global gameplay classes
-are not replaced by this initial validation probe.
+are not replaced by the baseline probe. Hybrid mode adds an authored activation
+adapter after verification, replacing only three helper methods in that table.
+Other native rendering/physics/gameplay services stay original. See the
+[hybrid integration limits](UNIFIED_LAUNCHER.md#recovered-helpers-in-native-gameplay).
 
 Start a career in the isolated profile, then start the mission. In the observed
 single-player flow the local probe loaded automatically without a separate

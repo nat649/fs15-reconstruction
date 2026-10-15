@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-15",
+  "scope": "Authored unified launcher, separate runtime processes and bounded recovered-helper integration; not a merged or completely rebuilt GE6",
+  "gui_build": "Release publish succeeded without warnings",
+  "gui_open_observed": true,
+  "gui_native_start_observed": true,
+  "native_map_observed": "Westbridge Hills",
+  "native_tractor_entry_observed": true,
+  "hybrid_evidence": "analysis/native-engine-validation.json",
+  "home_launch_from_gui": true,
+  "home_engine_ready": true,
+  "home_visible_gpu_samples": 965412,
+  "home_runtime_window_capture": "Computer Use FrameArrived timed out after one recovery attempt; renderer readiness is log/GPU evidence",
+  "direct_native_start": {
+    "attempted_from_gui": true,
+    "exit_code": 53,
+    "successful": false,
+    "scope": "Tested installed Steam executable only; no ownership bypass attempted"
+  },
+  "launcher_source_sha256": "b10e0a9cef4deb4a69c044e7fb48333024d5926758d1c71aa3c1757d0075f4f2",
+  "home_engine_loaded_original_GE6": false,
+  "native_session_activation_adapter_sha256": "7a1f017729d3cf80f518e393dda8f0707538997e654433e2e7ca4fe088292f2f",
+  "authored_fixture_activation_adapter_sha256": "a03d5c3dc3cebc3f381547c2f28ae4b877b8380bee4eb99ad528a874048c6789",
+  "native_reload_session_verified": false
+}

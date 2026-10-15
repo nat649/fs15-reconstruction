@@ -8,6 +8,16 @@ and machine-specific analysis outputs remain local.
 
 ## Compiled components
 
+The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the
+home runtime, original GE6 baseline or GE6 with three recovered wheel helpers.
+The native menu, Westbridge Hills and tractor HUD were observed; all three
+recovered helper methods were called by native vehicles after 104 comparisons.
+The home engine also reached its ready state from the same launcher. Direct
+startup of the tested Steam copy exits with code 53; normal Steam startup works.
+This combines launch configuration and bounded recovered logic, with separate
+native renderer/physics processes. See [native evidence](native-engine-validation.json)
+and [launcher evidence](unified-launcher-validation.json).
+
 The new [gameplay alpha](../docs/GAMEPLAY_RUNTIME.md) loads original starting
 fleets and field/crop data, executes recovered motor/wheel and farm-transfer
 rules, and supports basic cutting/cultivation/sowing through a partial native
@@ -27,10 +37,10 @@ GE6/PhysX behavior, complete specialization startup and persistent saves remain
 unfinished. Explicit harvest/silo scenarios relocate original equipment only
 for reproducible trials; normal new-game placement uses original templates.
 
-The native catalogue now has **11,599 verified local pseudocode exports** from
-11,601 eligible functions, with two explicit timeouts after 120-second retries.
+The native catalogue now has **11,601 verified local pseudocode exports** from
+11,601 eligible functions, with zero remaining export failures in this catalogue.
 Another 565 catalogue entries are thunks or external functions. There are also
-205 explicit engine descriptors indexed separately from earlier Lua mappings.
+498 explicit native scripting descriptors indexed separately from earlier Lua mappings.
 The tire-force calculation at `0x1400c24c0` is reconstructed in C++ and matches
 the original in **3,300 cases / 13,200 float outputs**. It is not yet integrated
 with playable contacts/slip/rigid-body physics. See [native recovery](../docs/NATIVE_RECOVERY.md),
@@ -162,15 +172,16 @@ Public summaries: [recovery](lua-recovery-summary.json),
 | Original launcher | 654 | 651 | 0 |
 | x64 game, initial selection | 12,166 | 249 | 1 |
 | x64 game, focused selection | Same catalogue | 44 | 0 |
-| x64 game, full eligible catalogue | 12,166 (11,601 eligible) | 11,599 | 2 |
+| x64 game, full eligible catalogue | 12,166 (11,601 eligible) | 11,601 | 0 |
 
 The game selections overlap. Counts include C/C++ runtime and third-party
 library code and are not completion percentages.
 
-Automatic engine analysis completed within 300 seconds. Full export retries
-up to 120 seconds still time out for **0x1400f8420** and **0x1401f59a0**.
-The full-export script preserves successful files and records failures for
-further analysis. Two data-creation
+Automatic engine analysis completed within 300 seconds. The formerly failing
+**0x1400f8420** and **0x1401f59a0** now export after increasing response capacity,
+omitting unused syntax-tree output and using a 300-second function limit.
+The full-export script preserves successful files and retries short Windows
+progress-file sharing conflicts. Two data-creation
 diagnostics remain at `0x140457006` and `0x140457047`; exports and project
 saving succeeded. The original PDB is unavailable. Raw pseudocode still
 requires type recovery, naming, and reconstruction before compilation.

@@ -3,25 +3,17 @@
   "catalogued": 12166,
   "eligible": 11601,
   "excluded_thunks_or_external": 565,
-  "exported": 11599,
-  "failed": 2,
+  "exported": 11601,
+  "failed": 0,
   "complete_pass": true,
-  "pseudocode_bytes": 25329195,
-  "export_set_sha256": "6b469ea1bfa97da3d7908cee4b5b6c543a3279c50a5144a1015f53b0f859776c",
-  "explicit_engine_descriptors": 205,
-  "distinct_engine_names": 205,
-  "descriptor_registration_functions": 1,
-  "unresolved": [
-    {
-      "entry": "0x1400f8420",
-      "size": 43946,
-      "diagnostic": "Exception while decompiling 1400f8420: process: timeout "
-    },
-    {
-      "entry": "0x1401f59a0",
-      "size": 34645,
-      "diagnostic": "Exception while decompiling 1401f59a0: process: timeout "
-    }
-  ],
+  "pseudocode_bytes": 25754800,
+  "export_set_sha256": "6f96ddf8c8c483606421bbc893e99720ee11e7394f427cc6ddfe6dfdb5ffee06",
+  "explicit_engine_descriptors": 498,
+  "distinct_engine_names": 498,
+  "descriptor_registration_functions": 3,
+  "descriptor_function_pointers": 466,
+  "descriptor_code_labels": 32,
+  "descriptor_scope": "Observed native scripting descriptors, including general utilities; overlap with earlier Lua/native mappings is possible.",
+  "unresolved": [],
   "scope": "All eligible functions in the existing Ghidra catalogue were attempted. Pseudocode is not buildable recovered source or proof of complete function discovery, signatures, engine reconstruction or behavior parity."
 }

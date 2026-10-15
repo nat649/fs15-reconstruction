@@ -8,7 +8,7 @@ param(
     [string]$LeafReference = '',
     [string[]]$Inspect = @(),
     [switch]$FullExport,
-    [ValidateRange(1,120)][int]$FunctionTimeoutSeconds = 10,
+    [ValidateRange(1,600)][int]$FunctionTimeoutSeconds = 10,
     [string]$JavaHome = $env:JAVA_HOME
 )
 $ErrorActionPreference = 'Stop'
@@ -66,3 +66,8 @@ $javaArguments = @('-Xmx2G', '-XX:ParallelGCThreads=2', '-XX:CICompilerCount=2',
     'ghidra.Ghidra', 'ghidra.app.util.headless.AnalyzeHeadless') + $arguments
 & (Join-Path $jdk 'bin\java.exe') @javaArguments
 if ($LASTEXITCODE -ne 0) { throw "Ghidra failed with exit code $LASTEXITCODE" }
+if ($FullExport) {
+    $exportProgress = Get-Content -LiteralPath (Join-Path $out 'progress.json') -Raw | ConvertFrom-Json
+    if (-not $exportProgress.complete_pass) { throw 'Ghidra returned without completing the catalogue export; inspect the script log and resume.' }
+    if ($exportProgress.failed -gt 0) { Write-Warning "$($exportProgress.failed) native functions remain unresolved; see decompiled-index.csv." }
+}

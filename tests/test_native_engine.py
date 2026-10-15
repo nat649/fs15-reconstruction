@@ -33,7 +33,7 @@ class NativeEnginePreparation(unittest.TestCase):
         (self.root / 'analysis/lua-recovery.json').write_text(json.dumps(dict(files=[row])))
         probes = self.root / 'src/native_engine'
         probes.mkdir(parents=True)
-        for name in ('bootstrap.lua', 'verify.lua'):
+        for name in ('bootstrap.lua', 'verify.lua', 'activate.lua'):
             (probes / name).write_text('-- authored fixture\n')
 
     def test_isolated_profile_and_source_order(self):
@@ -103,6 +103,21 @@ class NativeEnginePreparation(unittest.TestCase):
         (Path(manifest['profile']) / 'log.txt').write_text(self.native_log() + 'Error: Running LUA method loadMap\n')
         with self.assertRaisesRegex(ValueError, 'Lua errors'):
             verify(self.root)
+
+    def test_hybrid_activation_is_after_verified_source(self):
+        manifest = prepare(self.root, self.game, activate_recovered=True)
+        mod = Path(manifest['profile']) / 'mods' / MOD_NAME
+        sources = ET.parse(mod / 'modDesc.xml').findall('./extraSourceFiles/sourceFile')
+        self.assertEqual([x.get('filename') for x in sources][-2:], ['verify.lua', 'activate.lua'])
+        self.assertTrue(manifest['recovered_gameplay_enabled'])
+
+    def test_hybrid_requires_real_helper_calls(self):
+        text = self.native_log() + 'FS15_HYBRID_RECOVERED_ACTIVE helpers=3\n'
+        self.assertFalse(inspect_log(text)['hybrid_runtime_verified'])
+        for helper in ('getTireType', 'getTireFriction', 'getGroundType'):
+            text += 'FS15_HYBRID_HELPER_USED name=' + helper + '\n'
+        self.assertTrue(inspect_log(text)['hybrid_runtime_verified'])
+        self.assertTrue(inspect_log(text.replace('\n', '\r\n'))['hybrid_runtime_verified'])
 
 
 if __name__ == '__main__':

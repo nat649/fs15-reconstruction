@@ -10,14 +10,20 @@ retried with a longer per-function timeout.
 
 ```powershell
 .\scripts\analyze.ps1 -Target game-runtime -Existing -FullExport `
-  -ExportName game-full -FunctionTimeoutSeconds 120 -JavaHome 'C:\path\to\jdk-21'
+  -ExportName game-full -FunctionTimeoutSeconds 300 -JavaHome 'C:\path\to\jdk-21'
 & 'C:\path\to\python.exe' scripts\index_native_exports.py
 ```
 
 The [aggregate report](../analysis/native-export-summary.json) records the
 catalogue, eligible exports, remaining failures and a digest of the verified
-export set. The current pass verified **11,599 / 11,601 eligible functions**;
-`0x1400f8420` and `0x1401f59a0` still time out after retries up to 120 seconds.
+export set. The current pass verified **11,601 / 11,601 eligible functions**,
+with no remaining export failures in this catalogue. The two large functions
+at `0x1400f8420` and `0x1401f59a0` now have verified local exports. Increasing
+the timeout exposed a response-buffer limit. The exporter now allows 128 MiB
+responses and requests C text without the unused HighFunction syntax tree.
+The successful retry used a 300-second per-function limit. Progress-file moves
+retry brief Windows sharing conflicts, and the wrapper checks completion even
+when Ghidra returns success after a script error.
 The remaining 565 catalogue entries are thunks or external functions.
 Detailed recovered code stays under `recovered/decompiled/game-full`
 and is excluded from Git. A complete pass through this catalogue does not prove
@@ -26,12 +32,17 @@ not directly compilable C++ and does not establish a rebuilt GE6 engine.
 
 ## Engine interface recovery
 
-The export index also recognizes **205 explicit engine API descriptors** in
-registration function `0x1400f1580`: the descriptor vtable, API name, function
-pointer and registration call must all be present. These are additional
+The export index now recognizes **498 explicit native scripting descriptors**
+in three registration functions: `0x140011a30` (111), `0x1400f1580` (205), and
+the newly exported `0x1400f8420` (182). The descriptor vtable, +0x60 name slot,
++0x68 callable slot and one of the two observed registration calls must all be
+present. Reordered initializers are accepted; stale or unrelated stack slots
+are rejected. Code labels remain distinguished from catalogued functions.
+The earlier 205 associations remain included. These are additional
 observations beside the earlier 112 Lua/native associations. Counts can
 overlap and should not be added as a unique API total. The detailed index stays
-local in `analysis/engine-bindings.json`.
+local in `analysis/engine-bindings.json`. General scripting utilities are part
+of these descriptors; the count is not a unique total of engine subsystems.
 
 Selected wheel paths traced from those descriptors:
 

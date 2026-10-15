@@ -15,7 +15,12 @@ def inspect_log(text):
     success = text.find('FS15_NATIVE_RECOVERED_LUA_OK comparisons=104')
     native = version is not None and 'OpenGL initialization successful' in text
     probe = native and 0 <= loaded < begin < success
+    activated = text.find('FS15_HYBRID_RECOVERED_ACTIVE helpers=3')
+    used = sorted(set(re.findall(r'^FS15_HYBRID_HELPER_USED name=(getTireType|getTireFriction|getGroundType)\r?$', text, re.M)))
     return dict(native_boot_verified=native, recovered_script_execution_verified=probe,
+                recovered_helpers_active=probe and activated > success,
+                recovered_helpers_used=used,
+                hybrid_runtime_verified=probe and activated > success and len(used) == 3,
                 engine_version=version.group(1) if version else None,
                 probe_comparisons=104 if probe else 0,
                 lua_error_lines=[line for line in text.splitlines()
@@ -32,12 +37,12 @@ def verify(root):
     log = profile / 'log.txt'
     raw = log.read_bytes()
     report = inspect_log(raw.decode('utf-8', errors='replace'))
-    report.update(scope='Original GIANTS Engine 6 with an isolated recovered WheelsUtil helper probe; not a complete game rebuild',
+    report.update(scope='Original GIANTS Engine 6 with recovered WheelsUtil helpers; not a complete game rebuild or merged renderer',
                   log_sha256=hashlib.sha256(raw).hexdigest(),
                   original_executable_sha256=manifest['original_executable_sha256'],
                   recovered_wheels_source_sha256=manifest['recovered_wheels_source_sha256'],
                   mission_visual_check='Not inferred from the log; requires separate observation',
-                  original_global_gameplay_replaced=False)
+                  full_gameplay_replaced=False)
     if not report['native_boot_verified'] or not report['recovered_script_execution_verified'] or report['lua_error_lines']:
         raise ValueError('Missing native boot/probe evidence or Lua errors in the isolated log')
     # A launch timestamp prevents a stale log from validating a new launch request.
@@ -45,6 +50,8 @@ def verify(root):
         from datetime import datetime
         if log.stat().st_mtime + 2 < datetime.fromisoformat(manifest['launch_requested_utc']).timestamp():
             raise ValueError('Native log predates the current launch request')
+    if manifest.get('recovered_gameplay_enabled') and not report['hybrid_runtime_verified']:
+        raise ValueError('Hybrid mode requires activation and real native calls to all three recovered helpers')
     manifest.update({key: report[key] for key in ('native_boot_verified', 'recovered_script_execution_verified')})
     manifest['verified_log_sha256'] = report['log_sha256']
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')

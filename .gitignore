@@ -6,6 +6,8 @@
 /tools/I3DShapesTool/
 /src/shape_bridge/bin/
 /src/shape_bridge/obj/
+/src/unified_launcher/bin/
+/src/unified_launcher/obj/
 /analysis/*
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json
@@ -35,6 +37,7 @@
 !/analysis/native-export-summary.json
 !/analysis/tire-forces-validation.json
 !/analysis/native-engine-validation.json
+!/analysis/unified-launcher-validation.json
 /logs/
 __pycache__/
 *.pyc

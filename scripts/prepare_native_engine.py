@@ -40,7 +40,7 @@ def restart_safe_profile(profile, alias_root):
     return alias
 
 
-def prepare(root, game):
+def prepare(root, game, activate_recovered=False):
     root, game = Path(root).resolve(), Path(game).resolve(strict=True)
     if not (game / 'FarmingSimulator2015.xml').is_file() or not (game / 'x64/FarmingSimulator2015Game.exe').is_file():
         raise ValueError('Expected the installed FS15 game directory')
@@ -62,15 +62,16 @@ def prepare(root, game):
     target = mod / 'recovered/WheelsUtil.lua'
     if target.is_symlink() or target.with_suffix('.luc').exists():
         raise ValueError('The native probe needs plain source without a preferred neighboring .luc file')
-    for name in ('bootstrap.lua', 'verify.lua'):
-        if (mod / name).is_symlink():
-            raise ValueError('Refusing a linked native probe output')
+    authored_sources = ('bootstrap.lua', 'verify.lua', 'activate.lua') if activate_recovered else ('bootstrap.lua', 'verify.lua')
+    for name in authored_sources:
+        if (mod / name).is_symlink() or (mod / name).with_suffix('.luc').exists():
+            raise ValueError('Refusing a linked native probe output or preferred neighboring .luc')
     desc_path = mod / 'modDesc.xml'
     if desc_path.is_symlink():
         raise ValueError('Refusing a linked native descriptor output')
     mod.mkdir(parents=True, exist_ok=True)
     (mod / 'recovered').mkdir(exist_ok=True)
-    for name in ('bootstrap.lua', 'verify.lua'):
+    for name in authored_sources:
         target = mod / name
         shutil.copyfile(root / 'src/native_engine' / name, target)
     target = mod / 'recovered/WheelsUtil.lua'
@@ -82,7 +83,10 @@ def prepare(root, game):
     ET.SubElement(ET.SubElement(descriptor, 'description'), 'en').text = 'Compare recovered wheel helpers inside the actual GIANTS Engine 6.'
     ET.SubElement(descriptor, 'multiplayer', supported='false')
     sources = ET.SubElement(descriptor, 'extraSourceFiles')
-    for name in ('bootstrap.lua', 'recovered/WheelsUtil.lua', 'verify.lua'):
+    source_order = ['bootstrap.lua', 'recovered/WheelsUtil.lua', 'verify.lua']
+    if activate_recovered:
+        source_order.append('activate.lua')
+    for name in source_order:
         ET.SubElement(sources, 'sourceFile', filename=name)
     ET.indent(descriptor)
     ET.ElementTree(descriptor).write(desc_path, encoding='utf-8', xml_declaration=True)
@@ -90,12 +94,33 @@ def prepare(root, game):
     command = [str(launcher), '--game-dir', str(game), '--arch', 'x64', '--', '-profile', profile.as_posix()]
     manifest = dict(scope='Actual GIANTS Engine 6 entry point with an isolated profile and recovered-source probe',
                     game_directory=str(game),
+                    recovered_gameplay_enabled=activate_recovered,
                     native_boot_verified=False, recovered_script_execution_verified=False,
                     original_executable_sha256=digest(game / 'x64/FarmingSimulator2015Game.exe'),
                     recovered_wheels_source_sha256=digest(source), profile=str(profile), command=command,
                     mod=MOD_NAME, expected_probe_comparisons=104,
                     evidence_required=['fresh GIANTS Engine Runtime 6.0.2 log', 'FS15_NATIVE_RECOVERED_LUA_OK comparisons=104 during mission loading'])
+    if activate_recovered:
+        manifest['evidence_required'] += ['FS15_HYBRID_RECOVERED_ACTIVE helpers=3', 'Native vehicle calls to getTireType, getTireFriction and getGroundType']
     (runtime / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    return manifest
+
+
+def configure_launch(manifest, steam=None, direct=False, dry_run=False):
+    profile_arg = restart_safe_profile(manifest['profile'], tempfile.gettempdir())
+    manifest['command'][-1] = profile_arg.as_posix()
+    game = Path(manifest['game_directory'])
+    if not direct and steam is None and game.parent.name.lower() == 'common':
+        steam = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Steam/steam.exe'
+    if steam is not None and not direct:
+        steam = Path(steam).resolve(strict=True)
+        manifest['command'][1:1] = ['--steam', str(steam)]
+    if dry_run:
+        manifest['command'].insert(1, '--dry-run')
+    else:
+        from datetime import datetime, timezone
+        manifest['launch_requested_utc'] = datetime.now(timezone.utc).isoformat()
+    manifest['profile_argument'] = str(profile_arg)
     return manifest
 
 
@@ -106,29 +131,17 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help='With --launch, print/check the launch command without starting a process')
     parser.add_argument('--steam', type=Path, help='Installed Steam client; defaults to the standard Steam path for Steam installations')
     parser.add_argument('--direct', action='store_true', help='Launch the installed executable directly (for non-Steam copies)')
+    parser.add_argument('--activate-recovered', action='store_true', help='After parity checks, use recovered wheel helpers in native gameplay')
     args = parser.parse_args()
     if args.launch and not args.dry_run and os.name == 'nt':
         from runtime_snapshot import processes
         if list(processes()):
             parser.error('FS15 is already running. Close that session before launching the isolated runtime again.')
-    manifest = prepare(ROOT, args.game_dir)
+    manifest = prepare(ROOT, args.game_dir, args.activate_recovered)
     if args.launch:
         if not Path(manifest['command'][0]).is_file():
             parser.error('Build FS15LauncherRebuilt before launching the original engine')
-        profile_arg = restart_safe_profile(manifest['profile'], tempfile.gettempdir())
-        manifest['command'][-1] = profile_arg.as_posix()
-        steam = args.steam
-        if not args.direct and steam is None and args.game_dir.parent.name.lower() == 'common':
-            steam = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Steam/steam.exe'
-        if steam is not None and not args.direct:
-            steam = steam.resolve(strict=True)
-            manifest['command'][1:1] = ['--steam', str(steam)]
-        if args.dry_run:
-            manifest['command'].insert(1, '--dry-run')
-        else:
-            from datetime import datetime, timezone
-            manifest['launch_requested_utc'] = datetime.now(timezone.utc).isoformat()
-        manifest['profile_argument'] = str(profile_arg)
+        configure_launch(manifest, args.steam, args.direct, args.dry_run)
         (ROOT / 'build/native-engine/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(json.dumps(manifest, indent=2), flush=True)
     if args.launch:

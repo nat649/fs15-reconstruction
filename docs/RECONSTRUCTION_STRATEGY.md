@@ -19,7 +19,8 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 | Component | Origin | Current use |
 |---|---|---|
 | Native runtime entry point | Installed original GIANTS Engine 6.0.2 executable | Normal Steam boot, original menu and Bjornholm observed with an isolated profile |
-| Native recovered-source integration | Recovered WheelsUtil source plus authored mod probe | 104 helper comparisons pass in the actual engine; original global gameplay remains intact |
+| Unified launcher | Authored C# Windows Forms / Python process orchestration | One interface selects the home runtime, original GE6 baseline, or GE6 with recovered helpers; native renderers remain separate |
+| Native recovered-source integration | Recovered WheelsUtil source plus authored parity/activation adapters | 104 helper comparisons pass; three recovered helpers are activated and called by GE6 vehicles on Westbridge Hills |
 | GUI logic | Recovered FS15 Lua sources | Compiled from source and executed in the frontend |
 | Map hierarchy, camera, dimensions and repeat sizes | Original I3D XML | Parsed without rewriting the installed game |
 | Buildings, trees, roads and props | Original version-3 `.i3d.shapes` containers | Decoded into local, lossless float/index caches; native GPU instancing |
@@ -35,7 +36,7 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 | Starting fleets and dynamic wheels | Original career templates, vehicle XML/I3D | Thirteen / twelve objects, eleven distinct prepared configurations |
 | Motor, wheel and farm-transfer rules | Recovered Lua | Executed with partial native services; no full PhysX integration |
 | Vehicle animation and trailer state transitions | Recovered AnimatedVehicle / Trailer / SpecializationUtil | Original XML loader, timing, visibility, discharge and closure; 777 matching original-bytecode fixture samples |
-| Native engine catalogue | Full Ghidra pseudocode export | 11,599 eligible functions exported locally, two timeouts; analysis rather than compilable recovered engine source |
+| Native engine catalogue | Full Ghidra pseudocode export | All 11,601 eligible functions exported locally, zero remaining catalogue export failures; analysis rather than compilable recovered engine source |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
 | Simulation scheduling and pause | Authored host code | Fixed 60 Hz gameplay updates, bounded stall recovery and pause/input clearing; not recovered GE6 physics timing |
@@ -56,9 +57,11 @@ the pinned analysis image and does not inject into a running game.
 The native entry point now uses the installed original engine with a separate
 profile. The recovered WheelsUtil source runs through its supported script
 loader and passes 104 helper comparisons. The original menu and Bjornholm were
-observed in the actual engine. This initial probe does not replace original
-global gameplay classes. Wider code replacement and full session validation
-remain separate milestones. The experimental host remains useful for fixtures.
+observed in the actual engine. Hybrid mode now additionally replaces three
+wheel helper methods after parity checks; native vehicle calls to all three
+were recorded. Most original game code and all original native engine services
+remain in use. Wider code replacement and full session validation remain
+separate milestones. The experimental host remains useful for fixtures.
 
 Original executable/code bytes, decoded geometry, textures and recovered Lua
 stay local. GitHub contains authored code, dependency provenance/licenses,
@@ -67,7 +70,7 @@ aggregate validation and selected rendered screenshots.
 ## Next reconstruction targets
 
 The [native recovery report](NATIVE_RECOVERY.md) records full-export scope,
-remaining timeouts and 205 observed engine descriptors. Wheel creation, property
+catalogue limits and 498 observed native scripting descriptors. Wheel creation, property
 updates, slip lookup, tire forces and differential dispatch are now traced to
 native entry points; their full services are not integrated yet.
 

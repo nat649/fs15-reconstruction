@@ -5,7 +5,9 @@ or execution evidence. They do not represent a percentage of the full game.
 
 **Current native milestone:** the installed GIANTS Engine 6.0.2 opens its menu,
 loads Bjornholm and executes recovered WheelsUtil source with 104 passing helper
-comparisons in an isolated profile. Original global gameplay remains in use;
+comparisons in an isolated profile. The hybrid mode activates three recovered
+wheel helpers and records all three being called by GE6 on Westbridge Hills.
+Most original global gameplay remains in use;
 this is an integration baseline, not a complete recovered-game rebuild.
 Use `Launch FS15.cmd`; see the [native runtime](docs/NATIVE_ENGINE_RUNTIME.md).
 
@@ -29,9 +31,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
 - [x] Catalogue 12,166 native functions and export targeted pseudocode.
 - [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
-- [x] Verify 11,599 local pseudocode exports and record two unresolved functions after 120-second retries.
-- [x] Index 205 additional explicit engine API descriptors and trace selected wheel/physics call paths.
-- [ ] Resolve the two remaining full-export timeouts and audit function discovery beyond this catalogue.
+- [x] Verify all 11,601 eligible local pseudocode exports with no remaining catalogue export failures.
+- [x] Unblock the two large exports with a larger response limit and C-only output; retry Windows progress-file sharing conflicts.
+- [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
+- [ ] Audit function discovery and code labels beyond this catalogue.
 - [ ] Recover compilable native source, types, globals and subsystem initialization from the exported pseudocode.
 - [x] Map 112 observed Lua/native registrations from one routine.
 - [ ] Recover signatures and behavior for the wider engine interface.
@@ -71,6 +74,12 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Execute the recovered-source probe during actual-engine mission loading; all 104 comparisons pass.
 - [x] Observe the original menu, successful Bjornholm loading and the in-world player HUD.
 - [x] Add a dedicated native launch command, Steam routing, running-session guard and log evidence verifier.
+- [x] Build/open a graphical launcher for native baseline, GE6 with recovered helpers, and the home runtime.
+- [x] Preserve explicit direct startup without a silent Steam fallback; observe exit code 53 on the local Steam copy.
+- [x] Activate three recovered wheel helpers after parity checks and record all three native vehicle call paths.
+- [x] Check custom tire preservation and conditional unload restoration in an authored fixture.
+- [ ] Validate native unload restoration and a complete save/load farming session with recovered helpers.
+- [ ] Establish a supported GE6 launch independent of Steam; the tested Steam executable does not start through the direct path.
 - [x] Prepare/check a profile junction without spaces to avoid native restart argument truncation.
 - [ ] Validate a full graphics restart round trip through the new profile alias.
 - [ ] Integrate recovered game behavior into the actual engine and validate complete sessions.

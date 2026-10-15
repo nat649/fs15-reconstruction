@@ -13,38 +13,54 @@ import re
 from inventory import ROOT, sha256, write_json
 from native_gar import EXPECTED_IMAGE, DEFAULT_IMAGE
 
-DESCRIPTOR = re.compile(r'(local_\w+) = &PTR_FUN_1404b6300;')
-NAME = re.compile(r'local_\w+ = "([^"\\]+)";')
-IMPLEMENTATION = re.compile(r'local_\w+ = FUN_([0-9a-f]+);')
 CALLS = re.compile(r'\bFUN_([0-9a-f]+)\(')
+ASSIGNMENT = re.compile(r'(local_[0-9a-f]+) = (.*);')
+REGISTRATION = re.compile(r'FUN_(140024f50|140031bc0)\((.*),&(local_[0-9a-f]+)\);')
 
 
 def descriptors(code, registration):
-    """Only accept the observed descriptor vtable and registration call pair."""
-    pending = None
-    for line in code.splitlines():
-        match = DESCRIPTOR.fullmatch(line.strip())
+    """Match explicit descriptor slots, including reordered initializers.
+
+    The two observed registration functions use the same descriptor layout:
+    vtable at +0, name at +0x60, implementation at +0x68. Stack-local suffixes
+    count down as addresses increase. Do not associate adjacent unrelated data.
+    """
+    assigned = {}
+    consumed = {}
+    for line_number, line in enumerate(code.splitlines()):
+        match = ASSIGNMENT.fullmatch(line.strip())
         if match:
-            pending = dict(descriptor=match[1], age=0)
+            assigned[match[1]] = (match[2], line_number)
+        call = REGISTRATION.fullmatch(re.sub(r'\s+', '', line))
+        if not call:
             continue
-        if pending is None:
+        base = call[3]
+        offset = int(base[6:], 16)
+        if offset < 0x68:
             continue
-        pending['age'] += 1
-        if pending['age'] > 40:
-            pending = None
+        slots = [base, 'local_' + format(offset - 0x60, 'x'), 'local_' + format(offset - 0x68, 'x')]
+        values = [assigned.get(slot) for slot in slots]
+        if any(value is None or line_number - value[1] > 40 or value[1] <= consumed.get(base, -1) for value in values):
             continue
-        match = NAME.fullmatch(line.strip())
-        if match:
-            pending['name'] = match[1]
-        match = IMPLEMENTATION.fullmatch(line.strip())
-        if match:
-            pending['implementation'] = '0x' + match[1]
-        if 'FUN_140024f50(' in line:
-            if '&' + pending['descriptor'] + ')' in line and 'name' in pending and 'implementation' in pending:
-                yield dict(name=pending['name'], implementation=pending['implementation'],
-                           registration_function='0x' + registration,
-                           evidence='explicit descriptor vtable/name/function and registration call')
-            pending = None
+        vtable, name, implementation = [value[0] for value in values]
+        if vtable != '&PTR_FUN_1404b6300':
+            continue
+        name_match = re.fullmatch(r'"([^"\\]+)"', name)
+        impl_match = re.fullmatch(r'(FUN_|&LAB_)([0-9a-f]+)', implementation)
+        if name_match is None or impl_match is None:
+            continue
+        result = dict(name=name_match[1], implementation='0x' + impl_match[2],
+                      implementation_kind='code_label' if impl_match[1] == '&LAB_' else 'function',
+                      registration_function='0x' + registration,
+                      registration_service='0x' + call[1],
+                      evidence='explicit descriptor vtable, +0x60 name, +0x68 callable and observed registration call')
+        if call[1] == '140031bc0':
+            wrapper = re.search(r',FUN_([0-9a-f]+)$', call[2])
+            if wrapper is None:
+                continue
+            result['wrapper'] = '0x' + wrapper[1]
+        consumed[base] = line_number
+        yield result
 
 
 def main():
@@ -100,6 +116,9 @@ def main():
                    pseudocode_bytes=byte_count, export_set_sha256=digest.hexdigest(),
                    explicit_engine_descriptors=len(bindings), distinct_engine_names=len({row['name'] for row in bindings}),
                    descriptor_registration_functions=len({row['registration_function'] for row in bindings}),
+                   descriptor_function_pointers=sum(row['implementation_kind'] == 'function' for row in bindings),
+                   descriptor_code_labels=sum(row['implementation_kind'] == 'code_label' for row in bindings),
+                   descriptor_scope='Observed native scripting descriptors, including general utilities; overlap with earlier Lua/native mappings is possible.',
                    unresolved=failures,
                    scope='All eligible functions in the existing Ghidra catalogue were attempted. Pseudocode is not buildable recovered source or proof of complete function discovery, signatures, engine reconstruction or behavior parity.')
     write_json(ROOT / 'analysis/native-export-summary.json', summary)

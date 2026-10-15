@@ -26,11 +26,11 @@ experimental viewer/test host. The native entry point has now reached the
 original menu and Bjornholm, with 104 recovered-source helper comparisons
 passing inside GE6. See the [native runtime instructions](docs/NATIVE_ENGINE_RUNTIME.md).
 
-**Launch the actual engine:** double-click `Launch FS15.cmd` after local recovery
-and launcher compilation. On first setup, run
-`scripts/launch-native.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Farming Simulator 15'`.
-The script remembers the installation in the ignored local manifest, uses Steam
-for Steam installations, and keeps saves under `build/native-engine/profile`.
+**Launch:** build with `scripts/build-launcher.ps1`, then double-click
+`Launch FS15.cmd`. The graphical launcher offers GE6 with recovered wheel
+helpers, the home engine, and an original-GE6 baseline. It remembers local
+settings and keeps native saves under `build/native-engine/profile`.
+See [launcher modes and requirements](docs/UNIFIED_LAUNCHER.md).
 The existing `FS15MenuRebuilt.exe` / `FS15EngineRebuilt.exe` packages are the
 separate experimental host; they are not the actual-engine entry point.
 
@@ -39,13 +39,17 @@ separate experimental host; they are not the actual-engine entry point.
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
   profile. The recovered WheelsUtil source executes through the native mod
-  loader and passes all 104 helper comparisons. This probe leaves the original
-  global gameplay classes intact; full recovered-game replacement is pending.
+  loader and passes all 104 helper comparisons. The hybrid mode now activates
+  three recovered wheel helpers, with all three called by actual GE6 vehicles
+  on Westbridge Hills. Most gameplay remains original; full recovered-game
+  replacement is pending. Direct startup of this Steam copy still fails; the
+  launcher retains normal Steam startup and an explicit direct mode.
   See the [bounded log evidence](analysis/native-engine-validation.json).
 - **Native decompilation coverage:** a full pass through the existing Ghidra
-  catalogue exported **11,599 / 11,601 eligible functions** as local pseudocode.
-  Two functions still time out after retries up to 120 seconds; 565 thunks or
-  external entries are excluded. An additional **205 explicit engine API
+  catalogue exported **11,601 / 11,601 eligible functions** as local pseudocode,
+  with no remaining export failures. The last two exports were unblocked with
+  larger response capacity and C-only output; 565 thunks or external entries
+  are excluded. **498 explicit native scripting API
   descriptors** now guide wheel/physics interface recovery. This is analysis
   coverage, not a recompilable full engine. See [native recovery](docs/NATIVE_RECOVERY.md).
 - **Recovered vehicle animations:** original `AnimatedVehicle` and `Trailer`
