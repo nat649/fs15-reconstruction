@@ -12,7 +12,7 @@ The runtime target is **the actual GIANTS Engine 6**, including its renderer,
 physics, scene/resource loading and lifecycle. Recovered game code must run on
 that engine. Native analysis supports understanding and modifying it; building
 a replacement engine around selected GIANTS services is not the project target.
-The existing authored Direct3D host remains an experimental viewer and test
+The existing authored Direct3D host, named **ReFarm**, remains an experimental viewer and test
 fixture. Its earlier milestones do not establish actual-GE6 integration.
 See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 

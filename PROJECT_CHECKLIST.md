@@ -11,7 +11,7 @@ Most original global gameplay remains in use;
 this is an integration baseline, not a complete recovered-game rebuild.
 Use `Launch FS15.cmd`; see the [native runtime](docs/NATIVE_ENGINE_RUNTIME.md).
 
-**Experimental host milestone:** the recovered frontend can launch an independently
+**ReFarm experimental engine milestone:** the recovered frontend can launch an independently
 compiled Direct3D 11 scene host for either base map. It renders original
 height data, decoded buildings/trees/props, diffuse textures and terrain layers
 at their original hierarchical transforms, with a free camera.
@@ -97,6 +97,8 @@ See [native recompilation and console limits](docs/NATIVE_RECOMPILATION.md).
 - [x] Add a dedicated native launch command, Steam routing, running-session guard and log evidence verifier.
 - [x] Build/open a graphical launcher for native baseline, GE6 with recovered helpers, and the home runtime.
 - [x] Add Play, Resources and Diagnostics pages, streamed progress, cancellation and locked configuration during preparation.
+- [x] Add an illustrated library-style launcher, engine cards, a fixed launch bar and themed keyboard-accessible profile menus.
+- [x] Name the experimental engine ReFarm in the launcher and game window; retain existing filenames and the home-mode alias.
 - [x] Detect local FS15 through Steam libraries/app manifests, environment and saved workspace paths.
 - [x] Prepare/repair original local resources with the existing recovery pipeline, content hashes, an import lock and interrupted-import launch guards.
 - [ ] Remove the original-native GAR-oracle dependency from fresh-workspace asset extraction.

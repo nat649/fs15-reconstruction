@@ -2,16 +2,24 @@
 
 Build with `scripts/build-launcher.ps1`, then open `Launch FS15.cmd`.
 The launcher needs the .NET 10 Windows Desktop runtime and Python 3.11+.
-The **Diagnostics** page allows selecting Python and an optional Steam client.
+The **Settings & activity** page allows selecting Python and an optional Steam client.
+The sidebar links
+to Farming Simulator 15, Game resources and Settings & activity. The main view
+shows a project scene preview, engine cards and a persistent bottom launch bar.
+Choose **ReFarm (experimental)** for the authored reconstructed engine, or a GE6
+profile for the installed original engine. Map/difficulty are ReFarm settings;
+GE6 careers and maps are still selected inside the native game.
+
+![ReFarm selected in the redesigned launcher](screenshots/launcher-refarm.png)
 
 ## Prepare resources
 
-1. Open **Resources** and choose **Detect installation**, or browse to your FS15
+1. Open **Game resources** and choose **Detect installation**, or browse to your FS15
    installation. Detection reads Steam libraries and app 313160 manifests, the
    `FS15_GAME_DIR` environment variable and this workspace's saved settings.
 2. Choose **Prepare / repair assets**. Progress, errors and cancellation appear
    in the launcher. Keep the installation available until preparation finishes.
-3. Return to **Play**, choose the home engine, map and difficulty, check the launch
+3. Return to **Farming Simulator 15**, choose ReFarm, map and difficulty, check the launch
    plan and launch. Build the Windows host first if diagnostics report it missing.
 
 Preparation reuses the existing recovery pipeline. It verifies local archive and
@@ -26,7 +34,7 @@ SDK/reference packs described in the build instructions.
 
 Original resources and recovered scripts stay under ignored local `recovered/`.
 `build/launcher/assets.json` records status, content hashes and preparation steps.
-Interrupted/failed preparation blocks home-engine startup until repaired. An
+Interrupted/failed preparation blocks ReFarm startup until repaired. An
 operating-system lock prevents concurrent preparations. Source copying uses a
 verified temporary file and atomic replacement; interrupted temporary copies can
 be repaired on the next run. Redirected output paths are rejected before staging.
@@ -69,13 +77,22 @@ python scripts/launcher_assets.py prepare --game-dir $env:FS15_GAME_DIR
 ## Runtime selection and validation
 
 GE6 baseline/hybrid modes use the installed original engine and its normal
-startup requirements. GE6 uses installed assets in place. The home engine uses
+startup requirements. GE6 uses installed assets in place. ReFarm uses
 local prepared caches; the renderers run in separate processes. Native career/map
 selection happens inside GE6; home mode uses the launcher's map and difficulty.
 See [native integration limits](UNIFIED_LAUNCHER.md).
 
-`--smoke-capture PATH` renders the actual WinForms layout and runs detection and
-preflight without starting a game. Adding `--smoke-prepare` also runs the real
+`--smoke-capture PATH` renders all three WinForms pages, both engine selections
+and the compact layout, checks the custom profile menu and keyboard/accessibility
+selection, and runs detection/preflight without starting a game. Adding `--smoke-prepare` also runs the real
 preparation worker against the selected installation. Its JSON report distinguishes
 preparation, UI rendering and game startup. Captures stay local and may contain
 installation paths.
+
+The two embedded banner images are existing rendered project screenshots; they
+are labeled as ReFarm experimental captures. They do not imply original-GE6
+rendering fidelity. No Minecraft assets or game-resource payloads are bundled.
+
+For command-line startup, use `python scripts/unified_launcher.py --mode refarm`.
+The existing `--mode home` command and `FS15EngineRebuilt.exe` filename remain
+compatible. ReFarm is the name of the experimental engine, not the whole project.

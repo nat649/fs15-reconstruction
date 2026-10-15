@@ -28,7 +28,7 @@ passing inside GE6. See the [native runtime instructions](docs/NATIVE_ENGINE_RUN
 
 **Launch:** build with `scripts/build-launcher.ps1`, then double-click
 `Launch FS15.cmd`. The graphical launcher offers GE6 with recovered wheel
-helpers, the home engine, and an original-GE6 baseline. It remembers local
+helpers, **ReFarm** (the experimental reconstructed engine), and an original-GE6 baseline. It remembers local
 settings and keeps native saves under `build/native-engine/profile`.
 The **Resources** page detects the local installation and prepares/repairs map,
 texture, mesh, recovered-script and starting-fleet caches with progress and
@@ -36,6 +36,12 @@ cancellation. See [resource preparation and fresh-workspace requirements](docs/L
 See [launcher modes and requirements](docs/UNIFIED_LAUNCHER.md).
 The existing `FS15MenuRebuilt.exe` / `FS15EngineRebuilt.exe` packages are the
 separate experimental host; they are not the actual-engine entry point.
+
+The launcher has a visual library layout: original-map scene previews, clickable
+engine cards, a persistent launch-profile bar and a prominent PLAY button.
+**ReFarm** names the authored experimental host; the original GE6 runtime remains
+a separate option. Existing executable filenames and the `--mode home` alias are
+kept compatible; `--mode refarm` is also supported.
 
 ## Current results
 

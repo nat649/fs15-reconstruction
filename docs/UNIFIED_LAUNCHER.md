@@ -14,7 +14,7 @@ The application needs the .NET 10 Windows Desktop runtime and Python 3.11+.
 It discovers the workspace from its installation location. Keep the published
 files together in `build/FS15Launcher`; an explicit `--root PATH` is also supported.
 Choose the installed FS15 folder and Python executable in the interface.
-The interface has **Play**, **Resources** and **Diagnostics** pages. Resources
+The interface has **Farming Simulator 15**, **Game resources** and **Settings & activity** pages. Game resources
 detects the local installation and runs the existing asset/recovery preparation
 pipeline with progress and cancellation. See the [preparation guide](LAUNCHER.md)
 for prerequisites, repair behavior and the native GAR-oracle limitation.
@@ -24,14 +24,15 @@ for prerequisites, repair behavior and the native GAR-oracle limitation.
 | Mode | Renderer and physics | Recovered code | Remaining limits |
 |---|---|---|---|
 | GE6 + recovered gameplay | Installed original GE6 | After 104 comparisons, three recovered wheel helpers replace the corresponding methods in the original WheelsUtil table | Most game code remains original; full recovered-game replacement is incomplete |
-| Home engine (experimental) | Authored Direct3D host and partial simulation | Existing recovered gameplay scripts and original local resources | Approximate physics, farming subset, no persistent session saves |
+| ReFarm (experimental) | Authored Direct3D host and partial simulation | Existing recovered gameplay scripts, bounded recovered native components and original local resources | Approximate physics, farming subset, no persistent session saves |
 | GE6 original baseline | Installed original GE6 | Isolated comparison probe only | Original global gameplay methods stay intact |
 
 This combines launch configuration and recovered logic. It does not merge the
 two native renderers or physics solvers inside one process. Native modes choose
 Career/map/difficulty in the original GE6 frontend. The home-runtime map and
 difficulty selectors are disabled in native modes so selections are not silently
-discarded. The home runtime does not require Steam at runtime.
+discarded. ReFarm does not require Steam at runtime. The existing `--mode home`
+alias and executable filenames remain compatible; `--mode refarm` is preferred.
 
 ## Direct and Steam startup
 

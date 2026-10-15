@@ -1,6 +1,6 @@
-# Original map scene reconstruction
+# ReFarm: original map scene reconstruction
 
-`FS15EngineRebuilt.exe` is an independently authored Win32/Direct3D 11 runtime.
+**ReFarm** (`FS15EngineRebuilt.exe`) is an independently authored Win32/Direct3D 11 runtime.
 It opens a native window, creates a device, swap chain, depth buffer and shaders,
 uploads original terrain/object geometry and textures, and runs a free-camera render loop.
 It does not load the original GIANTS executable. Bounded native routines recovered

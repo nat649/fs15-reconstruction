@@ -44,6 +44,7 @@
 !/analysis/native-recompilation-summary.json
 !/analysis/transform-validation.json
 !/analysis/launcher-assets-validation.json
+!/analysis/launcher-design-validation.json
 /logs/
 __pycache__/
 *.pyc

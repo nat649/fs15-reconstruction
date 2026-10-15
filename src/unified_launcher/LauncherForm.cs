@@ -3,130 +3,8 @@ using System.Text.Json;
 
 namespace FS15Reconstruction;
 
-internal sealed class LauncherForm : Form
+internal sealed partial class LauncherForm : Form
 {
-    private readonly string root, settingsPath;
-    private readonly Color background = Color.FromArgb(17, 22, 28), surface = Color.FromArgb(29, 37, 45), text = Color.FromArgb(230, 237, 241), muted = Color.FromArgb(157, 178, 189), green = Color.FromArgb(64, 155, 108);
-    private readonly ComboBox mode = Choice("GE6 + recovered gameplay", "Home engine (experimental)", "GE6 original baseline");
-    private readonly ComboBox transport = Choice("Automatic", "Direct executable", "Steam client"), map = Choice("Bjornholm", "Westbridge Hills"), difficulty = Choice("Easy", "Normal", "Hard");
-    private readonly TextBox game = new(), python = new(), steam = new();
-    private readonly Label description = new(), status = new(), resources = new(), evidence = new();
-    private readonly RichTextBox output = new();
-    private readonly ProgressBar progress = new();
-    private readonly Panel pages = new();
-    private readonly List<Control> pageList = [];
-    private readonly List<Button> navigation = [], actions = [];
-    private readonly Button cancel;
-    private readonly List<Control> configuration = [];
-    private Process? worker;
-    private bool busy, cancelled, closing;
-    private bool preparedInSmoke;
-    private int selectedPage;
-
-    private static ComboBox Choice(params string[] values)
-    {
-        var box = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, IntegralHeight = false };
-        box.Items.AddRange(values); box.SelectedIndex = 0; return box;
-    }
-
-    public LauncherForm(string workspace)
-    {
-        root = workspace; settingsPath = Path.Combine(root, "build", "launcher", "settings.json");
-        Text = "FS15 Reconstruction"; ClientSize = new Size(1140, 820); MinimumSize = new Size(1040, 780);
-        Font = new Font("Segoe UI", 10); BackColor = background; ForeColor = text;
-        var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
-        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200)); shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); Controls.Add(shell);
-        var sidebar = new FlowLayoutPanel { Dock = DockStyle.Fill, BackColor = surface, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(18, 30, 10, 10) };
-        sidebar.Controls.Add(Label("FS15", 27, true, 165, 52)); sidebar.Controls.Add(Label("RECONSTRUCTION", 9, false, 165, 55));
-        foreach (string title in new[] { "Play", "Resources", "Diagnostics" })
-        {
-            int index = navigation.Count; var button = Button(title, () => SelectPage(index)); button.Width = 162; button.TextAlign = ContentAlignment.MiddleLeft; button.Margin = new Padding(0, 0, 0, 12);
-            navigation.Add(button); sidebar.Controls.Add(button);
-        }
-        sidebar.Controls.Add(Label("GE6  /  LOCAL PROJECT\n\nRecovered code and original resources.\n\nExperimental host and original engine have separate runtimes.", 9, false, 162, 190));
-        shell.Controls.Add(sidebar, 0, 0);
-        var body = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(24, 22, 24, 16) };
-        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
-        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 20)); body.RowStyles.Add(new RowStyle(SizeType.Absolute, 135)); body.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-        shell.Controls.Add(body, 1, 0); pages.Dock = DockStyle.Fill; body.Controls.Add(pages);
-        status.Dock = DockStyle.Fill; status.ForeColor = muted; status.Text = "Ready. Select a runtime or prepare your local resources."; body.Controls.Add(status);
-        progress.Dock = DockStyle.Fill; progress.Margin = new Padding(0, 4, 0, 8); body.Controls.Add(progress);
-        output.Dock = DockStyle.Fill; output.ReadOnly = true; output.BorderStyle = BorderStyle.None; output.BackColor = surface; output.ForeColor = muted; output.Font = new Font("Consolas", 9); body.Controls.Add(output);
-        var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0) };
-        footer.Controls.Add(Button("Open logs", OpenLogs)); footer.Controls.Add(Button("Copy diagnostics", () => { if (output.TextLength > 0) Clipboard.SetText(output.Text); }));
-        cancel = Button("Cancel operation", CancelWorker); cancel.Enabled = false; footer.Controls.Add(cancel); body.Controls.Add(footer);
-        BuildPlay(); BuildResources(); BuildDiagnostics();
-        foreach (var control in new Control[] { mode, transport, map, difficulty, game, python, steam })
-        { control.BackColor = surface; control.ForeColor = text; control.Margin = new Padding(3, 5, 3, 5); configuration.Add(control); }
-        LoadSettings(); mode.SelectedIndexChanged += (_, _) => UpdateMode(); SelectPage(0); UpdateMode(); RefreshEvidence();
-        Shown += async (_, _) => { if (game.Text.Length == 0) await Detect(); await CheckResources(); };
-        FormClosing += (_, e) => { if (busy && !closing) { e.Cancel = true; closing = true; CancelWorker(); return; } SaveSettings(); };
-    }
-
-    private Label Label(string value, float size = 10, bool bold = false, int width = 0, int height = 0)
-        => new() { Text = value, Font = new Font(Font.FontFamily, size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = bold ? text : muted, Width = width, Height = height, AutoSize = width == 0, Margin = new Padding(0, 0, 0, 8) };
-    private Button Button(string title, Action click)
-    {
-        var button = new Button { Text = title, BackColor = surface, ForeColor = text, FlatStyle = FlatStyle.Flat, Height = 38, AutoSize = true, MinimumSize = new Size(130, 38), Cursor = Cursors.Hand, Margin = new Padding(0, 0, 10, 0) };
-        button.FlatAppearance.BorderSize = 0; button.Click += (_, _) => click(); return button;
-    }
-    private Button ActionButton(string title, Func<Task> action, bool primary = false)
-    {
-        var button = Button(title, async () => await action()); if (primary) button.BackColor = green; actions.Add(button); return button;
-    }
-    private TableLayoutPanel Page(string title, string subtitle)
-    {
-        var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); page.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
-        page.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); page.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
-        page.Controls.Add(Label(title, 25, true)); var copy = Label(subtitle); copy.Dock = DockStyle.Fill; page.Controls.Add(copy);
-        pages.Controls.Add(page); pageList.Add(page); return page;
-    }
-    private TableLayoutPanel Fields(int rows)
-    {
-        var panel = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 3, RowCount = rows, Height = rows * 45 };
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 85));
-        for (int i = 0; i < rows; i++) panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); return panel;
-    }
-    private void Row(TableLayoutPanel panel, int row, string name, Control control, Action? browse = null)
-    {
-        var label = Label(name); label.Dock = DockStyle.Fill; label.TextAlign = ContentAlignment.MiddleLeft; panel.Controls.Add(label, 0, row);
-        control.Dock = DockStyle.Fill; panel.Controls.Add(control, 1, row);
-        if (browse == null) panel.SetColumnSpan(control, 2);
-        else { var button = Button("Browse", browse); button.MinimumSize = Size.Empty; button.Dock = DockStyle.Fill; button.Margin = new Padding(4, 5, 0, 5); panel.Controls.Add(button, 2, row); configuration.Add(button); }
-    }
-    private void BuildPlay()
-    {
-        var page = Page("Choose your runtime", "Launch the original GIANTS Engine 6 or explore the experimental reconstructed host.");
-        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 195)); content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var fields = Fields(4); Row(fields, 0, "Runtime", mode); Row(fields, 1, "Native startup", transport); Row(fields, 2, "Home-engine map", map); Row(fields, 3, "Home difficulty", difficulty); content.Controls.Add(fields);
-        description.Dock = DockStyle.Fill; description.ForeColor = muted; description.Padding = new Padding(12); description.BackColor = surface; content.Controls.Add(description); page.Controls.Add(content);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) };
-        buttons.Controls.Add(ActionButton("Launch game", () => Run(false), true)); buttons.Controls.Add(ActionButton("Check launch plan", () => Run(true))); page.Controls.Add(buttons);
-    }
-    private void BuildResources()
-    {
-        var page = Page("Prepare your resources", "Select your installed copy of FS15. The assistant reads original files and prepares local textures, meshes, scripts and starting fleets.");
-        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); content.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var fields = Fields(1); Row(fields, 0, "FS15 installation", game, () => BrowseFolder(game)); content.Controls.Add(fields);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill }; buttons.Controls.Add(ActionButton("Detect installation", Detect)); buttons.Controls.Add(ActionButton("Check resources", CheckResources)); content.Controls.Add(buttons);
-        resources.Dock = DockStyle.Fill; resources.ForeColor = muted; resources.Padding = new Padding(12); resources.BackColor = surface; resources.Text = "Checking local resources..."; content.Controls.Add(resources); page.Controls.Add(content);
-        var actionsPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) };
-        actionsPanel.Controls.Add(ActionButton("Prepare / repair assets", PrepareAssets, true)); page.Controls.Add(actionsPanel);
-    }
-    private void BuildDiagnostics()
-    {
-        var page = Page("Diagnostics & tools", "Saved native evidence, startup options and local preparation logs.");
-        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var fields = Fields(2); Row(fields, 0, "Python executable", python, () => BrowseExe(python)); Row(fields, 1, "Steam (optional)", steam, () => BrowseExe(steam)); content.Controls.Add(fields);
-        evidence.Dock = DockStyle.Fill; evidence.ForeColor = muted; evidence.Padding = new Padding(12); evidence.BackColor = surface; content.Controls.Add(evidence); page.Controls.Add(content);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 10, 0, 0) }; buttons.Controls.Add(ActionButton("Verify native session", Verify)); buttons.Controls.Add(Button("Preparation guide", () => Process.Start(new ProcessStartInfo(Path.Combine(root, "docs", "LAUNCHER.md")) { UseShellExecute = true }))); page.Controls.Add(buttons);
-    }
-    private void SelectPage(int index)
-    { selectedPage = index; for (int i = 0; i < pageList.Count; i++) { pageList[i].Visible = i == index; navigation[i].BackColor = i == index ? green : surface; } }
     private void BrowseFolder(TextBox field)
     { using var dialog = new FolderBrowserDialog { Description = "Select your Farming Simulator 15 installation", UseDescriptionForTitle = true }; if (Directory.Exists(field.Text)) dialog.InitialDirectory = field.Text; if (dialog.ShowDialog(this) == DialogResult.OK) { field.Text = dialog.SelectedPath; SaveSettings(); } }
     private void BrowseExe(TextBox field)
@@ -148,9 +26,8 @@ internal sealed class LauncherForm : Form
     private void UpdateMode()
     {
         bool home = mode.SelectedIndex == 1; transport.Enabled = steam.Enabled = !busy && !home; map.Enabled = difficulty.Enabled = !busy && home;
-        description.Text = home ? "HOME ENGINE / EXPERIMENTAL\n\nAuthored Direct3D host using recovered Lua, native components and original assets. Physics and farming remain partial.\n\nChoose Resources to prepare or repair the local asset cache."
-            : mode.SelectedIndex == 0 ? "GE6 + RECOVERED GAMEPLAY\n\nOriginal engine rendering and physics, with three recovered wheel helpers activated after 104 comparisons.\n\nSelect your career and map inside GE6. Normal installation startup is used."
-            : "ORIGINAL GE6 BASELINE\n\nInstalled original engine with an isolated source-comparison probe.\n\nSelect your career and map inside GE6. Your normal saves stay separate.";
+        description.Text = home ? "Experimental gameplay · local assets" : mode.SelectedIndex == 0 ? "Original GE6 + recovered helpers" : "Original GE6 · comparison baseline";
+        nativeCard.Selected = !home; homeCard.Selected = home; nativeCard.Invalidate(); homeCard.Invalidate();
     }
     private void Append(string line)
     {
@@ -176,10 +53,11 @@ internal sealed class LauncherForm : Form
         if (kind is "resources" or "complete")
         {
             bool present = data.GetProperty("assets_present").GetBoolean();
-            resources.Text = present ? "LOCAL RESOURCES FOUND\n\nMaps, decoded meshes, field grids, recovered scripts and prepared starting fleets are present.\n\n" + (data.GetProperty("host_built").GetBoolean() ? "The home engine is built. Use Check launch plan before starting." : "Build the Windows home engine using scripts/build.ps1.") + "\n\nPrepare / repair checks source hashes and regenerates scene and vehicle caches. File presence alone does not verify a rendered game session."
+            libraryStatus.Text = present ? "Resources found on this PC" : "Resource setup needed";
+            resources.Text = present ? "LOCAL RESOURCES FOUND\n\nYour maps, textures, recovered scripts and starting fleets are available.\n\n" + (data.GetProperty("host_built").GetBoolean() ? "ReFarm is built and available in your launch profiles." : "Build ReFarm using scripts/build.ps1 to enable its launch profile.") + "\n\nUse Prepare / repair to check source files and rebuild the local caches."
                 : "PREPARATION REQUIRED\n\n" + string.Join("\n", data.GetProperty("missing").EnumerateArray().Take(8).Select(v => "• " + v.GetString())) + "\n\nSelect your installation, then choose Prepare / repair assets.";
             if (data.TryGetProperty("preparation_incomplete", out var unfinished) && unfinished.GetBoolean())
-                resources.Text = "PREPARATION INTERRUPTED OR FAILED\n\nRun Prepare / repair assets to repair unfinished caches. Home-engine startup is blocked until preparation completes.\n\n" + resources.Text;
+                resources.Text = "PREPARATION INTERRUPTED OR FAILED\n\nRun Prepare / repair assets to repair unfinished caches. ReFarm startup is blocked until preparation completes.\n\n" + resources.Text;
         }
     }
     private async Task<int> Worker(string script, IEnumerable<string> args)
@@ -214,7 +92,7 @@ internal sealed class LauncherForm : Form
     }
     private Task Run(bool dryRun)
     {
-        SaveSettings(); var args = new List<string> { "--mode", new[] { "hybrid", "home", "ge6" }[mode.SelectedIndex], "--transport", new[] { "auto", "direct", "steam" }[transport.SelectedIndex], "--map", map.SelectedIndex == 0 ? "Map01" : "Map02", "--difficulty", (difficulty.SelectedIndex + 1).ToString() };
+        SaveSettings(); var args = new List<string> { "--mode", new[] { "hybrid", "refarm", "ge6" }[mode.SelectedIndex], "--transport", new[] { "auto", "direct", "steam" }[transport.SelectedIndex], "--map", map.SelectedIndex == 0 ? "Map01" : "Map02", "--difficulty", (difficulty.SelectedIndex + 1).ToString() };
         if (game.Text.Trim().Length > 0) args.AddRange(["--game-dir", game.Text.Trim()]); if (steam.Text.Trim().Length > 0) args.AddRange(["--steam", steam.Text.Trim()]); if (dryRun) args.Add("--dry-run");
         return Operation(dryRun ? "Checking launch configuration..." : "Starting runtime...", () => Worker("unified_launcher.py", args), dryRun ? "Launch plan checked. No game process started." : "Runtime started. Inspect its window and session evidence.");
     }
@@ -226,20 +104,52 @@ internal sealed class LauncherForm : Form
         try
         {
             using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "analysis", "native-engine-validation.json"))); var data = report.RootElement;
-            evidence.Text = "SAVED NATIVE EVIDENCE\n\nGE6 boot: " + (data.GetProperty("native_boot_verified").GetBoolean() ? "recorded" : "pending") + "\nRecovered source: " + (data.GetProperty("recovered_script_execution_verified").GetBoolean() ? "104 comparisons passed" : "pending") + "\nHybrid gameplay: " + (data.TryGetProperty("hybrid_runtime_verified", out var h) && h.GetBoolean() ? "three recovered helpers called by native vehicles" : "pending") + "\n\nThese saved checks do not prove a new session is running. Full GE6 recompilation and complete farming sessions remain unfinished.";
+            evidence.Text = "SAVED SESSION CHECKS  ·  GE6 boot: " + (data.GetProperty("native_boot_verified").GetBoolean() ? "recorded" : "pending") + "  ·  Recovered source: " + (data.GetProperty("recovered_script_execution_verified").GetBoolean() ? "104 comparisons passed" : "pending") + "\n\n" + (data.TryGetProperty("hybrid_runtime_verified", out var h) && h.GetBoolean() ? "Three recovered wheel helpers were used in a recorded native session." : "Native helper integration is pending verification.") + "\nSaved checks describe earlier sessions. Complete GE6 reconstruction remains in progress.";
         }
         catch (Exception error) when (error is IOException or JsonException or KeyNotFoundException) { evidence.Text = "No saved native session evidence. Start a career inside GE6, then verify the session."; }
     }
     internal async Task SmokeAsync(string path, bool prepare)
     {
-        // Real WinForms layout render; no game process or resource import starts.
+        // Real WinForms layouts. Game startup is deliberately excluded here.
         while (busy) await Task.Delay(50);
         await Detect(); await CheckResources();
         if (prepare) { await PrepareAssets(); preparedInSmoke = progress.Value == 100; }
-        SelectPage(1); await Task.Delay(100); PerformLayout();
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var bitmap = new Bitmap(Width, Height); DrawToBitmap(bitmap, new Rectangle(0, 0, Width, Height)); bitmap.Save(path);
-        File.WriteAllText(Path.ChangeExtension(path, ".json"), JsonSerializer.Serialize(new { ui_layout_rendered = true, page = selectedPage, installation_found = game.Text.Length > 0, asset_status_displayed = resources.Text.Contains("LOCAL RESOURCES FOUND"), preparation_requested = prepare, preparation_succeeded = preparedInSmoke, game_launched = false, size = new { Width, Height } }, new JsonSerializerOptions { WriteIndented = true }));
+        int originalMode = mode.SelectedIndex, originalMap = map.SelectedIndex;
+        string Suffix(string suffix) => Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + suffix + ".png");
+        async Task Capture(string target, int page)
+        {
+            SelectPage(page); await Task.Delay(100); PerformLayout(); Refresh();
+            using var bitmap = new Bitmap(Width, Height); DrawToBitmap(bitmap, new Rectangle(0, 0, Width, Height)); bitmap.Save(target);
+        }
+        mode.SelectedIndex = 0; map.SelectedIndex = 0;
+        await Capture(path, 0); await Capture(Suffix("-resources"), 1); await Capture(Suffix("-settings"), 2);
+        SelectPage(0); homeCard.PerformClick(); bool homeSelection = mode.SelectedIndex == 1 && map.Enabled && difficulty.Enabled && !transport.Enabled;
+        map.SelectedIndex = 1; await Capture(Suffix("-home"), 0);
+        nativeCard.PerformClick(); bool nativeSelection = mode.SelectedIndex == 0 && !map.Enabled && !difficulty.Enabled && transport.Enabled;
+        var originalSize = ClientSize; ClientSize = new Size(1100, 760); await Capture(Suffix("-compact"), 0); ClientSize = originalSize;
+        mode.SelectedIndex = 2; bool baselineAvailable = !map.Enabled && transport.Enabled;
+        var keyHandler = typeof(LauncherChoice).GetMethod("OnKeyDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        keyHandler.Invoke(mode, [new KeyEventArgs(Keys.Home)]); bool keyboardSelection = mode.SelectedIndex == 0;
+        keyHandler.Invoke(mode, [new KeyEventArgs(Keys.End)]); keyboardSelection &= mode.SelectedIndex == 2;
+        mode.AccessibilityObject.Value = mode.Items[1]; bool accessibleSelection = mode.SelectedIndex == 1;
+        mode.AccessibilityObject.DoDefaultAction(); await Task.Delay(80);
+        bool popupSelection = mode.ContextMenuStrip is { Visible: true } menu && menu.Items.Count == 3;
+        if (mode.ContextMenuStrip is { } choices)
+        {
+            using var menuImage = new Bitmap(choices.Width, choices.Height); choices.DrawToBitmap(menuImage, new Rectangle(Point.Empty, choices.Size)); menuImage.Save(Suffix("-profile-menu"));
+            choices.Items[0].PerformClick(); popupSelection &= mode.SelectedIndex == 0; choices.Close();
+        }
+        mode.SelectedIndex = originalMode; map.SelectedIndex = originalMap; SelectPage(0);
+        bool visualAssets = GetType().Assembly.GetManifestResourceStream("FS15.Scene.bjornholm") != null && GetType().Assembly.GetManifestResourceStream("FS15.Scene.westbridge") != null;
+        bool verified = homeSelection && nativeSelection && baselineAvailable && visualAssets && keyboardSelection && accessibleSelection && popupSelection;
+        File.WriteAllText(Path.ChangeExtension(path, ".json"), JsonSerializer.Serialize(new { ui_layout_rendered = true, pages_captured = 3, compact_layout_captured = true,
+            embedded_project_scenes = visualAssets, home_selection_verified = homeSelection, native_selection_verified = nativeSelection,
+            keyboard_selection_verified = keyboardSelection, accessible_selection_verified = accessibleSelection, popup_selection_verified = popupSelection,
+            baseline_available = baselineAvailable, selected_settings_restored = mode.SelectedIndex == originalMode && map.SelectedIndex == originalMap,
+            installation_found = game.Text.Length > 0, asset_status_displayed = resources.Text.Contains("LOCAL RESOURCES FOUND"),
+            preparation_requested = prepare, preparation_succeeded = preparedInSmoke, game_launched = false, size = new { Width, Height } }, new JsonSerializerOptions { WriteIndented = true }));
+        if (!verified) Environment.ExitCode = 1;
         Close();
     }
 }

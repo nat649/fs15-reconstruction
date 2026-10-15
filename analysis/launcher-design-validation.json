@@ -1,0 +1,72 @@
+{
+  "status": "passed",
+  "date": "2026-10-15",
+  "scope": "WinForms launcher design, programmatic UI interaction checks, and ReFarm naming; no new original-GE6 session or full engine reconstruction claimed",
+  "engine_name": "ReFarm",
+  "release_publish": "passed without warnings",
+  "ui_checks": {
+    "ui_layout_rendered": true,
+    "pages_captured": 3,
+    "compact_layout_captured": true,
+    "embedded_project_scenes": true,
+    "home_selection_verified": true,
+    "native_selection_verified": true,
+    "keyboard_selection_verified": true,
+    "accessible_selection_verified": true,
+    "popup_selection_verified": true,
+    "baseline_available": true,
+    "selected_settings_restored": true,
+    "installation_found": true,
+    "asset_status_displayed": true,
+    "preparation_requested": false,
+    "preparation_succeeded": false,
+    "game_launched": false,
+    "size": {
+      "Width": 1296,
+      "Height": 849
+    }
+  },
+  "logical_client_sizes": [
+    [
+      1280,
+      810
+    ],
+    [
+      1100,
+      760
+    ]
+  ],
+  "actual_multi_dpi_session_tested": false,
+  "refarm_map_render_checks": {
+    "passed": 2,
+    "maps": [
+      "Map01",
+      "Map02"
+    ]
+  },
+  "python_tests": {
+    "total": 56,
+    "passed": 54,
+    "skipped": 2,
+    "failed": 0
+  },
+  "compatibility": {
+    "home_mode_alias_retained": true,
+    "existing_executable_filenames_retained": true,
+    "refarm_mode_dry_run_passed": true
+  },
+  "source_sha256": {
+    "src/unified_launcher/LauncherForm.cs": "00edb195fc280a115548e4ae5ab66cf9456a46d02b95de40c5628efb03742f85",
+    "src/unified_launcher/LauncherLayout.cs": "fe8b3bfd3bb502541aa34769f1de88741393d2d9369c9c528842ed5f7775b298",
+    "src/unified_launcher/LauncherControls.cs": "3ee79ed085855e93d3af502c62a43fd04f33e213c4ee4416970a5f11b0d44628",
+    "src/unified_launcher/LauncherChoice.cs": "5f817cbeae90784395f17afea67ed392ce174d010f2d37fa6dc686b5acc83ca8",
+    "src/unified_launcher/FS15Reconstruction.csproj": "0079da7145235025f7a7efc540c9f68714a315f8932f9e3d6bed3ee9a99dc215",
+    "scripts/unified_launcher.py": "ac8f229212c5b06d256d9d9e1d68e2e92706bf6aa82436bf36f95ca39ff46d93",
+    "src/engine/main.cpp": "6a375c68d390d6acd72f6e23f72c4b21d5c934a68130624130e8b80c91b5bb57"
+  },
+  "screenshot": {
+    "path": "docs/screenshots/launcher-refarm.png",
+    "sha256": "78d535401f6f8d5bcf1ba3dba98717a7f30db06244becd4f70997cdfb5ec81fb",
+    "method": "WinForms DrawToBitmap of the compiled launcher; original-map images are previously published project renders"
+  }
+}

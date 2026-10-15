@@ -8,4 +8,8 @@
     <AssemblyName>FS15Reconstruction</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../docs/screenshots/scene-map01.png" LogicalName="FS15.Scene.bjornholm" />
+    <EmbeddedResource Include="../../docs/screenshots/scene-map02.png" LogicalName="FS15.Scene.westbridge" />
+  </ItemGroup>
 </Project>

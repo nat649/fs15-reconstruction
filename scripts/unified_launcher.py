@@ -1,4 +1,4 @@
-"""Shared launcher backend: home runtime or actual GE6 with recovered helpers.
+"""Shared launcher backend: ReFarm or actual GE6 with recovered helpers.
 
 These are separate renderer/physics processes, not an in-process engine merger.
 Direct mode uses only normal installed-executable startup; no ownership bypass.
@@ -21,7 +21,7 @@ def home_plan(root, map_id, difficulty):
     if not executable.is_file():
         executable = root / 'build/Release/FS15EngineRebuilt.exe'
     if not executable.is_file():
-        raise ValueError('Build the home engine before launching it')
+        raise ValueError('Build ReFarm before launching it')
     status=resource_status(root)
     if not status['home_launch_ready']:
         details=', '.join(status['missing'][:5]) or 'unfinished or interrupted asset preparation'
@@ -33,7 +33,7 @@ def home_plan(root, map_id, difficulty):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--mode', choices=('home', 'ge6', 'hybrid'), required=True)
+    parser.add_argument('--mode', choices=('refarm', 'home', 'ge6', 'hybrid'), required=True)
     parser.add_argument('--transport', choices=('auto', 'direct', 'steam'), default='auto')
     parser.add_argument('--game-dir', type=Path)
     parser.add_argument('--steam', type=Path)
@@ -42,9 +42,9 @@ def main():
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
     try:
-        if args.mode == 'home':
+        if args.mode in ('refarm', 'home'):
             plan = home_plan(ROOT, args.map, args.difficulty)
-            print('Runtime: home engine (experimental). Map: ' + args.map + '. Difficulty: ' + str(args.difficulty), flush=True)
+            print('Runtime: ReFarm (experimental). Map: ' + args.map + '. Difficulty: ' + str(args.difficulty), flush=True)
             if args.dry_run:
                 print('Command: ' + subprocess.list2cmdline(plan['command']), flush=True)
             if not args.dry_run:
@@ -54,7 +54,7 @@ def main():
                 except subprocess.TimeoutExpired:
                     print('HOME_PROCESS_RUNNING pid=' + str(child.pid), flush=True)
                 else:
-                    raise ValueError('Home runtime exited during startup: ' + str(result))
+                    raise ValueError('ReFarm exited during startup: ' + str(result))
             return
         if not args.game_dir:
             raise ValueError('Select your installed Farming Simulator 15 directory')

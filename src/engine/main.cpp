@@ -304,7 +304,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
         WNDCLASSW wc{};wc.hInstance=instance;wc.lpfnWndProc=window_proc;wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"FS15IndependentWorldRuntime";
         if(!RegisterClassW(&wc))throw std::runtime_error("Cannot register 3D window");
         DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;RECT rect{0,0,int(width),int(height)};AdjustWindowRect(&rect,style,FALSE);
-        std::wstring title=L"FS15 Reconstructed Engine - Original map scene - "+wide(map)+L" | WASD/ZQSD, mouse look, Space/Ctrl, Home, Esc";
+        std::wstring title=L"ReFarm - Farming Simulator 15 - "+wide(map)+L" | WASD/ZQSD, mouse look, Space/Ctrl, Home, Esc";
         window=CreateWindowW(wc.lpszClassName,title.c_str(),style,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,instance,nullptr);
         if(!window)throw std::runtime_error("Cannot create engine window");
         Renderer render(window,terrain,warp,root);if(!smoke)ShowWindow(window,show);
@@ -356,7 +356,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
                     for(auto action:mission_actions)mission->action(action);mission_actions.clear();
                     mission->update(elapsed,float(keys['W']||keys['Z']||keys[VK_UP])-float(keys['S']||keys[VK_DOWN]),float(keys['A']||keys['Q']||keys[VK_LEFT])-float(keys['D']||keys[VK_RIGHT]),keys[VK_SPACE]);
                     XMFLOAT3 eye,target;follow_vehicle=mission->camera(eye,target);if(follow_vehicle)camera.look_at(eye,target);else camera.update(dt);
-                    static float status_time=0;status_time+=dt;if(status_time>0.25f){auto status=mission->status();status=status.substr(0,status.find(L'\n'));SetWindowTextW(window,(L"FS15 - "+status).c_str());status_time=0;}
+                    static float status_time=0;status_time+=dt;if(status_time>0.25f){auto status=mission->status();status=status.substr(0,status.find(L'\n'));SetWindowTextW(window,(L"ReFarm - "+status).c_str());status_time=0;}
                 }
                 else camera.update(dt);if(!mission||!mission->paused())animation_time+=dt;render.draw();
             }
