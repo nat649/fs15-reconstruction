@@ -95,6 +95,9 @@ missing-node cleanup, every truncation of the fixture, unsupported versions,
 allocation failure cleanup and preserved empty-channel lookup slots. See the
 [platform evidence](../analysis/portable-core-platform-validation.json) for the
 tested revision and platform results.
+All ten asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux
+under QEMU. Original-code comparisons remain Windows-only; no Switch build or
+complete engine execution is established by these checks.
 
 Preflight count, string, finite-value, monotonicity and node-ordinal guards are
 authored additions. Invalid/truncated inputs fail before engine allocation.

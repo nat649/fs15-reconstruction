@@ -1,10 +1,12 @@
 {
   "status": "passed",
   "date": "2026-10-16",
-  "tested_source_commit": "f5a509a2b33ad9da9c2e3115ef68ef5d0a0fd876",
+  "tested_source_commit": "ef852995509c61fc62269193ac38b1b022d038b5",
   "source_sha256": {
     "src/core/animation.cpp": "c18ea288cd716752ae7d645b449dcfb414f3521b59f40d68ed19f9ba1a0a2099",
-    "src/core/animation.h": "c010d8c456209cbf15ea349f5f44c7781e08054e938812378e3946f2c2cdc5a4",
+    "src/core/animation.h": "a4be6aaa3f9683d87c0dd42ef7d22c3d9df52ad136ab8e769756c4f0968671c8",
+    "src/core/animation_resources.cpp": "89496d118b75c660c053e5271844c70fd8bcc3568444ee7f0b0072a2e3d9936e",
+    "src/core/animation_resources.h": "793150f025a521e33c9703eb743dccca4c9b7d219b8f19269b0800a7f13f3e56",
     "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
     "src/core/bit_operations.cpp": "0adb266f9fc5f10e15ab085309a001d59763b43a3bc0373611916dd91658eac9",
     "src/core/export.h": "75a4bb3e1577531703f25043d307c8c515276f0b5dc58e9a32efd3d0f5945720",
@@ -41,29 +43,30 @@
     "portable_scene_lifecycle",
     "portable_scene_attributes",
     "portable_shared_scene",
-    "portable_animation"
+    "portable_animation",
+    "portable_animation_resources"
   ],
   "platforms": [
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 9
+      "tests_passed": 10
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 9,
-      "job_id": 116742772129
+      "tests_passed": 10,
+      "job_id": 116748314798
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 9,
-      "job_id": 116742772362
+      "tests_passed": 10,
+      "job_id": 116748314612
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38828895083",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38830621286",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,
