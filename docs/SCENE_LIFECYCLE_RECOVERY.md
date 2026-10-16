@@ -59,7 +59,7 @@ fully recovered scene loader, physics world or complete engine startup.
 
 Supported destruction now accepts valid nonempty maps through the
 [recovered attribute component](SCENE_ATTRIBUTES_RECOVERY.md), while requiring
-default property type, no shared resource and no active-trigger teardown. Per-object checks reject
+default property type, a supported shared-reference dispatcher and no active-trigger teardown. Per-object checks reject
 those unsupported states before freeing that object's members. The owning host
 must preflight descendants and supply correct callbacks. A callback failure
 after teardown starts cannot undo external frees or registry changes.
@@ -83,7 +83,7 @@ open. Full native allocation/ownership recovery is therefore still incomplete.
   allocations. The native reference retains only its registry sentinel.
 - A sixth asset-free CTest verifies ownership, defaults, registration timing,
   ordered recursive deletion, alias guards and failure cleanup independently.
-- All seven portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+- All eight portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
   under QEMU. These invariant checks are separate from the Windows original-code
   comparisons; no complete ARM64 GE6 or Switch executable is validated.
 
