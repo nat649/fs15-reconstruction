@@ -114,7 +114,7 @@ through recovered playback and scene updates, numeric quirks, visibility/easing,
 pending cleanup, rejected-key retention, invalid nesting, short vectors and
 allocation failures through partial binding. See the tested revision and CPU
 scope in [platform evidence](../analysis/portable-core-platform-validation.json).
-All sixteen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux
+All seventeen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux
 under QEMU. Original-code comparisons remain Windows-only; no complete engine
 or Switch executable is established by these platform checks.
 
