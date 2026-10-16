@@ -42,6 +42,10 @@ remain excluded until their native state/lifetime paths are recovered.
 
 Bounds currently allow 65,535 nodes, 1,048,576 total child/observer slots and
 256 levels. Pointee storage and complete vector allocations must be valid.
+Staging copies the supplied forest and allocated child slots for each call; it
+is a bounded validation transport, not a proven full-map loading strategy. The
+complete original maps exceed its current node bound.
+
 Output buffers must be disjoint. Bounds, cycle checks and transactional staging
 are authored guards: insufficient event capacity, invalid views and allocation
 failure leave the live forest unchanged. Native exception/prefix-write behavior
@@ -80,8 +84,8 @@ TRS/libm regions use scaled tolerance `1e-5` across successive operations.
 The asset-free `portable_scene_owned` check exercises the growth sequence,
 aliasing, multi-level ownership, insertion order, reparenting, inherited state,
 observer identity/order, failure cleanup, inconsistent membership and cycle
-rejection. All thirteen portable checks pass locally on Windows x64. The exact
-cross-platform tested revision is tracked in
+rejection. All thirteen portable checks pass on Windows x64, Linux x64 and ARM64 Linux
+under QEMU. The exact tested revision and CI job IDs are tracked in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 
 ```powershell

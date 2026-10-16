@@ -128,7 +128,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All twelve asset-free core tests pass on Windows x64, Linux x64
+  full linking. All thirteen asset-free core tests pass on Windows x64, Linux x64
   and ARM64 Linux under QEMU, separately from the future Switch target. See
   [platform evidence](analysis/portable-core-platform-validation.json) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
