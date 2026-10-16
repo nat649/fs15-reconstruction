@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **82 native entries on bounded tested paths**. The affine component passes
+  **92 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -98,7 +98,13 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Shared animation ownership:** twelve additional paths recover CharacterSet/data
   construction, binding/rebinding, update membership and last-reference cleanup.
   220 scenarios cover 4,310 node destructions and 4,297 owned clip channels.
-  Playback/evaluation remains open. See [scope](docs/SHARED_SCENE_RECOVERY.md).
+  See [ownership scope](docs/SHARED_SCENE_RECOVERY.md).
+- **Native animation playback:** ten further entries recover key sampling,
+  packed quaternion interpolation, four-track controls and bounded TRS pose
+  application. 4,320 clip samples, 42,444 channel records and 2,240 successive
+  animation/scene arenas match original code, including 28,545 notifications.
+  Loading, scheduling and skeletal rendering remain open. See
+  [animation scope and evidence](docs/ANIMATION_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

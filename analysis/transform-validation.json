@@ -8,7 +8,7 @@
     "src/core/transform.cpp": "3d3e14ba48dcc8704b48e1569de8e319ce5389a08ec7639b5685593f5b1c79b2",
     "src/core/transform.h": "e0ff1e223f10b052a423e8880a76aaa74f650c74c72cfb93c89a4b8fed6b478b"
   },
-  "rebuilt_dll_sha256": "61e48335b5d7bddd050020ea4f02df41515dc086db477b7d914f427dde730263",
+  "rebuilt_dll_sha256": "165c134d7a7340401d85460f948e2d3a1eb212b67eb921b262ea39ebe7888ecf",
   "complete_vector_comparisons": 12000,
   "original_result_sha256": "418534611983740cd782d38eee4c25be8ced33457fad1e3ab8e00e231f90327b",
   "scope": "Native affine point-transform leaf on finite synthetic data, bit-exact four-float outputs; no complete scene graph, physics solver or engine startup"

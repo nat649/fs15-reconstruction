@@ -71,7 +71,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Document native String-to-scalar retained allocations and pointer residues separately from ordinary owned cleanup.
 - [x] Recover known CharacterSet/data construction, node binding/rebinding, reference release, active/pending update removal and nested clip cleanup; compare 220 complete shared lifetimes.
 - [x] Recover default property cloning/replacement and dispatch known shared references through the node destructor chain.
-- [x] Track 82 bounded reconstructed native entries separately from 11,553 pseudocode-only entries, with source-pinned evidence.
+- [x] Recover native key selection/easing, compressed quaternion interpolation, four-track controls and bounded TRS pose application; compare 4,320 clips, 42,444 channel records and 2,240 successive animation arenas.
+- [x] Retain native shared-clip selection order, scale-cache refresh, visibility threshold and origin-zero propagation; compare 28,545 observer notifications.
+- [ ] Recover animation resource loading, update scheduling, skin/skeleton binding and renderer consumption.
+- [x] Track 92 bounded reconstructed native entries separately from 11,543 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

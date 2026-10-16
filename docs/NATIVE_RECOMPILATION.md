@@ -29,9 +29,11 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Ordered scene link/reparent/unlink | Three native entries, preallocated vectors only | 19,200 successive complete node arenas/child buffers and notification traces, including same-parent reorder and suppressed removal |
 | Supported object construction, naming and lifetime chains | Thirteen entries with authored platform/container service boundaries | 2,500 constructor and 2,500 nondeleting-destructor records, 7,500 renames, 3,500 auxiliary allocations, 4,970 registry snapshots and 250 recursive forests / 2,470 deleting destructions |
 | Native-layout attribute maps and script frames | Eight entries, including RB insertion and nonempty-map cleanup | 12,780 complete trees, 12,600 setters, 25,200 getters and 180 complete member-free-order traces; original getter also reads reconstructed storage directly |
+| Shared CharacterSet/data/clip ownership | Twelve entries | 220 shared lifetimes, 440 bindings, 4,310 node destructions and nested clip/channel cleanup |
+| Animation sampling, quaternion decoding and four-track playback | Ten entries | 4,320 clip samples, 42,444 complete channels, 2,240 successive animation arenas and 28,545 ordered notifications |
 
-Those are **82 native entries with bounded reconstructed paths**. They are not
-82 completely proven engine functions or a percentage of GE6 completion.
+Those are **92 native entries with bounded reconstructed paths**. They are not
+92 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -177,5 +179,7 @@ Recovered executable code, pseudocode exports and game resources remain local.
 The repository contains authored reconstruction/tooling and aggregate evidence.
 
 Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
-update-list removal and nested clip destruction. Other resource classes,
-animation evaluation, active triggers and complete loading remain open.
+update-list removal and nested clip destruction.
+[Bounded playback](ANIMATION_RECOVERY.md) is also recovered. Other resource
+classes, resource loading, scheduling, skinning, active triggers and complete
+engine startup remain open.

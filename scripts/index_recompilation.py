@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('animation_playback', ['0x1400524b0','0x140174af0','0x1402806f0','0x1401766d0',
+        '0x140176950','0x1401762a0','0x140176330','0x140176370','0x1401763b0',
+        '0x140175820'], 'analysis/animation-validation.json'),
     ('shared_scene_animation_lifetime', ['0x140174c10','0x140174cc0','0x140174e10',
         '0x140174e40','0x1401750c0','0x1401750f0','0x1401752f0','0x140176800',
         '0x1401bd100','0x140041980','0x1400b1520','0x1400b1e10'], 'analysis/shared-scene-validation.json'),

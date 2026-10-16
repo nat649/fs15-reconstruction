@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 82 bounded reconstructed entries from 11,553 pseudocode-only entries. This is host component
+separates 92 bounded reconstructed entries from 11,543 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,8 +37,9 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has eight asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. All thirteen native differential suites also pass.
+has nine asset-free component tests passing on Windows. Of 64 Python fixtures,
+62 pass and two Windows symlink checks are skipped. All fourteen native
+differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
 Euler extraction, lazy cache refresh, rebuild propagation and six Lua
@@ -93,6 +94,14 @@ and full linking remain unresolved. The recovered core cross-compiles for ARM64
 Linux and passes all eight asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
+
+Ten additional animation entries recover the generated normalization table,
+compressed quaternion interpolation, key selection/easing, four-track controls
+and bounded known-TRS pose evaluation. 4,320 clip samples, 42,444 complete channel
+records and 2,240 successive animation/scene arenas match original code, with
+28,545 ordered notifications and bit-identical recorded float regions. Loading,
+scheduling, arbitrary callbacks, skinning and renderer consumption remain open.
+See [animation scope](../docs/ANIMATION_RECOVERY.md).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
 
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the

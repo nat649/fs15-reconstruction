@@ -50,8 +50,9 @@ with an explicitly initialized update registry, never in a modified live game.
 
 Allocation, ID/object registry, synchronization, known dispatch and failure
 guards are authored integration services. Original exception/unwind behavior,
-other derived/shared resource classes, animation evaluation/interpolation,
-skinning, active triggers and complete scene startup remain open. Vtable values
+other derived/shared resource classes, skinning, active triggers and complete
+scene startup remain open. [Bounded animation evaluation](ANIMATION_RECOVERY.md)
+is now recovered separately. Vtable values
 in portable records are identity tokens, never callable original pointers.
 ReFarm retains authored ownership/loader code. No complete portable GE6 or
 Switch executable is validated by this component.

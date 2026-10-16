@@ -57,6 +57,7 @@
 !/analysis/scene-lifecycle-validation.json
 !/analysis/scene-attributes-validation.json
 !/analysis/shared-scene-validation.json
+!/analysis/animation-validation.json
 /logs/
 __pycache__/
 *.pyc

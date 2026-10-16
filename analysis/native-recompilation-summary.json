@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11553,
-  "validated_component_path_entries": 82,
+  "pseudocode_only": 11543,
+  "validated_component_path_entries": 92,
   "components": [
+    {
+      "name": "animation_playback",
+      "entries": 10,
+      "evidence": "analysis/animation-validation.json"
+    },
     {
       "name": "shared_scene_animation_lifetime",
       "entries": 12,
