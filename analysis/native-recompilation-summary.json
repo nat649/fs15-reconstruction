@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11500,
-  "validated_component_path_entries": 136,
+  "pseudocode_only": 11495,
+  "validated_component_path_entries": 141,
   "components": [
+    {
+      "name": "scene_group_xml_callbacks",
+      "entries": 5,
+      "evidence": "analysis/scene-groups-validation.json"
+    },
     {
       "name": "scene_lod_registration_and_distance_cache",
       "entries": 13,

@@ -19,8 +19,8 @@
   "rebuilt_source_sha256": {
     "src/core/scene_lod.cpp": "01bbdcdf660e36194f6ed277fb877b7364ed70f4b4b00544035774c3ef88d874",
     "src/core/scene_lod.h": "97d3dce8b87d8ebbb2ec0ad399ef6a41fc58d65fe2cbe3fadf137f15d7a8d1de",
-    "src/core/scene_owned.cpp": "8036dbdcb9e5f00007b10bb32d5d69e98209c8d618e411cf4716eeffbedaf39a",
-    "src/core/scene_owned.h": "7fbac205cd066bc70b242bbbf4559c3cd19e8dd80f08811e5d6ce0d34077c082",
+    "src/core/scene_owned.cpp": "94a970776c5c88347d52e88fc0f5de2956f0a2f6fcbd4c14daf2f4fe0ebc4f90",
+    "src/core/scene_owned.h": "42075ecb639c4be5c2a86a9977243ab8ec1f271352ec53f4f4fcc5aab6c8ff68",
     "src/core/scene_state.cpp": "aa85854e822c139a5c83fcb54864d199599ef9c5b5d90cc14e744cb098259b74",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
@@ -38,7 +38,7 @@
     "src/core/scene_properties.cpp": "118a6e34d3f88b030c41351a29b33bdc25ee5d58f608a3481d5eb6eebf423e08",
     "src/core/scene_properties.h": "e1cb13e5ba769a924cb0f9a9b191f6e2b87b3b4524a67ae1fcf04133c4146446"
   },
-  "tested_dll_sha256": "4f23dc1178a762a43c014dec52dc577b717187485dce8b473700a09ffce2cac8",
+  "tested_dll_sha256": "8bdefb84ba55cc61f1fe3e2fa088b98320fa48be469960d93a41da1c8a4af2f0",
   "comparisons": {
     "complete_lod_constructors": 160,
     "lod_child_token_queries": 3520,

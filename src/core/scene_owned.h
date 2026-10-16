@@ -45,6 +45,9 @@ FS15_CORE_API int fs15_scene_owned_trs_lod(const FS15SceneOwnedView*,size_t,unsi
 FS15_CORE_API int fs15_scene_owned_link_lod(const FS15SceneOwnedView*,size_t,size_t,uint32_t,int,const FS15SceneLifecycleServices*,FS15SceneNotification*,size_t,size_t*,uint32_t*,FS15SceneLodQueue*);
 FS15_CORE_API int fs15_scene_owned_unlink_lod(const FS15SceneOwnedView*,size_t,uint32_t,int,FS15SceneNotification*,size_t,size_t*,FS15SceneLodQueue*);
 FS15_CORE_API int fs15_scene_owned_world(const FS15SceneOwnedView*,size_t,float*,size_t);
+/* Known matrix setter dispatch, including the inherited TRS setter on LOD.
+ * This copies the local matrix/dirty cache only; propagation is a separate call. */
+FS15_CORE_API int fs15_scene_owned_matrix(const FS15SceneOwnedView*,size_t,const float*,size_t);
 /* Known inherited-LOD marker (0x1400b61f0) on a valid owned subtree, without
  * inspecting parents/properties or requiring the rest of a tearing-down forest.
  * Supports matrix/TRS/LOD tables only; authored depth/cycle bounds preflight. */

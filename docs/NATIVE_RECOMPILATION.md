@@ -36,9 +36,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Common I3D attributes and pending body/joint metadata | Twelve entries | 2,043 common node lifetimes, 1,403 original-asset attribute records, 800 property constructors and 800 detached destructor/deleting paths |
 | Owned child-vector reserve/grow/alias-append | Three additional entries; existing hierarchy paths reused | 9,600 complete vector states and 10,800 successive separately allocated forest states / 120 lifetimes |
 | LOD metadata, register/distance cache and state/lifetime | Thirteen entries; known base/owned paths reused | 2,100 registrations, 12,000 standalone distance queries and 36 mixed LOD/TRS forest lifetimes / 4,896 states |
+| TransformGroup/LOD XML callbacks and float-vector growth/parser | Five entries | 87 complete forest lifetimes, 63 original subtrees, 2,746 callback/playback states and 435 loaded-node animation updates |
 
-Those are **136 native entries with bounded reconstructed paths**. They are not
-136 completely proven engine functions or a percentage of GE6 completion.
+Those are **141 native entries with bounded reconstructed paths**. They are not
+141 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -202,3 +203,8 @@ allocation. The transport is authored; it is not a recovered complete loader cla
 The [LOD component](SCENE_LOD_RECOVERY.md) extends known scene dispatch and
 registration/distance-cache lifetime to LOD groups. Spatial tree/frustum culling,
 derived render consumption and the complete I3D loading callbacks remain open.
+
+The [group XML callbacks](SCENE_GROUP_RECOVERY.md) now create and attach known
+TRS/LOD hierarchies and feed source-ID-resolved animation playback. Shape-end
+finalization, other derived callbacks, tokenizer/full loading and renderer
+consumption remain open.

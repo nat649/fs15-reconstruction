@@ -95,7 +95,8 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-This does not complete the I3D tokenizer, TransformGroup/LOD/derived-node
-callbacks, original complete loader class, render/physics backend or engine
-startup. Those remain the next loading boundaries. The Switch target remains
+The [group callbacks](SCENE_GROUP_RECOVERY.md) now construct and attach known
+TRS/LOD records through this owned transport. The I3D tokenizer, other derived
+callbacks, original complete loader class, render/physics backend and engine
+startup remain open. The Switch target remains
 deferred; ARM64 Linux execution is separate from a console build.

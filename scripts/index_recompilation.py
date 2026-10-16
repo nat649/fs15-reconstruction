@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_group_xml_callbacks', ['0x1400266d0','0x140028150',
+        '0x1400281d0','0x14018c1a0','0x14018c370'], 'analysis/scene-groups-validation.json'),
     ('scene_lod_registration_and_distance_cache', ['0x1400d7a70','0x1400d7be0',
         '0x1400d7bb0','0x1400d7620','0x1400d7840','0x1400d78f0',
         '0x1400d60b0','0x1400d7d50','0x1400d7e20','0x1400d7ea0',

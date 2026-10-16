@@ -121,7 +121,8 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-The next loading work is TransformGroup/LOD XML begin/end callbacks and complete
-loader ownership. Spatial tree traversal/frustum culling, derived shape/light/
+The [group XML callbacks](SCENE_GROUP_RECOVERY.md) now construct and attach
+TRS/LOD records and connect animations through their loaded source IDs. Complete
+loader ownership, spatial tree traversal/frustum culling, derived shape/light/
 camera consumption, full renderer scheduling and engine startup remain open.
 The future Switch build is still deferred and unverified.

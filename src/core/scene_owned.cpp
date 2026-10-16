@@ -204,3 +204,14 @@ extern "C" int fs15_scene_owned_mark_branch(FS15SceneStateRecord* root) {
         return 1;
     }catch(...){return 0;}
 }
+extern "C" int fs15_scene_owned_matrix(const FS15SceneOwnedView* view,size_t index,const float* matrix,size_t count) {
+    if(!view||index>=view->count)return 0;
+    try {
+        Staged s(*view,true);std::vector<uint8_t> kinds(view->kinds,view->kinds+view->count);
+        // All inspected LOD tables inherit the exact TRS matrix setter at +0x38.
+        for(auto& kind:kinds)if(kind==2)kind=1;
+        s.view.kinds=kinds.data();
+        if(!fs15_scene_set_local_matrix(&s.view,index,matrix,count))return 0;
+        s.commit();return 1;
+    }catch(...){return 0;}
+}

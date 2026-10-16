@@ -23,7 +23,7 @@
     "src/core/scene_attributes.cpp": "d1df841d9efa6056fdf44629a349eaf400a97860a54e7345b009ec5674af87ba",
     "src/core/scene_attributes.h": "299888f34ca2678936a0b30d0f6df58ce18a5706edce8a073dc860a4cfbe4e2e"
   },
-  "tested_dll_sha256": "4f23dc1178a762a43c014dec52dc577b717187485dce8b473700a09ffce2cac8",
+  "tested_dll_sha256": "8bdefb84ba55cc61f1fe3e2fa088b98320fa48be469960d93a41da1c8a4af2f0",
   "cases": {
     "registry_snapshots": 4970,
     "constructors": 2500,

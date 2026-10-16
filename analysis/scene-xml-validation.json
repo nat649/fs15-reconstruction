@@ -33,7 +33,7 @@
     "src/core/animation_xml.cpp": "bad44695ea73a69bccb024d67d9f934f63a792fd4073cbd4414f962fe7787858",
     "src/core/animation_xml.h": "c626f2343ccb426488cd59ce66b4e596ebd5ae9ef23d29828b2bdd209956574b"
   },
-  "tested_dll_sha256": "4f23dc1178a762a43c014dec52dc577b717187485dce8b473700a09ffce2cac8",
+  "tested_dll_sha256": "8bdefb84ba55cc61f1fe3e2fa088b98320fa48be469960d93a41da1c8a4af2f0",
   "comparisons": {
     "property_constructors": 800,
     "property_flag_updates": 1600,
@@ -49,7 +49,7 @@
     "local_asset_common_records": 1403,
     "registered_source_ids": 586
   },
-  "original_results_sha256": "7adeb481551cd4cf3fd4496955a5b5a060e041ec731e706c6c80e39c2e354d61",
+  "original_results_sha256": "f2fa0fe85f0fce4626392955897af5e9106453c244ebe936a426ff18c1871ef7",
   "local_assets": [
     {
       "name": "kroneSwadro2000.i3d",

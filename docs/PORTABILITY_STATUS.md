@@ -11,7 +11,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,201 entries, 11,636 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 136 native entries with validated bounded paths | Remaining 11,500 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 141 native entries with validated bounded paths | Remaining 11,495 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 24 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -23,10 +23,11 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Animation playback | Ten paths; 4,320 clip samples, 42,444 channels, 2,240 complete animation arenas and 28,545 notifications | Complete resource integration, scheduling, arbitrary callbacks, skinning and renderer consumption |
 | Binary animation resources | Seven paths; 91 complete binary-load lifetimes and 637 loaded-resource pose updates, including an original resource | Complete file/archive/scene loading and renderer integration |
 | XML animation callbacks | Nine paths; 7,189 callback states, three original I3D files and exact native numeric grammar | Original XML tokenizer/complete dispatch, CRT startup, full scene/render integration |
-| Common I3D attributes | Twelve paths; 2,043 common-node lifetimes and pending body/joint records match native code, including 1,403 original-map/tool attribute records | Derived render nodes, LOD XML callbacks, complete scene loading, active physics/observers and trigger teardown |
+| Common I3D attributes | Twelve paths; 2,043 common-node lifetimes and pending body/joint records match native code, including 1,403 original-map/tool attribute records | Other derived render callbacks, complete scene loading, active physics/observers and trigger teardown |
 | Owned scene allocation | Three new vector paths and authored scatter transport; 10,800 successive separately allocated forest states, 2,763 child-vector relocations and 120 recursive lifetimes | LOD dispatch is now supported through explicit queue output; other derived dispatch, complete loader construction and platform/observer side effects |
 | LOD groups | Thirteen paths; registry, packed branch tokens, dirty/visible updates and stamp-cached distance selection; 36 complete mixed forest lifetimes | Full spatial tree/frustum culling, derived render consumption and complete loading/scheduling |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 69 have validated components | 2,809 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| I3D group callbacks | Five paths; 63 complete original subtrees, 87 loaded forest lifetimes and 435 animation updates through loaded source IDs | Other derived objects, shape-end finalization, tokenizer/full loader and render/physics integration |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 71 have validated components | 2,807 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
