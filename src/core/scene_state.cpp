@@ -3,6 +3,7 @@
 #include "scene_math.h"
 #include "scene_graph.h"
 #include "scene_trs.h"
+#include "scene_lod.h"
 #include <cmath>
 #include <algorithm>
 #include <cstring>
@@ -27,7 +28,8 @@ struct State {
     std::vector<FS15SceneStateRecord> nodes;
     std::vector<FS15SceneNotification> events;
     std::vector<uintptr_t> child_storage;
-    State(const FS15SceneStateArena& v,size_t index):view(v),count(v.node_stride?v.node_bytes/v.node_stride:0) {
+    std::vector<size_t> lod_requests;
+    State(const FS15SceneStateArena& v,size_t index,bool lod=false):view(v),count(v.node_stride?v.node_bytes/v.node_stride:0) {
         if(v.node_stride<sizeof(FS15SceneStateRecord)||index>=count||
             !range(v.nodes,v.node_bytes,1)||!range(v.children,v.child_count,sizeof(uintptr_t))||
             !range(v.observers,v.observer_count,sizeof(uintptr_t))||
@@ -36,7 +38,7 @@ struct State {
             (v.special_root!=none&&v.special_root>=count))throw std::runtime_error("Invalid scene views");
         nodes.resize(count);
         for(size_t i=0;i<count;++i) {
-            if(v.kinds[i]>FS15_SCENE_TRS_NODE)throw std::runtime_error("Unknown virtual dispatch kind");
+            if(v.kinds[i]>(lod?2:1))throw std::runtime_error("Unknown virtual dispatch kind");
             std::memcpy(&nodes[i],static_cast<const uint8_t*>(v.nodes)+i*v.node_stride,sizeof(nodes[i]));
         }
         for(auto& node:nodes)if(node.parent)node.parent=reinterpret_cast<uintptr_t>(&nodes[source_index(node.parent)]);
@@ -66,7 +68,7 @@ struct State {
     void set_matrix(size_t i,const float* matrix) {
         for(unsigned lane=0;lane<16;++lane)if(!std::isfinite(matrix[lane]))throw std::runtime_error("Nonfinite matrix");
         std::memcpy(nodes[i].local,matrix,64);
-        if(view.kinds[i]==FS15_SCENE_TRS_NODE)nodes[i].flags|=0x80;
+        if(view.kinds[i]>=FS15_SCENE_TRS_NODE)nodes[i].flags|=0x80;
     }
     void world(size_t i) {
         if(!fs15_scene_update_world(nodes.data(),nodes.size()*sizeof(nodes[0]),sizeof(nodes[0]),i))
@@ -98,7 +100,7 @@ struct State {
     void propagate(size_t i,uint32_t mask,int32_t origin,std::vector<bool>& visited,size_t depth=0) {
         if(visited[i]||depth>=256)throw std::runtime_error("Repeated/cyclic/deep scene child");
         visited[i]=true;
-        auto& n=nodes[i];const uint32_t initial=n.flags;const size_t p=parent(i);
+        auto& n=nodes[i];const uint32_t initial=n.flags,input_mask=mask;const size_t p=parent(i);
         if((initial&0x50)==0x40)mask&=~uint32_t(1);
         if(mask&2) {
             bool visible=false;
@@ -128,7 +130,7 @@ struct State {
             if(n.world_masks[0]==a&&n.world_masks[1]==b)mask&=~uint32_t(0x30);
             else {n.world_masks[0]=a;n.world_masks[1]=b;}
         }
-        if(!mask)return;
+        if(!mask){lod_post(i,input_mask);return;}
         if(mask&1) {
             n.flags|=0x40;
             for(uintptr_t observer:span(n.observers_begin,n.observers_end,view.observers,view.observer_count)) {
@@ -149,6 +151,19 @@ struct State {
             }
             propagate(child,child_mask,origin,visited,depth+1);
         }
+        lod_post(i,input_mask);
+    }
+    void lod_post(size_t i,uint32_t mask) {
+        if(view.kinds[i]!=2||!(mask&3u))return;
+        auto& n=nodes[i];n.flags|=0x100;
+        if(!(n.flags&0x400u)&&(n.flags&0x202u)){n.flags|=0x400;lod_requests.push_back(i);}
+    }
+    bool queue_capacity(FS15SceneLodQueue* queue)const {
+        if(!queue)return lod_requests.empty();
+        queue->count=lod_requests.size();return queue->count<=queue->capacity&&range(queue->indices,queue->capacity,sizeof(size_t));
+    }
+    void queue_output(FS15SceneLodQueue* queue)const {
+        if(queue&&!lod_requests.empty())std::memcpy(queue->indices,lod_requests.data(),lod_requests.size()*sizeof(size_t));
     }
     void rescan(size_t i,uint32_t mask) {
         std::vector<bool> visited(count);
@@ -274,18 +289,18 @@ struct State {
 };
 }
 
-extern "C" FS15_CORE_API int fs15_scene_state_update(const FS15SceneStateArena* arena,
+extern "C" FS15_CORE_API int fs15_scene_state_lod(const FS15SceneStateArena* arena,
     size_t index,unsigned operation,uint32_t mask,int32_t origin,FS15SceneNotification* events,
-    size_t capacity,size_t* notification_count) {
+    size_t capacity,size_t* notification_count,FS15SceneLodQueue* queue) {
     if(!arena||!notification_count||operation>FS15_SCENE_MARK_INHERITED||!range(events,capacity,sizeof(*events)))return 0;
     try {
-        State state(*arena,index);std::vector<bool> visited(state.count);
+        State state(*arena,index,queue!=nullptr);std::vector<bool> visited(state.count);
         if(operation==FS15_SCENE_PROPAGATE)state.propagate(index,mask,origin,visited);
         else if(operation==FS15_SCENE_RESCAN_OBSERVERS)state.rescan(index,mask);
         else state.mark(index,visited);
         *notification_count=state.events.size();
-        if(state.events.size()>capacity)return 0;
-        state.commit();
+        if(!state.queue_capacity(queue)||state.events.size()>capacity)return 0;
+        state.commit();state.queue_output(queue);
         if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
         return 1;
     }catch(...){return 0;}
@@ -298,13 +313,13 @@ extern "C" FS15_CORE_API int fs15_scene_set_local_matrix(const FS15SceneStateAre
     catch(...){return 0;}
 }
 
-extern "C" FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena* arena,
+extern "C" FS15_CORE_API int fs15_scene_trs_lod(const FS15SceneStateArena* arena,
     size_t index,unsigned operation,void* frame,size_t frame_bytes,FS15SceneNotification* events,
-    size_t capacity,size_t* notification_count,int* scale_warning) {
+    size_t capacity,size_t* notification_count,int* scale_warning,FS15SceneLodQueue* queue) {
     if(!arena||!notification_count||!scale_warning||operation>FS15_SCENE_GET_SCALE||
         !range(events,capacity,sizeof(*events))||(operation>=2&&(!frame||frame_bytes<(operation>=5?0x11a:0x24))))return 0;
     try {
-        State state(*arena,index);auto& node=state.nodes[index];int warning=0;
+        State state(*arena,index,queue!=nullptr);auto& node=state.nodes[index];int warning=0;
         float values[3]{};
         if(operation>=2&&operation<=4) {
             for(unsigned i=0;i<3;++i)std::memcpy(values+i,static_cast<const uint8_t*>(frame)+i*16,4);
@@ -326,8 +341,8 @@ extern "C" FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena* ar
             }
         }
         *notification_count=state.events.size();
-        if(state.events.size()>capacity)return 0;
-        state.commit();
+        if(!state.queue_capacity(queue)||state.events.size()>capacity)return 0;
+        state.commit();state.queue_output(queue);
         if(operation>=5)for(unsigned i=0;i<3;++i) {
             const uint16_t type=3;
             std::memcpy(static_cast<uint8_t*>(frame)+0xf0+i*16,values+i,4);
@@ -338,28 +353,41 @@ extern "C" FS15_CORE_API int fs15_scene_trs_update(const FS15SceneStateArena* ar
     }catch(...){return 0;}
 }
 
-extern "C" FS15_CORE_API int fs15_scene_link(const FS15SceneStateArena* arena,uintptr_t* writable,
+extern "C" FS15_CORE_API int fs15_scene_link_lod(const FS15SceneStateArena* arena,uintptr_t* writable,
     size_t parent,size_t child,uint32_t position,int matrix_link,FS15SceneNotification* events,
-    size_t capacity,size_t* used,uint32_t* attached) {
+    size_t capacity,size_t* used,uint32_t* attached,FS15SceneLodQueue* queue) {
     if(!arena||!used||!attached||(matrix_link!=0&&matrix_link!=1)||!range(events,capacity,sizeof(*events)))return 0;
     try {
-        State state(*arena,parent);state.stage_children(writable);
+        State state(*arena,parent,queue!=nullptr);state.stage_children(writable);
         const uint32_t result=state.link(parent,child,position,matrix_link!=0);
-        *used=state.events.size();if(state.events.size()>capacity)return 0;
-        state.commit_children(writable);
+        *used=state.events.size();if(!state.queue_capacity(queue)||state.events.size()>capacity)return 0;
+        state.commit_children(writable);state.queue_output(queue);
         if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
         *attached=result;return 1;
     }catch(...){return 0;}
 }
 
-extern "C" FS15_CORE_API int fs15_scene_unlink(const FS15SceneStateArena* arena,uintptr_t* writable,
-    size_t parent,uint32_t slot,int suppress,FS15SceneNotification* events,size_t capacity,size_t* used) {
+extern "C" FS15_CORE_API int fs15_scene_unlink_lod(const FS15SceneStateArena* arena,uintptr_t* writable,
+    size_t parent,uint32_t slot,int suppress,FS15SceneNotification* events,size_t capacity,size_t* used,FS15SceneLodQueue* queue) {
     if(!arena||!used||!range(events,capacity,sizeof(*events)))return 0;
     try {
-        State state(*arena,parent);state.stage_children(writable);state.unlink(parent,slot,suppress!=0);
-        *used=state.events.size();if(state.events.size()>capacity)return 0;
-        state.commit_children(writable);
+        State state(*arena,parent,queue!=nullptr);state.stage_children(writable);state.unlink(parent,slot,suppress!=0);
+        *used=state.events.size();if(!state.queue_capacity(queue)||state.events.size()>capacity)return 0;
+        state.commit_children(writable);state.queue_output(queue);
         if(!state.events.empty())std::memcpy(events,state.events.data(),state.events.size()*sizeof(*events));
         return 1;
     }catch(...){return 0;}
+}
+
+extern "C" int fs15_scene_state_update(const FS15SceneStateArena* a,size_t i,unsigned op,uint32_t mask,int32_t origin,FS15SceneNotification* e,size_t c,size_t* n) {
+    return fs15_scene_state_lod(a,i,op,mask,origin,e,c,n,nullptr);
+}
+extern "C" int fs15_scene_trs_update(const FS15SceneStateArena* a,size_t i,unsigned op,void* frame,size_t bytes,FS15SceneNotification* e,size_t c,size_t* n,int* warning) {
+    return fs15_scene_trs_lod(a,i,op,frame,bytes,e,c,n,warning,nullptr);
+}
+extern "C" int fs15_scene_link(const FS15SceneStateArena* a,uintptr_t* w,size_t p,size_t child,uint32_t at,int matrix,FS15SceneNotification* e,size_t c,size_t* n,uint32_t* result) {
+    return fs15_scene_link_lod(a,w,p,child,at,matrix,e,c,n,result,nullptr);
+}
+extern "C" int fs15_scene_unlink(const FS15SceneStateArena* a,uintptr_t* w,size_t p,uint32_t at,int suppress,FS15SceneNotification* e,size_t c,size_t* n) {
+    return fs15_scene_unlink_lod(a,w,p,at,suppress,e,c,n,nullptr);
 }

@@ -37,8 +37,9 @@ allocator supplies the platform heap; its implementation remains authored.
 
 The view must describe a complete valid forest of supported matrix/TRS records,
 with every object listed once. Default properties and detached body/joint
-metadata are valid first-16-byte property views. LOD and other derived dispatch
-remain excluded until their native state/lifetime paths are recovered.
+metadata are valid first-16-byte property views. The original interfaces retain this matrix/TRS contract. New
+[LOD-aware variants](SCENE_LOD_RECOVERY.md) accept known LOD records with ordered
+pending-request output; other derived dispatch remains excluded.
 
 Bounds currently allow 65,535 nodes, 1,048,576 total child/observer slots and
 256 levels. Pointee storage and complete vector allocations must be valid.

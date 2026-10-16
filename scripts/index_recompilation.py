@@ -11,6 +11,10 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_lod_registration_and_distance_cache', ['0x1400d7a70','0x1400d7be0',
+        '0x1400d7bb0','0x1400d7620','0x1400d7840','0x1400d78f0',
+        '0x1400d60b0','0x1400d7d50','0x1400d7e20','0x1400d7ea0',
+        '0x1400d7db0','0x1400b6260','0x140087e50'], 'analysis/scene-lod-validation.json'),
     ('scene_owned_pointer_vectors', ['0x1400d5f30','0x1400d34e0',
         '0x14005a1b0'], 'analysis/scene-owned-validation.json'),
     ('scene_xml_common_and_pending_properties', ['0x140194460','0x14018c100',

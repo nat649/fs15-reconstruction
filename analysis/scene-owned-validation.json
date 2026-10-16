@@ -7,9 +7,9 @@
     "0x14005a1b0"
   ],
   "rebuilt_source_sha256": {
-    "src/core/scene_owned.cpp": "4c9e0bebe0182c3527d99f130a37980289bef9b645680e7909f8e4b28336d344",
-    "src/core/scene_owned.h": "64542319ae7ccab61c0d3e10986406be76fe4d808de33ed4ec10a13c39c128f6",
-    "src/core/scene_state.cpp": "5a611b6f80900828c91e7f105a29aa3d7969232731e413883c97a9411eefed4b",
+    "src/core/scene_owned.cpp": "8036dbdcb9e5f00007b10bb32d5d69e98209c8d618e411cf4716eeffbedaf39a",
+    "src/core/scene_owned.h": "7fbac205cd066bc70b242bbbf4559c3cd19e8dd80f08811e5d6ce0d34077c082",
+    "src/core/scene_state.cpp": "aa85854e822c139a5c83fcb54864d199599ef9c5b5d90cc14e744cb098259b74",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
     "src/core/scene_xml.h": "eb38a97d8e4d2bc642b2aa0e450f5d3028cbdb78d422a94bd2011b998c29ee64",
@@ -28,7 +28,7 @@
     "src/core/scene_attributes.cpp": "d1df841d9efa6056fdf44629a349eaf400a97860a54e7345b009ec5674af87ba",
     "src/core/scene_attributes.h": "299888f34ca2678936a0b30d0f6df58ce18a5706edce8a073dc860a4cfbe4e2e"
   },
-  "tested_dll_sha256": "3b0808ab32d29447a729dd5b5facd0ad5b0ea02c008c49763e574e9618def8ec",
+  "tested_dll_sha256": "4f23dc1178a762a43c014dec52dc577b717187485dce8b473700a09ffce2cac8",
   "comparisons": {
     "vector_metadata_alias_after_growth": 1,
     "vector_reserve_calls": 1066,

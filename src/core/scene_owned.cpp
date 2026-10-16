@@ -1,5 +1,6 @@
 // Native child-vector allocation with authored noncontiguous record transport.
 #include "scene_owned.h"
+#include "scene_graph.h"
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -28,11 +29,11 @@ struct Staged {
     std::vector<size_t> sizes,firsts,observer_firsts;
     std::vector<uintptr_t> children,observers;
     FS15SceneStateArena view{};
-    explicit Staged(const FS15SceneOwnedView& v):source(v) {
+    explicit Staged(const FS15SceneOwnedView& v,bool lod=false):source(v) {
         if(!v.nodes||!v.kinds||!v.count||v.count>65535||(v.special_root!=SIZE_MAX&&v.special_root>=v.count))throw std::runtime_error("Invalid owned forest");
         nodes.resize(v.count);properties.resize(v.count);windows.resize(v.count);sizes.resize(v.count);firsts.resize(v.count);observer_firsts.resize(v.count);
         for(size_t i=0;i<v.count;++i) {
-            if(!v.nodes[i]||v.kinds[i]>1||!indices.emplace(reinterpret_cast<uintptr_t>(v.nodes[i]),i).second)throw std::runtime_error("Duplicate/unsupported owned node");
+            if(!v.nodes[i]||v.kinds[i]>(lod?2:1)||!indices.emplace(reinterpret_cast<uintptr_t>(v.nodes[i]),i).second)throw std::runtime_error("Duplicate/unsupported owned node");
             nodes[i]=*v.nodes[i];if(!nodes[i].properties)throw std::runtime_error("Missing owned property");
             std::memcpy(&properties[i],reinterpret_cast<void*>(nodes[i].properties),sizeof(properties[i]));
         }
@@ -137,26 +138,26 @@ extern "C" int fs15_scene_pointer_append(FS15SceneVector* vector,const uintptr_t
         std::memcpy(reinterpret_cast<void*>(vector->end),&copied,8);vector->end+=8;return 1;
     }catch(...){return 0;}
 }
-extern "C" int fs15_scene_owned_state(const FS15SceneOwnedView* view,size_t index,unsigned op,uint32_t mask,int32_t origin,FS15SceneNotification* events,size_t capacity,size_t* used) {
+extern "C" int fs15_scene_owned_state_lod(const FS15SceneOwnedView* view,size_t index,unsigned op,uint32_t mask,int32_t origin,FS15SceneNotification* events,size_t capacity,size_t* used,FS15SceneLodQueue* queue) {
     if(!view)return 0;
-    try {Staged s(*view);if(!fs15_scene_state_update(&s.view,index,op,mask,origin,events,capacity,used))return 0;s.commit();return 1;}catch(...){return 0;}
+    try {Staged s(*view,queue!=nullptr);if(!fs15_scene_state_lod(&s.view,index,op,mask,origin,events,capacity,used,queue))return 0;s.commit();return 1;}catch(...){return 0;}
 }
-extern "C" int fs15_scene_owned_trs(const FS15SceneOwnedView* view,size_t index,unsigned op,void* frame,size_t bytes,FS15SceneNotification* events,size_t capacity,size_t* used,int* warning) {
+extern "C" int fs15_scene_owned_trs_lod(const FS15SceneOwnedView* view,size_t index,unsigned op,void* frame,size_t bytes,FS15SceneNotification* events,size_t capacity,size_t* used,int* warning,FS15SceneLodQueue* queue) {
     if(!view)return 0;
-    try {Staged s(*view);if(!fs15_scene_trs_update(&s.view,index,op,frame,bytes,events,capacity,used,warning))return 0;s.commit();return 1;}catch(...){return 0;}
+    try {Staged s(*view,queue!=nullptr);if(!fs15_scene_trs_lod(&s.view,index,op,frame,bytes,events,capacity,used,warning,queue))return 0;s.commit();return 1;}catch(...){return 0;}
 }
-extern "C" int fs15_scene_owned_link(const FS15SceneOwnedView* view,size_t parent,size_t child,uint32_t position,int matrix,const FS15SceneLifecycleServices* memory,FS15SceneNotification* events,size_t capacity,size_t* used,uint32_t* attached) {
+extern "C" int fs15_scene_owned_link_lod(const FS15SceneOwnedView* view,size_t parent,size_t child,uint32_t position,int matrix,const FS15SceneLifecycleServices* memory,FS15SceneNotification* events,size_t capacity,size_t* used,uint32_t* attached,FS15SceneLodQueue* queue) {
     if(!view||parent>=view->count||child>=view->count||parent==child||!allocator(memory))return 0;
     FS15SceneVector replacement{};
     try {
-        Staged s(*view);size_t changed=SIZE_MAX;
+        Staged s(*view,queue!=nullptr);size_t changed=SIZE_MAX;
         if(view->nodes[child]->parent!=reinterpret_cast<uintptr_t>(view->nodes[parent])&&s.sizes[parent]==s.windows[parent].size()) {
             const size_t grown=growth(s.sizes[parent],s.windows[parent].size());
             if(!fs15_scene_pointer_reserve(&replacement,grown,memory))return 0;
             if(s.sizes[parent])std::memcpy(reinterpret_cast<void*>(replacement.begin),reinterpret_cast<void*>(view->nodes[parent]->children_begin),s.sizes[parent]*8);
             s.windows[parent].assign(reinterpret_cast<const uintptr_t*>(replacement.begin),reinterpret_cast<const uintptr_t*>(replacement.capacity));s.flatten();changed=parent;
         }
-        if(!fs15_scene_link(&s.view,s.children.data(),parent,child,position,matrix,events,capacity,used,attached)) {
+        if(!fs15_scene_link_lod(&s.view,s.children.data(),parent,child,position,matrix,events,capacity,used,attached,queue)) {
             if(replacement.begin)memory->deallocate(memory->user,reinterpret_cast<void*>(replacement.begin));
             return 0;
         }
@@ -166,7 +167,40 @@ extern "C" int fs15_scene_owned_link(const FS15SceneOwnedView* view,size_t paren
         return 1;
     }catch(...){if(replacement.begin)memory->deallocate(memory->user,reinterpret_cast<void*>(replacement.begin));return 0;}
 }
-extern "C" int fs15_scene_owned_unlink(const FS15SceneOwnedView* view,size_t parent,uint32_t slot,int suppress,FS15SceneNotification* events,size_t capacity,size_t* used) {
+extern "C" int fs15_scene_owned_unlink_lod(const FS15SceneOwnedView* view,size_t parent,uint32_t slot,int suppress,FS15SceneNotification* events,size_t capacity,size_t* used,FS15SceneLodQueue* queue) {
     if(!view)return 0;
-    try {Staged s(*view);if(!fs15_scene_unlink(&s.view,s.children.data(),parent,slot,suppress,events,capacity,used))return 0;s.commit();return 1;}catch(...){return 0;}
+    try {Staged s(*view,queue!=nullptr);if(!fs15_scene_unlink_lod(&s.view,s.children.data(),parent,slot,suppress,events,capacity,used,queue))return 0;s.commit();return 1;}catch(...){return 0;}
+}
+
+extern "C" int fs15_scene_owned_state(const FS15SceneOwnedView* v,size_t i,unsigned op,uint32_t mask,int32_t origin,FS15SceneNotification* e,size_t cap,size_t* used) {
+    return fs15_scene_owned_state_lod(v,i,op,mask,origin,e,cap,used,nullptr);
+}
+extern "C" int fs15_scene_owned_trs(const FS15SceneOwnedView* v,size_t i,unsigned op,void* frame,size_t bytes,FS15SceneNotification* e,size_t cap,size_t* used,int* warning) {
+    return fs15_scene_owned_trs_lod(v,i,op,frame,bytes,e,cap,used,warning,nullptr);
+}
+extern "C" int fs15_scene_owned_link(const FS15SceneOwnedView* v,size_t parent,size_t child,uint32_t at,int matrix,const FS15SceneLifecycleServices* s,FS15SceneNotification* e,size_t cap,size_t* used,uint32_t* result) {
+    return fs15_scene_owned_link_lod(v,parent,child,at,matrix,s,e,cap,used,result,nullptr);
+}
+extern "C" int fs15_scene_owned_unlink(const FS15SceneOwnedView* v,size_t parent,uint32_t at,int suppress,FS15SceneNotification* e,size_t cap,size_t* used) {
+    return fs15_scene_owned_unlink_lod(v,parent,at,suppress,e,cap,used,nullptr);
+}
+extern "C" int fs15_scene_owned_world(const FS15SceneOwnedView* view,size_t index,float* position,size_t count) {
+    if(!view||!position||count<3||index>=view->count)return 0;
+    try {Staged s(*view,true);if(!fs15_scene_update_world(s.nodes.data(),s.nodes.size()*sizeof(s.nodes[0]),sizeof(s.nodes[0]),index))return 0;s.commit();std::memcpy(position,view->nodes[index]->world+12,12);return 1;}catch(...){return 0;}
+}
+extern "C" int fs15_scene_owned_mark_branch(FS15SceneStateRecord* root) {
+    if(!root)return 0;
+    try {
+        std::vector<std::pair<FS15SceneStateRecord*,unsigned>> pending{{root,0}};
+        std::map<FS15SceneStateRecord*,bool> seen;
+        while(!pending.empty()) {
+            const auto item=pending.back();pending.pop_back();auto* n=item.first;
+            if(!n||item.second>=256||seen.size()>=limit||!seen.emplace(n,true).second||
+                (n->vtable!=0x1404c0cd8&&n->vtable!=0x1404c5d98&&n->vtable!=0x1404c1c48))return 0;
+            slots(n->children_begin,n->children_end,n->children_capacity);
+            for(uintptr_t p=n->children_begin;p<n->children_end;p+=8)pending.emplace_back(reinterpret_cast<FS15SceneStateRecord*>(*reinterpret_cast<const uintptr_t*>(p)),item.second+1);
+        }
+        for(const auto& item:seen)item.first->flags|=8;
+        return 1;
+    }catch(...){return 0;}
 }

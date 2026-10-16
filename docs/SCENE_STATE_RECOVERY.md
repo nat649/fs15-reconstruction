@@ -17,7 +17,7 @@ by the locally exported constructors. Their eight observed slots contain ten
 distinct targets. Four were not previously catalogue entries. Discovery created
 functions only in uncovered executable code and never split existing bodies.
 All four now have local pseudocode exports. The wider catalogue contains
-12,200 entries, including 11,635 eligible exports and 565 excluded thunks/external entries.
+12,201 entries, including 11,636 eligible exports and 565 excluded thunks/external entries.
 
 ## Layout and bounded API
 
@@ -75,3 +75,8 @@ python scripts/index_native_exports.py
 python scripts/index_scene_vtables.py
 python scripts/check_scene_state.py --dll build/native-recovery/Release/FS15Core.dll
 ```
+
+A later [LOD table audit](SCENE_LOD_RECOVERY.md) added one more function. Across
+all three bounded tables, 24 slots identify 13 distinct targets and five functions
+discovered from explicit virtual references. LOD-aware state variants preserve
+derived post-processing and collect pending requests after base traversal.

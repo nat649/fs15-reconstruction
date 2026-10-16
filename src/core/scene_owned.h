@@ -1,5 +1,6 @@
 #pragma once
 #include "shared_scene.h"
+#include "scene_lod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +37,18 @@ FS15_CORE_API int fs15_scene_owned_link(const FS15SceneOwnedView*,size_t,size_t,
     const FS15SceneLifecycleServices*,FS15SceneNotification*,size_t,size_t*,uint32_t*);
 FS15_CORE_API int fs15_scene_owned_unlink(const FS15SceneOwnedView*,size_t,uint32_t,int,
     FS15SceneNotification*,size_t,size_t*);
+/* LOD-aware variants collect pending-update requests in native traversal order.
+ * They preserve the same ownership/guard contracts, accepting kind=2 for LOD.
+ * LOD tails are separate valid 0x188-byte owned records and remain addressable. */
+FS15_CORE_API int fs15_scene_owned_state_lod(const FS15SceneOwnedView*,size_t,unsigned,uint32_t,int32_t,FS15SceneNotification*,size_t,size_t*,FS15SceneLodQueue*);
+FS15_CORE_API int fs15_scene_owned_trs_lod(const FS15SceneOwnedView*,size_t,unsigned,void*,size_t,FS15SceneNotification*,size_t,size_t*,int*,FS15SceneLodQueue*);
+FS15_CORE_API int fs15_scene_owned_link_lod(const FS15SceneOwnedView*,size_t,size_t,uint32_t,int,const FS15SceneLifecycleServices*,FS15SceneNotification*,size_t,size_t*,uint32_t*,FS15SceneLodQueue*);
+FS15_CORE_API int fs15_scene_owned_unlink_lod(const FS15SceneOwnedView*,size_t,uint32_t,int,FS15SceneNotification*,size_t,size_t*,FS15SceneLodQueue*);
+FS15_CORE_API int fs15_scene_owned_world(const FS15SceneOwnedView*,size_t,float*,size_t);
+/* Known inherited-LOD marker (0x1400b61f0) on a valid owned subtree, without
+ * inspecting parents/properties or requiring the rest of a tearing-down forest.
+ * Supports matrix/TRS/LOD tables only; authored depth/cycle bounds preflight. */
+FS15_CORE_API int fs15_scene_owned_mark_branch(FS15SceneStateRecord*);
 #ifdef __cplusplus
 }
 #endif

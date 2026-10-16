@@ -7,12 +7,19 @@ import ghidra.program.model.mem.MemoryBlock;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.io.BufferedWriter;
+import java.util.*;
 
 public class RecoverVtableFunctions extends GhidraScript {
     @Override public void run() throws Exception {
         String[] args=getScriptArgs();Path out=Paths.get(args[0]);Files.createDirectories(out);
         FunctionManager manager=currentProgram.getFunctionManager();
-        int created=0,slots=0;
+        Map<String,String[]> previous=new HashMap<>();
+        Path prior=out.resolve("slots.csv");
+        if(Files.isRegularFile(prior))for(String line:Files.readAllLines(prior,StandardCharsets.UTF_8)) {
+            String[] row=line.split(",",-1);
+            if(row.length==5&&row[3].equals("created_from_explicit_vtable"))previous.put(row[0]+":"+row[1],row);
+        }
+        Set<String> createdTargets=new HashSet<>();int createdNow=0,slots=0;
         try(BufferedWriter writer=Files.newBufferedWriter(out.resolve("slots.csv"),StandardCharsets.UTF_8)) {
             writer.write("table,slot,target,status,containing_function\n");
             for(int i=1;i<args.length;i++) {
@@ -30,14 +37,18 @@ public class RecoverVtableFunctions extends GhidraScript {
                         if(function==null) {
                             disassemble(target);function=createFunction(target,null);
                             if(function==null)throw new IllegalArgumentException("Cannot create uncovered target "+target);
-                            status="created_from_explicit_vtable";created++;
+                            status="created_from_explicit_vtable";createdNow++;createdTargets.add(target.toString());
                         }
+                    }
+                    String[] old=previous.get(table+":"+slot*8);
+                    if(status.equals("existing_entry")&&old!=null&&old[2].equals(target.toString())&&old[4].equals(function.getEntryPoint().toString())) {
+                        status="created_from_explicit_vtable";createdTargets.add(target.toString());
                     }
                     writer.write(table+","+slot*8+","+target+","+status+","+function.getEntryPoint()+"\n");slots++;
                 }
             }
         }
-        Files.writeString(out.resolve("complete.txt"),slots+","+created+"\n",StandardCharsets.UTF_8);
-        println("Vtable audit: "+slots+" explicit slots; "+created+" uncovered functions created. Existing bodies were not split.");
+        Files.writeString(out.resolve("complete.txt"),slots+","+createdTargets.size()+"\n",StandardCharsets.UTF_8);
+        println("Vtable audit: "+slots+" explicit slots; "+createdNow+" uncovered functions created now; "+createdTargets.size()+" creation records retained. Existing bodies were not split.");
     }
 }

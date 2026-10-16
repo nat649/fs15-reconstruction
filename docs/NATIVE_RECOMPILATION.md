@@ -35,9 +35,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | XML animation callbacks and numeric grammar | Nine entries | 7,189 callback states, 12,015 scalar results and 6,000 vector frames; three original I3D resources with 180 channels / 1,078 keys |
 | Common I3D attributes and pending body/joint metadata | Twelve entries | 2,043 common node lifetimes, 1,403 original-asset attribute records, 800 property constructors and 800 detached destructor/deleting paths |
 | Owned child-vector reserve/grow/alias-append | Three additional entries; existing hierarchy paths reused | 9,600 complete vector states and 10,800 successive separately allocated forest states / 120 lifetimes |
+| LOD metadata, register/distance cache and state/lifetime | Thirteen entries; known base/owned paths reused | 2,100 registrations, 12,000 standalone distance queries and 36 mixed LOD/TRS forest lifetimes / 4,896 states |
 
-Those are **123 native entries with bounded reconstructed paths**. They are not
-123 completely proven engine functions or a percentage of GE6 completion.
+Those are **136 native entries with bounded reconstructed paths**. They are not
+136 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -149,11 +150,11 @@ It does not recover shared resources, arbitrary derived teardown or full loading
 Auditing the 32 scripting references previously emitted as code labels found
 **30 distinct uncovered executable entries**. All 30 were created as functions
 without splitting existing function bodies, and then decompiled. The enlarged
-catalogue now contains **12,200 entries, 11,635 eligible pseudocode exports and
+catalogue now contains **12,201 entries, 11,636 eligible pseudocode exports and
 565 excluded thunks/external functions**. All 498 observed native scripting
 descriptors now resolve to catalogue function entries. This audit is limited
-to those explicit references and a subsequent 16-slot scene-vtable audit that
-added four functions. Wider code discovery remains open.
+to those explicit references and subsequent bounded scene-vtable audits that inspected
+24 slots across matrix, TRS and LOD tables and added five functions. Wider code discovery remains open.
 
 ```powershell
 scripts/analyze.ps1 -Target game-runtime -Existing -RecoverBindings -ExportName binding-discovery -JavaHome 'C:\path\to\jdk-21'
@@ -197,3 +198,7 @@ Derived render nodes, LOD, full scene hierarchy loading and live physics remain 
 [Owned scene transport](SCENE_OWNED_RECOVERY.md) removes the contiguous-arena and
 fixed-capacity restriction for supported records, using recovered pointer-vector
 allocation. The transport is authored; it is not a recovered complete loader class.
+
+The [LOD component](SCENE_LOD_RECOVERY.md) extends known scene dispatch and
+registration/distance-cache lifetime to LOD groups. Spatial tree/frustum culling,
+derived render consumption and the complete I3D loading callbacks remain open.

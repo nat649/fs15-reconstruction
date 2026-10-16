@@ -1,9 +1,9 @@
 {
   "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
-  "dependency_export_sha256": "c63b45dd2ca557f97b807563f2d11e2e29fc16d7a66892fd813b25a88638933f",
-  "catalogued_entries": 12200,
+  "dependency_export_sha256": "9950a94e8d2dd0852686b76318372e539c361326c9522e1ed1e3a4603efe1873",
+  "catalogued_entries": 12201,
   "known_distinct_call_edges": 31393,
-  "eligible_functions_with_undefined_prototypes": 11311,
+  "eligible_functions_with_undefined_prototypes": 11312,
   "native_import_libraries": [
     {
       "library": "VERSION.dll",
@@ -91,8 +91,8 @@
       "seed_entries": 491,
       "known_reachable_entries": 2904,
       "eligible_reachable_entries": 2878,
-      "bounded_recovered_entries": 68,
-      "remaining_entries_without_validated_components": 2810,
+      "bounded_recovered_entries": 69,
+      "remaining_entries_without_validated_components": 2809,
       "functions_with_computed_calls": 939,
       "computed_call_sites": 2495,
       "external_targets_outside_function_catalogue": 124,
@@ -112,13 +112,13 @@
       "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
     },
     "observed_scene_vtables": {
-      "seed_entries": 10,
-      "known_reachable_entries": 196,
-      "eligible_reachable_entries": 191,
-      "bounded_recovered_entries": 20,
+      "seed_entries": 13,
+      "known_reachable_entries": 204,
+      "eligible_reachable_entries": 199,
+      "bounded_recovered_entries": 28,
       "remaining_entries_without_validated_components": 171,
-      "functions_with_computed_calls": 62,
-      "computed_call_sites": 154,
+      "functions_with_computed_calls": 64,
+      "computed_call_sites": 156,
       "external_targets_outside_function_catalogue": 39,
       "uncatalogued_native_target_entries": 0,
       "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."

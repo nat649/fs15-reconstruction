@@ -10,10 +10,10 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 
 | Evidence | Observed result | What remains open |
 |---|---|---|
-| Existing native catalogue | 12,200 entries, 11,635 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 123 native entries with validated bounded paths | Remaining 11,512 eligible entries only have pseudocode in this ledger |
+| Existing native catalogue | 12,201 entries, 11,636 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
+| Recovered portable C++17 core | 136 native entries with validated bounded paths | Remaining 11,500 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
-| Scene state/vtables | 16 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
+| Scene state/vtables | 24 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
 | TRS updates | Eleven entries, 18,000 math results and 7,200 complete scene arenas; integrated TRS/affine composition in ReFarm | Platform libm, logger/observer callback effects and full object lifecycle remain separate boundaries |
 | Hierarchy membership | Three entries; 19,200 successive complete arenas/child buffers and notification traces match native link/reparent/unlink behavior | Separate owned allocation is now supported for known records; arbitrary derived callbacks and complete loader/resource ownership remain open |
@@ -23,11 +23,12 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Animation playback | Ten paths; 4,320 clip samples, 42,444 channels, 2,240 complete animation arenas and 28,545 notifications | Complete resource integration, scheduling, arbitrary callbacks, skinning and renderer consumption |
 | Binary animation resources | Seven paths; 91 complete binary-load lifetimes and 637 loaded-resource pose updates, including an original resource | Complete file/archive/scene loading and renderer integration |
 | XML animation callbacks | Nine paths; 7,189 callback states, three original I3D files and exact native numeric grammar | Original XML tokenizer/complete dispatch, CRT startup, full scene/render integration |
-| Common I3D attributes | Twelve paths; 2,043 common-node lifetimes and pending body/joint records match native code, including 1,403 original-map/tool attribute records | Derived render nodes, LOD, complete scene loading, active physics/observers and trigger teardown |
-| Owned scene allocation | Three new vector paths and authored scatter transport; 10,800 successive separately allocated forest states, 2,763 child-vector relocations and 120 recursive lifetimes | LOD/derived dispatch, complete loader construction and platform/observer side effects |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 68 have validated components | 2,810 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| Common I3D attributes | Twelve paths; 2,043 common-node lifetimes and pending body/joint records match native code, including 1,403 original-map/tool attribute records | Derived render nodes, LOD XML callbacks, complete scene loading, active physics/observers and trigger teardown |
+| Owned scene allocation | Three new vector paths and authored scatter transport; 10,800 successive separately allocated forest states, 2,763 child-vector relocations and 120 recursive lifetimes | LOD dispatch is now supported through explicit queue output; other derived dispatch, complete loader construction and platform/observer side effects |
+| LOD groups | Thirteen paths; registry, packed branch tokens, dirty/visible updates and stamp-cached distance selection; 36 complete mixed forest lifetimes | Full spatial tree/frustum culling, derived render consumption and complete loading/scheduling |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 69 have validated components | 2,809 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
-| Prototype recovery | 11,311 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
+| Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
 | CPU portability | All thirteen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 

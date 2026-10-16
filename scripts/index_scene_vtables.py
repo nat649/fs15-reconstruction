@@ -6,7 +6,7 @@ import struct
 from inventory import ROOT,PE,sha256,write_json
 from native_gar import DEFAULT_IMAGE,EXPECTED_IMAGE
 
-TABLES={'1404c0cd8':'1400b15e0','1404c5d98':'14010fa90'}
+TABLES={'1404c0cd8':'1400b15e0','1404c5d98':'14010fa90','1404c1c48':'1400d7a70'}
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
         new_entries=['0x'+entry for entry in created],
         discovery_csv_sha256=hashlib.sha256((discovery/'slots.csv').read_bytes()).hexdigest(),
         existing_function_bodies_split=False,
-        scope='Two constructor-observed scene-node tables, eight explicit slots each. '
+        scope='Three constructor-observed scene-node tables including LOD, eight explicit slots each. '
               'All targets have local pseudocode exports. This is not an exhaustive engine vtable, class or lifecycle recovery.')
     write_json(ROOT/'analysis/scene-vtables-summary.json',report)
     print(json.dumps(report,indent=2))

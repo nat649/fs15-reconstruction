@@ -29,9 +29,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Inventory installed files and record original executable/archive hashes.
 - [x] Capture the normally loaded native code section for local analysis.
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
-- [x] Catalogue 12,200 native functions, including 30 entries from binding targets and four from explicit scene-vtable slots.
+- [x] Catalogue 12,201 native functions, including 30 entries from binding targets and five from explicit scene-vtable slots.
 - [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
-- [x] Verify all 11,635 eligible local pseudocode exports with no remaining catalogue export failures.
+- [x] Verify all 11,636 eligible local pseudocode exports with no remaining catalogue export failures.
 - [x] Unblock the two large exports with a larger response limit and C-only output; retry Windows progress-file sharing conflicts.
 - [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
 - [x] Audit 32 code-label references, identify 30 distinct uncovered executable functions and decompile all 30.
@@ -80,9 +80,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover common I3D node attributes and pending body/joint construction, flags, density and detached destruction; compare 2,043 common node lifetimes and 800 property constructors.
 - [x] Compare 1,403 common attribute records sampled from both original maps and an original vehicle tool; preserve native ordering and source-ID duplicate behavior.
 - [x] Recover owned pointer-vector reserve/grow/alias-append and run existing hierarchy/state/TRS paths on separately allocated nodes; compare 10,800 successive forest states, 2,763 child-vector relocations and 120 complete lifetimes.
+- [x] Audit the LOD constructor table and discover its missing child-token function; preserve cumulative creation provenance across 24 explicit slots.
+- [x] Recover LOD construction, registration/move/swap-removal, packed child/inherited tokens, distance cache, scheduling and supported lifetime paths; compare 12,000 distance queries and 36 mixed LOD/TRS forest lifetimes.
 - [ ] Recover derived I3D node/LOD begin/end callbacks, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 123 bounded reconstructed native entries separately from 11,512 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 136 bounded reconstructed native entries separately from 11,500 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

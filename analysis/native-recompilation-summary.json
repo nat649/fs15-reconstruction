@@ -1,9 +1,14 @@
 {
-  "catalogued": 12200,
-  "eligible": 11635,
-  "pseudocode_only": 11512,
-  "validated_component_path_entries": 123,
+  "catalogued": 12201,
+  "eligible": 11636,
+  "pseudocode_only": 11500,
+  "validated_component_path_entries": 136,
   "components": [
+    {
+      "name": "scene_lod_registration_and_distance_cache",
+      "entries": 13,
+      "evidence": "analysis/scene-lod-validation.json"
+    },
     {
       "name": "scene_owned_pointer_vectors",
       "entries": 3,
