@@ -78,7 +78,7 @@ is not evidence that the entire engine or a console executable is rebuilt.
 - A seventh asset-free CTest checks sorted insertion/balance, conversion and
   frame invariants, sentinel reuse, destructor integration, malformed-map
   rejection, allocation-failure cleanup and the retained-text behavior.
-- All eleven portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+- All twelve portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
   under QEMU. The original-code comparisons remain Windows-only. These checks
   do not validate a complete engine or Switch executable.
 

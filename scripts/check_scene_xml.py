@@ -108,6 +108,10 @@ def main():
                 pairs.extend([('collisionMask','-123'),('solverIterationCount',str(case%17))])
             pairs.extend([('name','ignored-duplicate'),('Name','case-sensitive')])
             cases.append((None,pairs,case%8))
+        # Exercise the wrapper's empty scratch name and first-null duplicate,
+        # rather than letting the usual duplicate-name fixture mask absence.
+        cases[0]=(None,[],0)
+        cases[1]=(None,[('name',None),('name','ignored'),('nodeId',None),('refId','123')],1)
         inventory=ROOT/'analysis/inventory.json'
         if inventory.is_file():
             game=Path(json.loads(inventory.read_text())['game_root'])

@@ -87,8 +87,8 @@ native trigger-release branch. No collision simulation is validated by this work
 The asset-free `portable_scene_xml` check covers defaults and priorities,
 TRS grammar, flags, joint limits, registration-controlled drives, allocation
 failure cleanup and unsupported backend/trigger boundaries. All twelve portable
-checks pass locally on Windows x64. Cross-platform results are recorded separately
-in [platform evidence](../analysis/portable-core-platform-validation.json).
+checks pass on Windows x64, Linux x64 and ARM64 Linux under QEMU. Exact tested
+source revision, CI job IDs and scope are recorded in [platform evidence](../analysis/portable-core-platform-validation.json).
 
 ```powershell
 cmake --build build/native-recovery --config Release --target FS15Core
