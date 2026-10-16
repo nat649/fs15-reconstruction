@@ -1,9 +1,9 @@
 {
   "status": "passed",
   "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
-  "tables": 3,
-  "observed_slots": 24,
-  "distinct_targets": 13,
+  "tables": 4,
+  "observed_slots": 32,
+  "distinct_targets": 14,
   "newly_catalogued_functions": 5,
   "new_entries": [
     "0x1400b15d0",
@@ -12,7 +12,7 @@
     "0x1400d7db0",
     "0x14010fce0"
   ],
-  "discovery_csv_sha256": "04981ab6059ce2ca18f92feb3c799e41bbca6c516cb87d6ae95d8087029f0da7",
+  "discovery_csv_sha256": "359aeb009b56afe66f6dd81fcc95747b8a9f0688f479e5d0e627f1bb8a1415e7",
   "existing_function_bodies_split": false,
-  "scope": "Three constructor-observed scene-node tables including LOD, eight explicit slots each. All targets have local pseudocode exports. This is not an exhaustive engine vtable, class or lifecycle recovery."
+  "scope": "Four constructor-observed scene-node tables including LOD and Camera, eight explicit slots each. All targets have local pseudocode exports. This is not an exhaustive engine vtable, class or lifecycle recovery."
 }

@@ -80,13 +80,16 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover common I3D node attributes and pending body/joint construction, flags, density and detached destruction; compare 2,043 common node lifetimes and 800 property constructors.
 - [x] Compare 1,403 common attribute records sampled from both original maps and an original vehicle tool; preserve native ordering and source-ID duplicate behavior.
 - [x] Recover owned pointer-vector reserve/grow/alias-append and run existing hierarchy/state/TRS paths on separately allocated nodes; compare 10,800 successive forest states, 2,763 child-vector relocations and 120 complete lifetimes.
-- [x] Audit the LOD constructor table and discover its missing child-token function; preserve cumulative creation provenance across 24 explicit slots.
+- [x] Audit the LOD constructor table and discover its missing child-token function; preserve cumulative creation provenance across 32 explicit slots including the later Camera audit.
 - [x] Recover LOD construction, registration/move/swap-removal, packed child/inherited tokens, distance cache, scheduling and supported lifetime paths; compare 12,000 distance queries and 36 mixed LOD/TRS forest lifetimes.
 - [x] Recover TransformGroup/LOD begin and non-shape end callbacks plus their dynamic float-vector parser/growth; compare 87 complete forest lifetimes, including 63 complete original subtrees.
 - [x] Bind recovered XML animations through source IDs emitted by the group callbacks; compare 435 playback updates, owned matrix/state propagation and loaded LOD registration.
+- [x] Recover Camera construction/lifetime, I3D/script creation, parent-relative world pose and original follow/smoothing; compare 400 lifetimes, 127 XML cameras and 1,524 motion updates.
+- [x] Audit the Camera table and retain inherited TRS/LOD dispatch across four tables / 32 slots; validate Camera-to-LOD world updates.
+- [ ] Recover Camera projection/frustum/render consumption and general TRS/Camera cloning.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 141 bounded reconstructed native entries separately from 11,495 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 150 bounded reconstructed native entries separately from 11,486 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

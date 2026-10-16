@@ -196,7 +196,7 @@ extern "C" int fs15_scene_owned_mark_branch(FS15SceneStateRecord* root) {
         while(!pending.empty()) {
             const auto item=pending.back();pending.pop_back();auto* n=item.first;
             if(!n||item.second>=256||seen.size()>=limit||!seen.emplace(n,true).second||
-                (n->vtable!=0x1404c0cd8&&n->vtable!=0x1404c5d98&&n->vtable!=0x1404c1c48))return 0;
+                (n->vtable!=0x1404c0cd8&&n->vtable!=0x1404c5d98&&n->vtable!=0x1404c1c48&&n->vtable!=0x1404c1078))return 0;
             slots(n->children_begin,n->children_end,n->children_capacity);
             for(uintptr_t p=n->children_begin;p<n->children_end;p+=8)pending.emplace_back(reinterpret_cast<FS15SceneStateRecord*>(*reinterpret_cast<const uintptr_t*>(p)),item.second+1);
         }

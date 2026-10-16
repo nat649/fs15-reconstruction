@@ -60,7 +60,7 @@ extern "C" int fs15_scene_inherited_lod_token(const FS15SceneStateRecord* n,uint
         const auto* parent=reinterpret_cast<const FS15SceneStateRecord*>(cursor->parent);
         if(!(parent->type_flags&0x10)){*token=0xffffffff;return 1;}
         if(parent->vtable==lod_table)return fs15_scene_lod_child_token(reinterpret_cast<const FS15SceneLodRecord*>(parent),cursor,token);
-        if(parent->vtable!=0x1404c0cd8&&parent->vtable!=0x1404c5d98)return 0;
+        if(parent->vtable!=0x1404c0cd8&&parent->vtable!=0x1404c5d98&&parent->vtable!=0x1404c1078)return 0;
         cursor=parent;
     }
     return 0;

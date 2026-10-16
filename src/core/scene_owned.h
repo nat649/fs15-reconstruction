@@ -50,7 +50,7 @@ FS15_CORE_API int fs15_scene_owned_world(const FS15SceneOwnedView*,size_t,float*
 FS15_CORE_API int fs15_scene_owned_matrix(const FS15SceneOwnedView*,size_t,const float*,size_t);
 /* Known inherited-LOD marker (0x1400b61f0) on a valid owned subtree, without
  * inspecting parents/properties or requiring the rest of a tearing-down forest.
- * Supports matrix/TRS/LOD tables only; authored depth/cycle bounds preflight. */
+ * Supports matrix/TRS/LOD/Camera tables; authored depth/cycle bounds preflight. */
 FS15_CORE_API int fs15_scene_owned_mark_branch(FS15SceneStateRecord*);
 #ifdef __cplusplus
 }

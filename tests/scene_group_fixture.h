@@ -1,6 +1,7 @@
 #pragma once
 // Authored transport joining recovered group, animation and owned scene paths.
 #include "scene_groups.h"
+#include "scene_camera.h"
 #include "scene_owned.h"
 #include "animation_fixture.h"
 #include <array>
@@ -62,6 +63,7 @@ struct Fixture:Owner {
     static int destroy(void* p,void* child) {
         auto& f=memory_owner(p);auto* n=static_cast<FS15SceneStateRecord*>(child);
         if(f.kinds[f.indices.at(n)]==2)return fs15_scene_lod_destruct(static_cast<FS15SceneLodRecord*>(child),sizeof(FS15SceneLodRecord),1,&f.lod,&f.lod_services);
+        if(n->vtable==0x1404c1078)return fs15_scene_camera_destruct(static_cast<FS15SceneCameraRecord*>(child),sizeof(FS15SceneCameraRecord),1,&f.memory);
         return fs15_scene_destruct(n,sizeof(*n),FS15_OBJECT_TRS,1,&f.memory);
     }
     bool begin(std::initializer_list<std::pair<const char*,const char*>> pairs,FS15SceneGroupResult* output=nullptr) {

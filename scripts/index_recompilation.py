@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_camera_creation_xml_and_motion', ['0x140052540','0x1400b5870','0x1400b5910',
+        '0x1400b59f0','0x1400b5be0','0x1400b5d00','0x1400e8840','0x1400e8940',
+        '0x14018c430'], 'analysis/scene-camera-validation.json'),
     ('scene_group_xml_callbacks', ['0x1400266d0','0x140028150',
         '0x1400281d0','0x14018c1a0','0x14018c370'], 'analysis/scene-groups-validation.json'),
     ('scene_lod_registration_and_distance_cache', ['0x1400d7a70','0x1400d7be0',

@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
-  "rebuilt_dll_sha256": "8bdefb84ba55cc61f1fe3e2fa088b98320fa48be469960d93a41da1c8a4af2f0",
+  "rebuilt_dll_sha256": "f1589d8ac6b011b1862750c883793debaad11b972f638ed6a7a2eea11abb4412",
   "rebuilt_source_sha256": {
     "src/core/bit_operations.cpp": "0adb266f9fc5f10e15ab085309a001d59763b43a3bc0373611916dd91658eac9",
     "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028"

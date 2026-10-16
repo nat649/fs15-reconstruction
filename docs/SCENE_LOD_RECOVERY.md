@@ -25,7 +25,8 @@ hierarchies. They do not constitute the complete spatial culler or renderer.
 The LOD constructor explicitly references table `0x1404c1c48`. Auditing its eight
 slots found `0x1400d7db0` as executable code without a catalogue function.
 Discovery created that function without splitting an existing body. Across the
-three inspected scene tables, 24 slots now resolve to 13 distinct targets; five
+four inspected scene tables including [Camera](SCENE_CAMERA_RECOVERY.md),
+32 slots now resolve to 14 distinct targets; five
 functions were discovered through those explicit slots. All have local
 pseudocode exports. The catalogue now contains 12,201 entries and 11,636 eligible
 exports. This bounded audit is not exhaustive engine class discovery.

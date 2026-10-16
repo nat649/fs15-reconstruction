@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11495,
-  "validated_component_path_entries": 141,
+  "pseudocode_only": 11486,
+  "validated_component_path_entries": 150,
   "components": [
+    {
+      "name": "scene_camera_creation_xml_and_motion",
+      "entries": 9,
+      "evidence": "analysis/scene-camera-validation.json"
+    },
     {
       "name": "scene_group_xml_callbacks",
       "entries": 5,

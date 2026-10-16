@@ -64,6 +64,7 @@
 !/analysis/scene-owned-validation.json
 !/analysis/scene-lod-validation.json
 !/analysis/scene-groups-validation.json
+!/analysis/scene-camera-validation.json
 /logs/
 __pycache__/
 *.pyc
