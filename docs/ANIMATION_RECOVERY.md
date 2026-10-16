@@ -78,7 +78,7 @@ easing flags, antipodal/zero quaternions, clamped dirty detection, pose/visibili
 application, shared clips and invalid-input output preservation. Platform
 results and their tested revision are recorded in the
 [portable-core evidence](../analysis/portable-core-platform-validation.json).
-All nineteen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux
+All twenty asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux
 under QEMU. Original-code differential execution remains Windows-only; these
 checks do not validate a complete engine or Switch executable.
 

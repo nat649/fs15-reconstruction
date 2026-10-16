@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "date": "2026-10-16",
-  "tested_source_commit": "bf0009f89d518e4071bcc83e2ddf7275cdc33930",
+  "tested_source_commit": "4328ec7f13105a0b39cf620fa46670e97f968d5f",
   "source_sha256": {
     "src/core/animation.cpp": "c18ea288cd716752ae7d645b449dcfb414f3521b59f40d68ed19f9ba1a0a2099",
     "src/core/animation.h": "a4be6aaa3f9683d87c0dd42ef7d22c3d9df52ad136ab8e769756c4f0968671c8",
@@ -31,8 +31,8 @@
     "src/core/scene_groups.h": "13dfe1b9f13fe6bf218daca169f5ba95af0e31b908d4106decec43fe9d257b28",
     "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
     "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
-    "src/core/scene_light.cpp": "9bd5df889a3113c5154b8fbed8aeb480eabdd54b32337eed0b7ad517cbe33826",
-    "src/core/scene_light.h": "89a760ba81c9cb9c58a6038750d6fbf37d9f674243ee978dd2ef5d131ec115ea",
+    "src/core/scene_light.cpp": "843744dc3c68038f9fcc59a40fcd7773a19d699bacdb4c8d47c85b8b791652e5",
+    "src/core/scene_light.h": "fcaef1c0c793cfe92ec5fc2e3374c800c7fae7e9ca6d20bd9457d85f925d551a",
     "src/core/scene_lod.cpp": "b8e55b7829bef4a4f75bdaba70c1f328f46d5aa0039518d1e90d7a7232f465b1",
     "src/core/scene_lod.h": "97d3dce8b87d8ebbb2ec0ad399ef6a41fc58d65fe2cbe3fadf137f15d7a8d1de",
     "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
@@ -41,6 +41,8 @@
     "src/core/scene_owned.h": "d9fef57ceff2f548ad03fce063d45aedf1a382a01256b6cd6c6e6bce318df2a6",
     "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
     "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246",
+    "src/core/scene_spatial.cpp": "c763177823e5b874dd4c53b9e8641af946acb8ce02c99e57926a81314e8f29df",
+    "src/core/scene_spatial.h": "23f72bf9d9fee892dea2b67ed41351be80864f87409b4b57d999be5080d83910",
     "src/core/scene_state.cpp": "87920d2f9c3841e9f009d21628629840c1956099ef1d85281f353cc7cefd95a3",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
@@ -57,6 +59,7 @@
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef"
   },
   "tests": [
+    "portable_scene_spatial",
     "portable_native_core",
     "portable_scene_core",
     "portable_scene_state",
@@ -81,23 +84,23 @@
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 19
+      "tests_passed": 20
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 19,
-      "job_id": 116801625468
+      "tests_passed": 20,
+      "job_id": 116805847673
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 19,
-      "job_id": 116801625319
+      "tests_passed": 20,
+      "job_id": 116805847951
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38847622815",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38849009266",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,

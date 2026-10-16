@@ -109,7 +109,7 @@ is not validated. Original resources and raw pseudocode remain local.
 The asset-free `portable_scene_groups` test independently checks attribute
 precedence, missing-name behavior, defaults, callback/allocator failure ownership,
 unsupported shape finalization and the loaded-group-to-animation-to-LOD chain.
-All nineteen portable tests pass on Windows x64, Linux x64 and ARM64 Linux
+All twenty portable tests pass on Windows x64, Linux x64 and ARM64 Linux
 under QEMU. The exact tested revision and CI job IDs are recorded in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 
