@@ -5,6 +5,9 @@ They recover Light records, cone/dirty state, decoded I3D loading, pending-only
 lifetime and clone dispatch. The scene walker now distinguishes Light virtual
 behavior from ordinary TRS behavior. This does not implement spatial light
 registration, render/GPU resources or the original deferred-update consumer.
+The later [spatial component](SCENE_SPATIAL_RECOVERY.md) now recovers grid
+registration/removal, active destruction and LOD/Light pending consumption;
+the narrower fixture described here remains independently reproducible.
 
 | Entry | Recovered path |
 |---|---|
@@ -34,7 +37,7 @@ records remain retained and this audit creates no new functions.
 
 | Offset | Observed field |
 |---|---|
-| `+0x170` | Untouched opaque word |
+| `+0x170` | Spatial packed token, untouched by construction; identified by later grid recovery |
 | `+0x174` | Type: directional `0`, point `1`, spot `2` |
 | `+0x178/+0x184` | Diffuse/specular colors, three floats each |
 | `+0x190/+0x194/+0x198` | Range, drop-off and cone angle in degrees |
@@ -43,7 +46,7 @@ records remain retained and this audit creates no new functions.
 | `+0x1b4..1c4` | Shadow far/extrusion distances, perspective parameter, splits and split parameter |
 | `+0x1c8/+0x1cc` | Decay and affected-light masks |
 | `+0x1d0/+0x1d4` | Light option flags and cached LOD token |
-| `+0x1d8..1f0` | Spatial subobject table, links and observed count field |
+| `+0x1d8..1f0` | Sphere subobject table, opaque word, center and float radius; named by later spatial recovery |
 | `+0x1f4/+0x1f8` | Opaque word and render-resource pointer |
 
 The constructor leaves opaque bytes untouched, initializes spatial links and
@@ -157,7 +160,9 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-Spatial registration/removal, actual deferred consumption, GPU lighting/shadows,
+Spatial registration/removal and LOD/Light deferred consumption are now
+covered by the separate [spatial component](SCENE_SPATIAL_RECOVERY.md). Spatial
+visibility/frustum queries, Shape/audio dispatch, GPU lighting/shadows,
 Shape/reference cloning, skin/animation finalization, full engine startup and
 Switch execution remain open. ReFarm's authored renderer is unchanged by this
 milestone; metadata/state parity does not establish original-GE6 lighting output.

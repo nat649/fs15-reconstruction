@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11463,
-  "validated_component_path_entries": 173,
+  "pseudocode_only": 11451,
+  "validated_component_path_entries": 185,
   "components": [
+    {
+      "name": "scene_spatial_grid_and_active_light_consumer",
+      "entries": 12,
+      "evidence": "analysis/scene-spatial-validation.json"
+    },
     {
       "name": "scene_light_xml_state_pending_and_clone",
       "entries": 9,

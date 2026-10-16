@@ -3,13 +3,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct FS15SceneSpatialSphere {
+    uintptr_t vtable;uint32_t unknown08;float center[3],radius;uint32_t unknown1c;
+} FS15SceneSpatialSphere;
 typedef struct FS15SceneLightRecord {
-    FS15SceneStateRecord node;uint32_t unknown170,type;
+    FS15SceneStateRecord node;uint32_t spatial_token,type;
     float diffuse[3],specular[3],range,drop_off,cone_angle,outer_cos,inner_cos;
     float depth_bias,depth_slope_bias,depth_slope_clamp;uint32_t depth_resolution;
     float shadow_far,shadow_extrusion,shadow_perspective;uint32_t shadow_splits;
     float shadow_split_parameter;uint32_t decay,affected_masks,light_flags,lod_token;
-    uintptr_t spatial_table,spatial_links[2];uint32_t spatial_count,unknown1f4;uintptr_t render_resources;
+    FS15SceneSpatialSphere spatial;uintptr_t render_resources;
 } FS15SceneLightRecord;
 typedef struct FS15SceneLightParameters {
     uint32_t type;float diffuse[3],specular[3];
@@ -51,5 +54,5 @@ FS15_CORE_API int fs15_scene_light_begin(FS15SceneStateRecord**,const FS15SceneX
 }
 static_assert(sizeof(FS15SceneLightRecord)==0x200);
 static_assert(offsetof(FS15SceneLightRecord,lod_token)==0x1d4);
-static_assert(offsetof(FS15SceneLightRecord,spatial_table)==0x1d8);
+static_assert(offsetof(FS15SceneLightRecord,spatial)==0x1d8);
 #endif

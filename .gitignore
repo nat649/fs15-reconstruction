@@ -68,6 +68,7 @@
 !/analysis/scene-clone-validation.json
 !/analysis/scene-clone-tree-validation.json
 !/analysis/scene-light-validation.json
+!/analysis/scene-spatial-validation.json
 /logs/
 __pycache__/
 *.pyc

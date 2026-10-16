@@ -94,12 +94,15 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover Light construction, decoded I3D begin, cone/dirty/LOD-token state and pending-only cleanup; compare 300 constructors/destructors and 1,104 complete forest states.
 - [x] Add explicit Light virtual dispatch and clone handling; compare 6,460 complete node records, 206 cloned nodes and six original Light subtrees.
 - [x] Audit the Light table; retain cumulative discovery provenance across five tables, 40 slots and 17 distinct targets.
-- [ ] Recover Light spatial registration/removal, the original pending-update consumer and GPU/shadow resources.
+- [x] Recover spatial grid initialization/migration, cell storage, packed tokens and add/move/swap-removal; compare 72,816 index queries, 5,760 grid mutations and 48 nonempty migrations.
+- [x] Recover Light bounds, active registration/removal/destruction and the original manager consumer with Shape/audio queues empty; compare 208 flushes, 26 forest lifetimes and 66 active Light deletions.
+- [x] Verify retained old per-cell allocations during grid reinitialization and compare all 662 retained buffers; keep authored reclamation explicit.
+- [ ] Recover spatial visibility/frustum queries, Shape/audio pending consumer paths and GPU/shadow resources.
 - [ ] Recover Shape/reference clone branches, top-level finalization, skin remapping and shared-animation rebinding.
 - [ ] Recover Camera projection/frustum/render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 173 bounded reconstructed native entries separately from 11,463 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 185 bounded reconstructed native entries separately from 11,451 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

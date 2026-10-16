@@ -57,7 +57,7 @@ extern "C" int fs15_scene_light_construct(FS15SceneLightRecord* n,size_t bytes,c
     const float values[]={p->depth_bias,p->depth_slope_bias,p->depth_slope_clamp,p->range,p->cone_angle,p->drop_off,p->shadow_far,p->shadow_extrusion,p->shadow_perspective,p->shadow_split_parameter};if(!finite(values,10))return 0;
     if(!std::isfinite(((p->cone_angle*0.5f)*3.1415927410125732421875f)/180.0f))return 0;
     if(!fs15_scene_construct(n,bytes,FS15_OBJECT_TRS_TYPED,name,name_bytes,0x17,1,s))return 0;
-    n->node.vtable=table;n->node.type_flags|=0x2000;n->spatial_table=0x1404d9068;n->spatial_links[0]=n->spatial_links[1]=n->render_resources=0;n->spatial_count=0;
+    n->node.vtable=table;n->node.type_flags|=0x2000;n->spatial.vtable=0x1404d9068;n->spatial.unknown08=0;for(float& value:n->spatial.center)value=0;n->spatial.radius=0;n->render_resources=0;
     n->type=p->type;std::memcpy(n->diffuse,p->diffuse,12);std::memcpy(n->specular,p->specular,12);n->range=p->range;n->decay=p->decay?p->decay:1;n->cone_angle=p->cone_angle;n->drop_off=p->drop_off;
     n->light_flags=1;if(p->emit_diffuse)n->light_flags=3;if(p->emit_specular)n->light_flags|=4;if(p->cast_shadow)n->light_flags|=0x20;if(p->perspective)n->light_flags|=0x40;
     n->depth_bias=p->depth_bias;n->depth_slope_bias=p->depth_slope_bias;n->depth_slope_clamp=p->depth_slope_clamp;n->depth_resolution=p->depth_resolution;n->shadow_far=p->shadow_far;n->shadow_extrusion=p->shadow_extrusion;n->shadow_perspective=p->shadow_perspective;n->shadow_split_parameter=p->shadow_split_parameter;
@@ -74,7 +74,7 @@ extern "C" int fs15_scene_light_mark_tree(FS15SceneStateRecord* n,uint32_t token
 extern "C" int fs15_scene_light_destruct(FS15SceneLightRecord* n,size_t bytes,uint32_t flags,FS15SceneLightContext* c,const FS15SceneLifecycleServices* s) {
     if(!light(n)||bytes<sizeof(*n)||!c||!memory(s)||!vector(c->pending)||(n->node.flags&0x200u)||n->render_resources)return 0;
     if(n->node.flags&0x800u){auto& v=c->pending;auto* values=reinterpret_cast<uintptr_t*>(v.begin);const size_t count=(v.end-v.begin)/8;for(size_t i=0;i<count;++i)if(values[i]==reinterpret_cast<uintptr_t>(n)){if(i+1<count)values[i]=values[count-1];v.end-=8;break;}}
-    n->spatial_table=0x1404c7ce8;return fs15_scene_destruct(n,bytes,FS15_OBJECT_TRS_TYPED,flags,s);
+    n->spatial.vtable=0x1404c7ce8;return fs15_scene_destruct(n,bytes,FS15_OBJECT_TRS_TYPED,flags,s);
 }
 extern "C" int fs15_scene_light_begin(FS15SceneStateRecord** current,const FS15SceneXmlAttribute* attrs,size_t count,const FS15SceneLightXmlServices* s,FS15SceneLightContext* context,FS15SceneGroupResult* result) {
     if(!current||!*current||!s||!result||!memory(s->scene.common.memory)||!s->scene.constructed||!s->scene.link)return 0;

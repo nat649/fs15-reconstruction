@@ -16,7 +16,7 @@
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4"
   },
-  "tested_dll_sha256": "7d4f65cae46e622ed393dd81dad35b2d0868b12c7e39821d88b49ee4fa69b2be",
+  "tested_dll_sha256": "3ee11fd4df051a486bf4485e623454084329714e178c6bb00d13eac881c2ca78",
   "cases": {
     "raw_links": 4800,
     "reparents": 7335,
@@ -29,7 +29,7 @@
     "root_attachments": 2602,
     "suppressed_unlinks": 4463
   },
-  "original_results_sha256": "c61f4b5ee605be9afdf409e58351398a4eea0ac290389de9788fd6828f4fcd4a",
+  "original_results_sha256": "bda55435b9c37d96ed414be1e38c905e652c84ac34c279034cda0a2efa9e7847",
   "native_identity_epsilon": 9.999999747378752e-05,
   "scope": "Preallocated synthetic scene forests, three bounded hierarchy paths, exact node bytes, parent/child order, unused vector slots and side-effect-free notification order/origin. No native vector allocation/growth, object constructor/destructor, registry, arbitrary derived callbacks, full engine startup or console execution."
 }

@@ -43,8 +43,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 
 | Light metadata, decoded XML, virtual state/marker, pending lifetime and clone wrapper | Nine entries | 300 constructors/destructors, 6,460 node records, 1,104 forest states and six original Light subtrees |
 
-Those are **173 native entries with bounded reconstructed paths**. They are not
-173 completely proven engine functions or a percentage of GE6 completion.
+| Spatial grid storage/migration, packed registration and active Light consumer | Twelve entries | 72,816 index queries, 5,760 grid mutations, 48 migrations, 208 manager flushes and 66 active Light deletions |
+
+Those are **185 native entries with bounded reconstructed paths**. They are not
+185 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
