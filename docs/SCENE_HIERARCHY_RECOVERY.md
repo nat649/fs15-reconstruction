@@ -78,3 +78,7 @@ python scripts/check_scene_hierarchy.py --dll build/native-recovery/Release/FS15
 cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
+
+The newer [owned scene component](SCENE_OWNED_RECOVERY.md) reuses these recovered
+operations on separately allocated records and recovers child-vector growth.
+The original fixed-arena API and the measurements above retain their stated scope.

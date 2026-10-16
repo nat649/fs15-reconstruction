@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x1400d5f30",
+    "0x1400d34e0",
+    "0x14005a1b0"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/scene_owned.cpp": "4c9e0bebe0182c3527d99f130a37980289bef9b645680e7909f8e4b28336d344",
+    "src/core/scene_owned.h": "64542319ae7ccab61c0d3e10986406be76fe4d808de33ed4ec10a13c39c128f6",
+    "src/core/scene_state.cpp": "5a611b6f80900828c91e7f105a29aa3d7969232731e413883c97a9411eefed4b",
+    "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
+    "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
+    "src/core/scene_xml.h": "eb38a97d8e4d2bc642b2aa0e450f5d3028cbdb78d422a94bd2011b998c29ee64",
+    "src/core/scene_properties.cpp": "118a6e34d3f88b030c41351a29b33bdc25ee5d58f608a3481d5eb6eebf423e08",
+    "src/core/scene_properties.h": "e1cb13e5ba769a924cb0f9a9b191f6e2b87b3b4524a67ae1fcf04133c4146446",
+    "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
+    "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
+    "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
+    "src/core/scene_math.h": "d7e02e5aef957afb70ba31c68bb779ca44ed016b03df0b3091a70eebd9872408",
+    "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
+    "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
+    "src/core/scene_graph.cpp": "56ff291513dd3a7632afebc80baf756fb940e300a56a0c981a5827b1116c3851",
+    "src/core/scene_graph.h": "34f3b03e4e41ea249c94f9df1b0e86ac9b0c76464dab9ffc5b48eb0a132100f6",
+    "src/core/shared_scene.cpp": "cf957c58fcb68be5cc9daa03d8c8a01bd505c4c6e04ef920da9c00d51d559173",
+    "src/core/shared_scene.h": "b2d1f6613d250a64ebf1a165bbd2a6e1139475aff4df7d0f570169aee42d21f5",
+    "src/core/scene_attributes.cpp": "d1df841d9efa6056fdf44629a349eaf400a97860a54e7345b009ec5674af87ba",
+    "src/core/scene_attributes.h": "299888f34ca2678936a0b30d0f6df58ce18a5706edce8a073dc860a4cfbe4e2e"
+  },
+  "tested_dll_sha256": "3b0808ab32d29447a729dd5b5facd0ad5b0ea02c008c49763e574e9618def8ec",
+  "comparisons": {
+    "vector_metadata_alias_after_growth": 1,
+    "vector_reserve_calls": 1066,
+    "complete_vector_allocations": 9600,
+    "vector_grow_calls": 1066,
+    "vector_appends": 7468,
+    "aliased_appends": 3162,
+    "child_vector_relocations": 2763,
+    "raw_links": 3600,
+    "complete_owned_node_records": 179100,
+    "notification_events": 2989,
+    "complete_owned_forest_states": 10800,
+    "matrix_links": 1800,
+    "unlinks": 1800,
+    "state_updates": 1800,
+    "trs_rebuilds": 1800,
+    "complete_owned_forest_lifetimes": 120
+  },
+  "original_results_sha256": "2ca9c9dc5e755c515259d8c1ff1bfd6d2cb9190f2caa359780dd5ca7b2cd2dff",
+  "scope": "Recovered owned pointer-vector reserve/grow/alias-append and existing hierarchy/state/TRS paths on separately constructed, allocated objects with default/body/joint metadata. Complete capacities/spare slots and ordered side-effect-free notifications compared; float tolerance 1e-5. Scatter staging, bounds/failure guards, allocator/registry/dispatch transport authored. Complete I3D/LOD/derived-node callbacks, active physics, real observer effects and full engine startup remain open."
+}

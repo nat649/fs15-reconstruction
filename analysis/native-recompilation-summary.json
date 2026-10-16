@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11515,
-  "validated_component_path_entries": 120,
+  "pseudocode_only": 11512,
+  "validated_component_path_entries": 123,
   "components": [
+    {
+      "name": "scene_owned_pointer_vectors",
+      "entries": 3,
+      "evidence": "analysis/scene-owned-validation.json"
+    },
     {
       "name": "scene_xml_common_and_pending_properties",
       "entries": 12,

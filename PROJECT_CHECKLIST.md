@@ -79,9 +79,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Validate decoded animations from three original I3D resources (180 channels / 1,078 keys), including native interpolation, degree conversion and rejected-key retention.
 - [x] Recover common I3D node attributes and pending body/joint construction, flags, density and detached destruction; compare 2,043 common node lifetimes and 800 property constructors.
 - [x] Compare 1,403 common attribute records sampled from both original maps and an original vehicle tool; preserve native ordering and source-ID duplicate behavior.
+- [x] Recover owned pointer-vector reserve/grow/alias-append and run existing hierarchy/state/TRS paths on separately allocated nodes; compare 10,800 successive forest states, 2,763 child-vector relocations and 120 complete lifetimes.
 - [ ] Recover derived I3D node/LOD begin/end callbacks, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 120 bounded reconstructed native entries separately from 11,515 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 123 bounded reconstructed native entries separately from 11,512 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

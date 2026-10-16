@@ -99,8 +99,10 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 
 ## Next loading boundaries
 
-Recover TransformGroup/LOD and derived-node begin/end dispatch, native child-vector
-growth and complete loader ownership, then connect scene loading to recovered
+Native child-vector growth and separately allocated hierarchy operations are now
+covered by the [owned scene component](SCENE_OWNED_RECOVERY.md). Recover
+TransformGroup/LOD and derived-node begin/end dispatch and complete loader
+ownership, then connect scene loading to recovered
 animation/resource paths. Shape decoding, native materials/render resources,
 active physics/observer services, triggers, complete startup and a linked portable
 engine remain open. The future Switch `.nro` target remains deferred.

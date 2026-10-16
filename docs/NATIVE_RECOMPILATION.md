@@ -34,9 +34,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Binary animation resources, key packing and lookup generation | Seven entries | 90 synthetic files plus one original 56-channel/326-key resource; 637 loaded-resource pose updates |
 | XML animation callbacks and numeric grammar | Nine entries | 7,189 callback states, 12,015 scalar results and 6,000 vector frames; three original I3D resources with 180 channels / 1,078 keys |
 | Common I3D attributes and pending body/joint metadata | Twelve entries | 2,043 common node lifetimes, 1,403 original-asset attribute records, 800 property constructors and 800 detached destructor/deleting paths |
+| Owned child-vector reserve/grow/alias-append | Three additional entries; existing hierarchy paths reused | 9,600 complete vector states and 10,800 successive separately allocated forest states / 120 lifetimes |
 
-Those are **120 native entries with bounded reconstructed paths**. They are not
-120 completely proven engine functions or a percentage of GE6 completion.
+Those are **123 native entries with bounded reconstructed paths**. They are not
+123 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -192,3 +193,7 @@ scheduling, skinning, active triggers and complete engine startup remain open.
 The [common I3D attribute component](SCENE_XML_RECOVERY.md) now chains recovered
 rename, TRS rebuild, state propagation and detached body/joint metadata ownership.
 Derived render nodes, LOD, full scene hierarchy loading and live physics remain open.
+
+[Owned scene transport](SCENE_OWNED_RECOVERY.md) removes the contiguous-arena and
+fixed-capacity restriction for supported records, using recovered pointer-vector
+allocation. The transport is authored; it is not a recovered complete loader class.

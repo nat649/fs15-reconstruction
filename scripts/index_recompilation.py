@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_owned_pointer_vectors', ['0x1400d5f30','0x1400d34e0',
+        '0x14005a1b0'], 'analysis/scene-owned-validation.json'),
     ('scene_xml_common_and_pending_properties', ['0x140194460','0x14018c100',
         '0x140127910','0x140127d50','0x1401279a0','0x1401497e0',
         '0x1401498b0','0x140149880','0x14009e5b0','0x14009e5f0',

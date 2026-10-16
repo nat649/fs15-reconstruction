@@ -61,6 +61,7 @@
 !/analysis/animation-resources-validation.json
 !/analysis/animation-xml-validation.json
 !/analysis/scene-xml-validation.json
+!/analysis/scene-owned-validation.json
 /logs/
 __pycache__/
 *.pyc
