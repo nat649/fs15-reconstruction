@@ -83,7 +83,7 @@ open. Full native allocation/ownership recovery is therefore still incomplete.
   allocations. The native reference retains only its registry sentinel.
 - A sixth asset-free CTest verifies ownership, defaults, registration timing,
   ordered recursive deletion, alias guards and failure cleanup independently.
-- All eight portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+- All nine portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
   under QEMU. These invariant checks are separate from the Windows original-code
   comparisons; no complete ARM64 GE6 or Switch executable is validated.
 
@@ -105,5 +105,7 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
 Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
-update-list removal and nested clip destruction. Other resource classes,
-animation evaluation, active triggers and complete loading remain open.
+update-list removal and nested clip destruction.
+[Bounded animation playback](ANIMATION_RECOVERY.md) is now recovered separately.
+Other resource classes, loading, scheduling, skinning, active triggers and
+complete startup remain open.

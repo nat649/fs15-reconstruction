@@ -37,7 +37,8 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has nine asset-free component tests passing on Windows. Of 64 Python fixtures,
+has nine asset-free component tests passing on Windows, Linux and ARM64 Linux
+under QEMU. Of 64 Python fixtures,
 62 pass and two Windows symlink checks are skipped. All fourteen native
 differential suites also pass.
 
@@ -91,7 +92,7 @@ A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all eight asset-free tests under QEMU in CI. This is an intermediate
+Linux and passes all nine asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 
@@ -352,5 +353,7 @@ recovered-menu launch and an authored native terrain-engine startup. It does
 not establish full original engine or gameplay equivalence.
 
 Known [CharacterSet/data/clip ownership](../docs/SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
-update-list removal and nested clip destruction. Other resource classes,
-animation evaluation, active triggers and complete loading remain open.
+update-list removal and nested clip destruction.
+[Bounded animation evaluation](../docs/ANIMATION_RECOVERY.md) is now recovered
+separately. Other resource classes, loading, scheduling, skinning, active
+triggers and complete startup remain open.
