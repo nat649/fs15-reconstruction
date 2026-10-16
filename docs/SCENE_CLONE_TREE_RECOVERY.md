@@ -119,6 +119,8 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
+All eighteen portable tests pass on Windows x64, Linux x64 and ARM64 Linux
+under QEMU; all 23 native differential suites pass on Windows.
 [Platform evidence](../analysis/portable-core-platform-validation.json) is
 recorded separately from original-code comparisons. The larger original
 `0x14016de50` path still needs shape/skin remapping, reference resolution,

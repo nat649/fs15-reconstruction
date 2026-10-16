@@ -83,7 +83,7 @@ open. Full native allocation/ownership recovery is therefore still incomplete.
   allocations. The native reference retains only its registry sentinel.
 - A sixth asset-free CTest verifies ownership, defaults, registration timing,
   ordered recursive deletion, alias guards and failure cleanup independently.
-- All seventeen portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
+- All eighteen portable-core tests pass on Windows x64, Linux x64 and ARM64 Linux
   under QEMU. These invariant checks are separate from the Windows original-code
   comparisons; no complete ARM64 GE6 or Switch executable is validated.
 
