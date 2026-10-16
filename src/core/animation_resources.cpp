@@ -1,5 +1,6 @@
 // Native animation resource construction/decoding; guarded host interfaces authored.
 #include "animation_resources.h"
+#include "animation_storage.h"
 #include "scene_math.h"
 #include "scene_trs.h"
 #include <algorithm>
@@ -116,6 +117,14 @@ FS15AnimationClip* clip_construct(const Clip& source,const FS15SceneLifecycleSer
     }
     std::memcpy(storage,source.name.c_str(),size+1);write(c->name,16,size);c->duration=source.duration;return c;
 }
+}
+namespace fs15_animation_storage {
+FS15AnimationChannel* channel(const FS15SceneLifecycleServices& s){return channel_construct(s);}
+FS15AnimationClip* clip(const char* name,size_t size,float duration,const FS15SceneLifecycleServices& s) {
+    Clip source;source.name.assign(name,size);source.duration=duration;return clip_construct(source,s);
+}
+void destroy_channel(FS15AnimationChannel* c,const FS15SceneLifecycleServices& s){free_channel(c,s);}
+void destroy_clip(FS15AnimationClip* c,const FS15SceneLifecycleServices& s){free_clip(c,s);}
 }
 extern "C" int fs15_animation_euler_quaternion(const float* r,float* out,size_t count) {
     if(!r||!out||count<4)return 0;

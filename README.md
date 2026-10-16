@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **99 native entries on bounded tested paths**. The affine component passes
+  **108 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -108,8 +108,13 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Binary animation resources:** seven further entries recover key construction,
   lookup generation and binary payload loading. 90 synthetic files and one
   original 56-channel/326-key resource match GE6; 637 updates verify loaded
-  resources through recovered pose services. XML callbacks and complete
+  resources through recovered pose services. Complete
   scene/render startup remain open. See [resource scope](docs/ANIMATION_RESOURCE_RECOVERY.md).
+- **XML animation callbacks:** nine further entries recover numeric grammar and
+  group/clip/channel/key callbacks. 7,189 successive callback states match original
+  code, including three original I3D files with 180 channels / 1,078 keys.
+  The XML tokenizer, full scene integration and skeletal rendering remain open.
+  See [XML scope and ownership quirks](docs/ANIMATION_XML_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

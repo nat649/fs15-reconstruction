@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('animation_xml_callbacks', ['0x140026e60','0x140026850','0x140199890',
+        '0x140199970','0x140199d70','0x140199e90','0x140199ec0',
+        '0x140199fa0','0x14019a100'], 'analysis/animation-xml-validation.json'),
     ('animation_resource_loading', ['0x1402805b0','0x1401cb5c0','0x1401bd190',
         '0x1401bd2f0','0x1401768b0','0x1401751e0','0x1401ca840'],
         'analysis/animation-resources-validation.json'),

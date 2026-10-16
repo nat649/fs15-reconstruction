@@ -97,8 +97,9 @@ callback reentrancy, concurrent scheduling and original exception/unwind paths
 are outside this validation. Portable vtable values remain identity tokens.
 
 The [binary animation resource path](ANIMATION_RESOURCE_RECOVERY.md) now builds
-native-layout keys/clips/sets and reaches these playback services. Recover XML
-callbacks, complete file/archive/scene integration, scheduling, other resource
+native-layout keys/clips/sets and reaches these playback services.
+[XML callbacks](ANIMATION_XML_RECOVERY.md) also construct these resources.
+Recover the original XML tokenizer/complete dispatch, file/archive/scene integration, scheduling, other resource
 classes, skeleton/skin binding and renderer consumption next.
 ReFarm still has its existing authored animation integration; this milestone
 does not silently replace it or claim a complete GE6 or Switch build.

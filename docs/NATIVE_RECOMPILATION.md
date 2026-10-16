@@ -32,9 +32,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Shared CharacterSet/data/clip ownership | Twelve entries | 220 shared lifetimes, 440 bindings, 4,310 node destructions and nested clip/channel cleanup |
 | Animation sampling, quaternion decoding and four-track playback | Ten entries | 4,320 clip samples, 42,444 complete channels, 2,240 successive animation arenas and 28,545 ordered notifications |
 | Binary animation resources, key packing and lookup generation | Seven entries | 90 synthetic files plus one original 56-channel/326-key resource; 637 loaded-resource pose updates |
+| XML animation callbacks and numeric grammar | Nine entries | 7,189 callback states, 12,015 scalar results and 6,000 vector frames; three original I3D resources with 180 channels / 1,078 keys |
 
-Those are **99 native entries with bounded reconstructed paths**. They are not
-99 completely proven engine functions or a percentage of GE6 completion.
+Those are **108 native entries with bounded reconstructed paths**. They are not
+108 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -183,5 +184,6 @@ Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers sh
 update-list removal and nested clip destruction.
 [Bounded playback](ANIMATION_RECOVERY.md) and
 [binary animation resources](ANIMATION_RESOURCE_RECOVERY.md) are also recovered.
-Other resource classes, XML callbacks, complete file/archive/scene loading,
+The [XML animation callbacks](ANIMATION_XML_RECOVERY.md) are also recovered.
+Other resource classes, original XML tokenization, complete file/archive/scene loading,
 scheduling, skinning, active triggers and complete engine startup remain open.

@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 99 bounded reconstructed entries from 11,536 pseudocode-only entries. This is host component
+separates 108 bounded reconstructed entries from 11,527 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,9 +37,9 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has ten asset-free component tests passing on Windows, Linux and ARM64 Linux
-under QEMU. Of 64 Python fixtures,
-62 pass and two Windows symlink checks are skipped. All fifteen native
+has eleven asset-free component tests passing on Windows; platform evidence
+records the Linux/ARM64 tested revision separately. Of 64 Python fixtures,
+62 pass and two Windows symlink checks are skipped. All sixteen native
 differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
@@ -109,8 +109,18 @@ packing, ordered insertion, acceleration lookup construction and clip registrati
 90 synthetic files and the original `poettingerTop1252.i3d.anim` resource match
 native graphs and nested destruction. The original resource has one group,
 one clip, 56 channels and 326 keys; 637 loaded-resource pose updates match both
-evaluators. XML callbacks, file/archive/scene integration, scheduling and skeletal
+evaluators. Complete file/archive/scene integration, scheduling and skeletal
 rendering remain open. See [resource scope](../docs/ANIMATION_RESOURCE_RECOVERY.md).
+
+Nine more entries recover the seven XML animation callbacks and exact native
+scalar/vector numeric grammar. 7,189 successive callback states, 12,015 scalar
+results/cursors and 6,000 complete vector frames match unchanged original code.
+Three original I3D files supply 180 channels and 1,078 keys. Rejected XML key
+allocations retain their observed orphan boundary until explicit fixture/context
+cleanup. Original reference execution now uses a private CRT FLS/C-locale view,
+not captured process thread pointers. The original XML tokenizer, CRT startup
+and complete scene/render integration remain open. See
+[XML scope](../docs/ANIMATION_XML_RECOVERY.md).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
 
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the

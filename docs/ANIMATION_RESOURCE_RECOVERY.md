@@ -4,7 +4,8 @@ Seven additional native entries now connect decoded `.i3d.anim` resources to
 the recovered CharacterSet ownership and playback paths. The portable core
 loads a real local game resource with the same resulting keys, clips, node
 binding and sampled poses as unchanged GE6 code. Filesystem/archive access,
-the XML animation callbacks and complete scene/render startup remain open.
+complete scene/render startup remain open. The
+[XML callbacks](ANIMATION_XML_RECOVERY.md) are now recovered separately.
 
 | Native entry | Recovered behavior |
 |---|---|
@@ -106,7 +107,7 @@ partially bound group; the callback reports that boundary for caller cleanup.
 Callbacks must be serialized, non-reentrant and must not throw. A borrowed
 result can be invalidated by later rebinding unless the host retains a reference.
 
-Continue with XML callback recovery, complete I3D/file/archive integration,
+Continue with original XML tokenization/complete dispatch, I3D/file/archive integration,
 update scheduling, skeleton/skin binding and renderer consumption. ReFarm's
 existing resource/animation host remains separate. This component does not
 establish a complete portable GE6 or Switch executable.

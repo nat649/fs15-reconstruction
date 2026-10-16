@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11536,
-  "validated_component_path_entries": 99,
+  "pseudocode_only": 11527,
+  "validated_component_path_entries": 108,
   "components": [
+    {
+      "name": "animation_xml_callbacks",
+      "entries": 9,
+      "evidence": "analysis/animation-xml-validation.json"
+    },
     {
       "name": "animation_resource_loading",
       "entries": 7,

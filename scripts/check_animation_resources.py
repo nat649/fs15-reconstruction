@@ -321,7 +321,7 @@ def main():
             if native.registry() or owner.registry or len(native.allocations)!=1 or owner.blocks:raise AssertionError('Resource lifetime leaked owned storage')
             counts['complete_binary_load_lifetimes']+=1
             if path is not None:assets.append(dict(name=path.name,sha256=hashlib.sha256(payload).hexdigest(),bytes=len(payload),groups=len(groups),clips=sum(len(g['clips']) for g in groups),channels=sum(len(c['channels']) for g in groups for c in g['clips']),keys=sum(len(ch['keys']) for g in groups for c in g['clips'] for ch in c['channels'])))
-    paths=('src/core/animation_resources.cpp','src/core/animation_resources.h','src/core/animation.cpp','src/core/animation.h','src/core/shared_scene.cpp','src/core/shared_scene.h',
+    paths=('src/core/animation_resources.cpp','src/core/animation_resources.h','src/core/animation_storage.h','src/core/animation.cpp','src/core/animation.h','src/core/shared_scene.cpp','src/core/shared_scene.h',
         'src/core/scene_state.cpp','src/core/scene_state.h','src/core/scene_graph.cpp','src/core/scene_graph.h',
         'src/core/scene_lifecycle.cpp','src/core/scene_lifecycle.h','src/core/scene_math.cpp','src/core/scene_math.h','src/core/scene_trs.cpp','src/core/scene_trs.h')
     report=dict(status='passed',reference_sha256=EXPECTED_IMAGE,native_entries=['0x'+format(0x140000000+e,'x') for e in ENTRIES],
