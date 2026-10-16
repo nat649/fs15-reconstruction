@@ -88,11 +88,14 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Audit the Camera table and retain inherited TRS/LOD dispatch across four tables / 32 slots; validate Camera-to-LOD world updates.
 - [x] Recover typed attribute cloning/map assignment, detached body/joint property copy, common TRS copy and Camera/LOD clone wrappers; compare 1,800 values, 900 properties and 90 complete scene lifetimes.
 - [x] Preserve native map self-copy clearing, independent string allocation, kind-4 retention and LOD clone distance-count behavior.
-- [ ] Recover original recursive clone/remap tables, unsupported derived resources and shared-animation rebinding.
+- [x] Recover native pointer remap insertion/RB balancing/cleanup and clone-list vector instantiations; compare 5,490 complete remap states and 3,000 vector states.
+- [x] Recover recursive TRS/Camera/LOD cloning and ordered child attachment; compare 564 copied nodes, 99 complete lifetimes and 63 complete original subtrees.
+- [x] Verify duplicate-root null behavior and run 564 original lookup calls directly on reconstructed remap storage.
+- [ ] Recover Shape/Light/reference clone branches, top-level finalization, skin remapping and shared-animation rebinding.
 - [ ] Recover Camera projection/frustum/render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 157 bounded reconstructed native entries separately from 11,479 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 164 bounded reconstructed native entries separately from 11,472 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

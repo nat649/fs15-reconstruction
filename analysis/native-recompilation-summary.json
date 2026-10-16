@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11479,
-  "validated_component_path_entries": 157,
+  "pseudocode_only": 11472,
+  "validated_component_path_entries": 164,
   "components": [
+    {
+      "name": "scene_recursive_clone_and_pointer_remap",
+      "entries": 7,
+      "evidence": "analysis/scene-clone-tree-validation.json"
+    },
     {
       "name": "scene_attributes_properties_trs_and_derived_clone",
       "entries": 7,

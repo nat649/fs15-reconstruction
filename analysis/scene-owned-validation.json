@@ -28,7 +28,7 @@
     "src/core/scene_attributes.cpp": "a7f55f959a833fb782c0c1c8c1cd07812c84d032c5d4b1097ea75c08dfe23b63",
     "src/core/scene_attributes.h": "a5549f983e3197d034a48254f379ebef0add22730d45fd8d2d77830d6cd18b51"
   },
-  "tested_dll_sha256": "20810bbc0084b219bd08014fe858af05b8d3ed7b1c2462b0053bbd8bdcf5f3c2",
+  "tested_dll_sha256": "0b5347327998577c8eb22c89b0b80586afd4b32445f80dd86bf65992a9636c51",
   "comparisons": {
     "vector_metadata_alias_after_growth": 1,
     "vector_reserve_calls": 1066,

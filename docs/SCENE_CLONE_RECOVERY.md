@@ -92,7 +92,7 @@ replaced. Trees/pointees must be valid owned storage; distinct owners must not
 share member allocations. Bounds/finite/allocation guards and failure cleanup
 are authored. Native exception unwinding and temporary CRT string allocations
 are not reproduced. This component copies supported single records; original
-recursive clone maps, unsupported derived resources, backend observers,
+top-level clone finalization, unsupported derived resources, backend observers,
 shared-animation rebinding and complete loading remain open.
 
 The private Windows native reference calls unchanged code from the pinned image
@@ -125,3 +125,7 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 Original executables, raw pseudocode and allocation snapshots stay local.
 This milestone does not recover projection/rendering, full startup or a Switch
 executable; the [remaining port work](PORTABILITY_STATUS.md) still applies.
+
+The later [recursive clone component](SCENE_CLONE_TREE_RECOVERY.md) adds native
+pointer remap storage, clone-list allocation and known TRS/Camera/LOD subtree
+assembly. Top-level shape/skin/resource finalization remains open.

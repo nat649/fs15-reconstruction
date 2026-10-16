@@ -11,7 +11,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,201 entries, 11,636 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 157 native entries with validated bounded paths | Remaining 11,479 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 164 native entries with validated bounded paths | Remaining 11,472 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 32 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -28,8 +28,9 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | LOD groups | Thirteen paths; registry, packed branch tokens, dirty/visible updates and stamp-cached distance selection; 36 complete mixed forest lifetimes | Full spatial tree/frustum culling, derived render consumption and complete loading/scheduling |
 | I3D group callbacks | Five paths; 63 complete original subtrees, 87 loaded forest lifetimes and 435 animation updates through loaded source IDs | Other derived objects, shape-end finalization, tokenizer/full loader and render/physics integration |
 | Camera nodes | Nine paths; 400 camera lifetimes, 127 XML creations and 1,524 pose/follow/script updates match original code | Projection, frustum/rendering, recursive derived clone and complete loading remain open |
-| Scene copy and derived clone | Seven paths; 1,800 value clones, 900 property clones, 270 existing-node copies and 60 Camera/LOD wrappers | Original recursive remap tables, unsupported derived resources, live physics and animation rebinding remain open |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 82 have validated components | 2,796 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| Scene copy and derived clone | Seven paths; 1,800 value clones, 900 property clones, 270 existing-node copies and 60 Camera/LOD wrappers | Unsupported derived resources, top-level finalization, live physics and animation rebinding remain open |
+| Recursive clone/remap | Seven further paths; 564 recursively copied nodes, 63 complete original subtrees, 99 forest lifetimes and 5,490 standalone remap states | Shape/Light/reference branches, top-level finalization, skin/animation rebinding and full scene startup remain open |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 89 have validated components | 2,789 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |

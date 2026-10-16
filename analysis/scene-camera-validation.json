@@ -32,6 +32,8 @@
     "src/core/scene_camera.h": "85b9a889c467f9471c67f63083bad20ffce8f0ada47f7755f1da22030d7b8201",
     "src/core/scene_clone.cpp": "8f902dfde61e06a31f8db6f3b62bcbeeb1b5b0e2c73de0a115baae3887ce5118",
     "src/core/scene_clone.h": "8c2db52c69058d52a9d6bfe0b461af879012585e0bac54d1164b938f83b2abcf",
+    "src/core/scene_clone_tree.cpp": "5a93ffac55b5685a55ddcba4a75f90e9ab4fbd3dec58dfcd059ef3ba2ed3fcfd",
+    "src/core/scene_clone_tree.h": "bb986a7f1778f3817ea6327a43cd19263333b953ce45269181d8b42d1810a14e",
     "src/core/scene_graph.cpp": "56ff291513dd3a7632afebc80baf756fb940e300a56a0c981a5827b1116c3851",
     "src/core/scene_graph.h": "34f3b03e4e41ea249c94f9df1b0e86ac9b0c76464dab9ffc5b48eb0a132100f6",
     "src/core/scene_groups.cpp": "1fd58a987d7344a45ddede20e68763d876c3e2cda8a41493bf04f89d1af928a3",
@@ -61,7 +63,7 @@
     "src/core/wheel_queries.cpp": "f06b5cba3143210202b8fe5e247d065725b43915761a436148131d9607301155",
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef"
   },
-  "tested_dll_sha256": "20810bbc0084b219bd08014fe858af05b8d3ed7b1c2462b0053bbd8bdcf5f3c2",
+  "tested_dll_sha256": "0b5347327998577c8eb22c89b0b80586afd4b32445f80dd86bf65992a9636c51",
   "comparisons": {
     "exact_vector_normalizations": 2000,
     "direct_constructors": 200,

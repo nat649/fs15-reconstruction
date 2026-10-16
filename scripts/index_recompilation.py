@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_recursive_clone_and_pointer_remap', ['0x1401ba050','0x14016ea00',
+        '0x14016eb20','0x140096190','0x140088360','0x140320740','0x1401b9d70'],
+        'analysis/scene-clone-tree-validation.json'),
     ('scene_attributes_properties_trs_and_derived_clone', ['0x14016eea0','0x1401366d0',
         '0x1401279d0','0x140149a60','0x14010fd80','0x1400b5950','0x1400d7ca0'],
         'analysis/scene-clone-validation.json'),

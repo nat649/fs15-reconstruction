@@ -39,9 +39,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | TransformGroup/LOD XML callbacks and float-vector growth/parser | Five entries | 87 complete forest lifetimes, 63 original subtrees, 2,746 callback/playback states and 435 loaded-node animation updates |
 | Camera creation/lifetime, decoded XML/script adapters and pose/follow | Nine entries | 400 camera lifetimes, 127 XML cameras, 1,524 motion updates and 2,000 bit-exact vector normalizations |
 | Attribute/property/TRS copy and Camera/LOD single-record cloning | Seven entries | 1,800 value clones, 900 property clones, 270 existing-node copies and 90 complete scene lifetimes |
+| Pointer remap tree, clone-list allocation and recursive known-node cloning | Seven entries | 5,490 remap states, 3,000 vector states, 564 recursively copied nodes and 63 complete original subtrees |
 
-Those are **157 native entries with bounded reconstructed paths**. They are not
-157 completely proven engine functions or a percentage of GE6 completion.
+Those are **164 native entries with bounded reconstructed paths**. They are not
+164 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
