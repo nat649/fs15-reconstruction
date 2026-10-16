@@ -83,7 +83,7 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
     if(!record||kind>FS15_OBJECT_TRS_TYPED||bytes<record_size(kind)||!services_ok(s))return 0;
     if(kind) {
         if(!fs15_scene_attributes_validate(record,bytes))return 0;
-        if(kind>=FS15_OBJECT_MATRIX&&read<uintptr_t>(record,0x120))return 0;
+        if(kind>=FS15_OBJECT_MATRIX&&read<uintptr_t>(record,0x120)&&!s->release_shared)return 0;
         if(kind>=FS15_OBJECT_MATRIX) {
             const auto props=read<uintptr_t>(record,0x118);
             if(props&&read<uint64_t>(reinterpret_cast<void*>(props),0)!=property_table)return 0;
@@ -99,6 +99,7 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
     if(kind>=FS15_OBJECT_MATRIX) {
         write(record,0,matrix_table);
         if(const auto props=read<uintptr_t>(record,0x118))s->deallocate(s->user,reinterpret_cast<void*>(props));
+        if(const auto shared=read<uintptr_t>(record,0x120))if(!s->release_shared(s->user,reinterpret_cast<void*>(shared)))return 0;
     }
     if(kind) {
         write(record,0,node_table);if(!fs15_scene_attributes_clear(record,bytes,1,s))return 0;

@@ -69,7 +69,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Name recovered object header, identifier/class, attribute-map and shared-resource fields while preserving opaque bytes.
 - [x] Recover native-layout attribute lookup/insertion/RB balance, Lua get/set frames and nonempty-map cleanup; compare 12,780 complete trees and directly run 25,200 original getter calls on reconstructed storage.
 - [x] Document native String-to-scalar retained allocations and pointer residues separately from ordinary owned cleanup.
-- [x] Track 70 bounded reconstructed native entries separately from 11,565 pseudocode-only entries, with source-pinned evidence.
+- [x] Recover known CharacterSet/data construction, node binding/rebinding, reference release, active/pending update removal and nested clip cleanup; compare 220 complete shared lifetimes.
+- [x] Recover default property cloning/replacement and dispatch known shared references through the node destructor chain.
+- [x] Track 82 bounded reconstructed native entries separately from 11,553 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
@@ -82,7 +84,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Isolate Windows symbol exports and add a portable-only build path.
 - [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
 - [x] Choose Switch homebrew `.nro` as the future packaging route; console work is deferred.
-- [x] Cross-compile the recovered core for ARM64 Linux and pass all seven asset-free tests under QEMU in CI; this is separate from Switch hardware validation.
+- [x] Cross-compile the recovered core for ARM64 Linux and pass the asset-free tests under QEMU in CI; this is separate from Switch hardware validation.
 - [ ] Configure the console toolchain and packaging target.
 - [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
 - [ ] Recover/link the complete native engine and its platform/middleware interfaces.

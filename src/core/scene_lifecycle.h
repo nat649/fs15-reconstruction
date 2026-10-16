@@ -16,7 +16,7 @@ enum FS15SceneObjectKind {
  * unlink must remove the indexed child and clear its parent. destroy_child
  * must perform deleting destruction and detach the child from its parent.
  * Records/auxiliary allocations must remain addressable through callbacks.
- * Checks reject malformed attribute maps, shared resources and active-trigger
+ * Checks reject malformed attribute maps and active-trigger
  * teardown on the supplied record before its external frees begin. The caller
  * must preflight all descendants and only dispatch recovered object kinds. */
 typedef struct FS15SceneLifecycleServices {
@@ -28,6 +28,7 @@ typedef struct FS15SceneLifecycleServices {
     void (*unregistered)(void*,uint32_t,void*);
     int (*unlink)(void*,void*,uint32_t,int);
     int (*destroy_child)(void*,void*);
+    int (*release_shared)(void*,void*); /* Optional known-resource dispatch. */
 } FS15SceneLifecycleServices;
 /* Successful native initialization preserves opaque bytes. Stable observed
  * vtable addresses are stored as identity TOKENS, never callable C++ vtables.
@@ -45,8 +46,9 @@ FS15_CORE_API int fs15_scene_construct(void*,size_t,unsigned,const char*,size_t,
 FS15_CORE_API int fs15_scene_rename(void*,size_t,const char*,size_t,const FS15SceneLifecycleServices*);
 /* kind identifies the complete destructor chain. deleting_flags&1 frees the
  * object record after its members. Recursive child deletion is dispatched via
- * services, without executing original vtable pointers. Shared resource and
- * active trigger services are not reconstructed. Callbacks must only invoke
+ * services, without executing original vtable pointers. Shared references use
+ * release_shared; the owner must preflight its supported resource classes.
+ * Active trigger services remain open. Callbacks must only invoke
  * supported descendants; callback failures after teardown starts cannot roll
  * back external frees or registry effects. */
 FS15_CORE_API int fs15_scene_destruct(void*,size_t,unsigned,uint32_t,const FS15SceneLifecycleServices*);

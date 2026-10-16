@@ -103,3 +103,7 @@ python scripts/check_scene_lifecycle.py --dll build/native-recovery/Release/FS15
 cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
+
+Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
+update-list removal and nested clip destruction. Other resource classes,
+animation evaluation, active triggers and complete loading remain open.

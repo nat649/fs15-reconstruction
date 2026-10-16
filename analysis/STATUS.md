@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 70 bounded reconstructed entries from 11,565 pseudocode-only entries. This is host component
+separates 82 bounded reconstructed entries from 11,553 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,8 +37,8 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has seven asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
-symlink checks are skipped. All twelve native differential suites also pass.
+has eight asset-free component tests. Of 64 Python fixtures, 62 pass and two Windows
+symlink checks are skipped. All thirteen native differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
 Euler extraction, lazy cache refresh, rebuild propagation and six Lua
@@ -90,7 +90,7 @@ A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all seven asset-free tests under QEMU in CI. This is an intermediate
+Linux and executes asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
@@ -341,3 +341,7 @@ Current validation establishes the analysis pipeline, launcher behavior,
 one native routine, archive recovery, a recompiled Lua layer, a visible
 recovered-menu launch and an authored native terrain-engine startup. It does
 not establish full original engine or gameplay equivalence.
+
+Known [CharacterSet/data/clip ownership](../docs/SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
+update-list removal and nested clip destruction. Other resource classes,
+animation evaluation, active triggers and complete loading remain open.

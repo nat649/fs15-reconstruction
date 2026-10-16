@@ -24,7 +24,7 @@ UNLINK=C.CFUNCTYPE(C.c_int,P,P,C.c_uint32,C.c_int);DESTROY=C.CFUNCTYPE(C.c_int,P
 
 class Services(C.Structure):
     _fields_=[('user',P),('allocate',ALLOC),('deallocate',FREE),('next_id',NEXT),
-              ('registered',REGISTER),('unregistered',REGISTER),('unlink',UNLINK),('destroy_child',DESTROY)]
+              ('registered',REGISTER),('unregistered',REGISTER),('unlink',UNLINK),('destroy_child',DESTROY),('release_shared',DESTROY)]
 
 
 def read(pointer,offset=0,fmt='Q'):return struct.unpack(fmt,C.string_at(pointer+offset,struct.calcsize(fmt)))[0]

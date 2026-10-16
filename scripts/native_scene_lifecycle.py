@@ -14,8 +14,8 @@ N=C.c_size_t
 
 
 class NativeSceneLifecycle(NativeGarCipher):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*,math_helpers=False):
+        super().__init__(math_helpers=math_helpers)
         self.heap=0;self.allocations={};self.freed=[];self.retired={};self.callbacks=[];self.imports=[];self.critical=None
         try:
             k=self.kernel

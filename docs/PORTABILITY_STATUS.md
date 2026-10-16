@@ -11,7 +11,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,200 entries, 11,635 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 70 native entries with validated bounded paths | Remaining 11,565 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 82 native entries with validated bounded paths | Remaining 11,553 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 16 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -19,11 +19,11 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Hierarchy membership | Three entries; 19,200 successive complete arenas/child buffers and notification traces match native link/reparent/unlink behavior | Native allocation/growth, constructors/destructors, registries, resource ownership and arbitrary derived callbacks |
 | Object lifecycle | Thirteen supported constructor/name/destructor paths; 250 recursive forests / 2,470 deleting destructions match original code | Authored allocator/registry/dispatch services; shared resources, triggers, derived types and singleton/concurrent behavior |
 | Scene attributes | Eight paths; 12,780 complete trees, 12,600 setter / 25,200 getter frames; original getter reads reconstructed storage | Native allocation-retention quirks, individual erasure/cloning and complete resource/loader integration |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 53 have validated components | 2,825 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 60 have validated components | 2,818 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,311 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
-| CPU portability | All seven asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
+| CPU portability | Asset-free core tests run on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 
 See the [aggregate dependency evidence](../analysis/native-portability-summary.json),
 [component ledger](../analysis/native-recompilation-summary.json),
@@ -78,3 +78,7 @@ scripts/analyze.ps1 -Target game-runtime -Existing -Instructions '140280380','14
 
 These commands require the existing pinned local analysis project. The public
 repository contains authored tooling and aggregate evidence, not the inputs.
+
+Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
+update-list removal and nested clip destruction. Other resource classes,
+animation evaluation, active triggers and complete loading remain open.
