@@ -56,7 +56,7 @@ self-aliasing text replacement and cleanup after failed staged allocation are
 authored guards. They are not claims about native malformed-input handling or
 C++ exception unwinding. These low-level APIs require valid owned member
 pointers. They do not parse arbitrary untrusted addresses. Individual map-entry
-erasure, cloning, shared resource/reference counting, active trigger cleanup,
+erasure, remaining shared resources, active trigger cleanup,
 remaining derived objects and full scene loading remain separate recovery work.
 
 ReFarm's object ownership and resource loader remain authored. This component
@@ -98,3 +98,6 @@ python scripts/check_scene_attributes.py --dll build/native-recovery/Release/FS1
 cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
+
+The later [scene-copy component](SCENE_CLONE_RECOVERY.md) recovers typed value
+cloning and whole-map assignment, including self-copy and kind-4 retention.

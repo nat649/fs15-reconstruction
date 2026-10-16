@@ -102,23 +102,27 @@ struct Map {
     }
 };
 bool allocator(const FS15SceneLifecycleServices* s){return s&&s->allocate&&s->deallocate;}
+Node* insert_value(Map& map,const char* text,size_t size,Value* value,const FS15SceneLifecycleServices& s) {
+    auto* node=static_cast<Node*>(s.allocate(s.user,sizeof(Node)));
+    if(!node)return nullptr;
+    node->left=node->parent=node->right=map.head;node->color=node->nil=0;
+    node->key_storage[0]=0;node->key_length=0;node->key_capacity=15;
+    if(size>15) {
+        if(size>std::numeric_limits<size_t>::max()-16){s.deallocate(s.user,node);return nullptr;}
+        node->key_capacity=size|size_t(15);
+        auto* buffer=static_cast<char*>(s.allocate(s.user,node->key_capacity+1));
+        if(!buffer){s.deallocate(s.user,node);return nullptr;}
+        std::memcpy(node->key_storage,&buffer,sizeof(buffer));
+    }
+    std::memcpy(const_cast<char*>(key(node)),text,size+1);node->key_length=size;node->value=value;
+    map.insert(node);return node;
+}
 Value* ensure(Map& map,const char* text,size_t size,uint32_t kind,const FS15SceneLifecycleServices& s) {
     if(Node* found=map.find(text,size))return found->value;
     auto* value=static_cast<Value*>(s.allocate(s.user,sizeof(Value)));if(!value)return nullptr;
     value->bits=0;value->kind=kind;
-    auto* node=static_cast<Node*>(s.allocate(s.user,sizeof(Node)));
-    if(!node){s.deallocate(s.user,value);return nullptr;}
-    node->left=node->parent=node->right=map.head;node->color=node->nil=0;
-    node->key_storage[0]=0;node->key_length=0;node->key_capacity=15;
-    if(size>15) {
-        if(size>std::numeric_limits<size_t>::max()-16){s.deallocate(s.user,node);s.deallocate(s.user,value);return nullptr;}
-        node->key_capacity=size|size_t(15);
-        auto* buffer=static_cast<char*>(s.allocate(s.user,node->key_capacity+1));
-        if(!buffer){s.deallocate(s.user,node);s.deallocate(s.user,value);return nullptr;}
-        std::memcpy(node->key_storage,&buffer,sizeof(buffer));
-    }
-    std::memcpy(const_cast<char*>(key(node)),text,size+1);node->key_length=size;node->value=value;
-    map.insert(node);return value;
+    if(!insert_value(map,text,size,value,s)){s.deallocate(s.user,value);return nullptr;}
+    return value;
 }
 void free_nodes(Node* cursor,Node* head,const FS15SceneLifecycleServices& s) {
     while(cursor!=head) {
@@ -203,5 +207,37 @@ extern "C" FS15_CORE_API int fs15_scene_attribute_frame(void* object,size_t byte
             std::memcpy(&value->bits,&result,4);
         }else std::memcpy(&value->bits,static_cast<uint8_t*>(frame)+0x20,4);
         value->kind=kind;return 1;
+    }catch(...){return 0;}
+}
+extern "C" int fs15_scene_attribute_value_clone(const Value* source,size_t bytes,const FS15SceneLifecycleServices* s,Value** out) {
+    if(!source||bytes<sizeof(*source)||!allocator(s)||!out||((source->kind==3||source->kind==4)&&!source->bits))return 0;
+    auto* result=static_cast<Value*>(s->allocate(s->user,sizeof(Value)));if(!result)return 0;
+    result->bits=0;result->kind=source->kind;
+    if(source->kind==0)std::memcpy(&result->bits,&source->bits,1);
+    else if(source->kind==1||source->kind==2)std::memcpy(&result->bits,&source->bits,4);
+    else if(source->kind==3||source->kind==4) {
+        const auto* text=reinterpret_cast<const char*>(static_cast<uintptr_t>(source->bits));const size_t length=std::strlen(text);
+        auto* copied=s->allocate(s->user,length+1);if(!copied){s->deallocate(s->user,result);return 0;}
+        std::memcpy(copied,text,length+1);result->bits=reinterpret_cast<uintptr_t>(copied);
+    }
+    *out=result;return 1;
+}
+extern "C" int fs15_scene_attributes_copy(void* target,size_t target_bytes,const void* source,size_t source_bytes,const FS15SceneLifecycleServices* s) {
+    if(!allocator(s))return 0;
+    try {
+        Map destination(target,target_bytes),origin(const_cast<void*>(source),source_bytes);
+        destination.ordered();auto source_nodes=origin.ordered();
+        if(target!=source&&destination.head==origin.head)return 0;
+        for(const auto* n:source_nodes)if(!n->value||((n->value->kind==3||n->value->kind==4)&&!n->value->bits))return 0;
+        if(!fs15_scene_attributes_clear(target,target_bytes,0,s))return 0;
+        if(target==source)return 1;
+        for(const auto* n:source_nodes) {
+            Value* cloned=nullptr;if(!fs15_scene_attribute_value_clone(n->value,sizeof(Value),s,&cloned))return 0;
+            if(!insert_value(destination,key(n),n->key_length,cloned,*s)) {
+                if(cloned->kind==3||cloned->kind==4)s->deallocate(s->user,reinterpret_cast<void*>(static_cast<uintptr_t>(cloned->bits)));
+                s->deallocate(s->user,cloned);return 0;
+            }
+        }
+        return 1;
     }catch(...){return 0;}
 }

@@ -34,12 +34,12 @@
     "src/core/scene_graph.h": "34f3b03e4e41ea249c94f9df1b0e86ac9b0c76464dab9ffc5b48eb0a132100f6",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
-    "src/core/scene_properties.cpp": "118a6e34d3f88b030c41351a29b33bdc25ee5d58f608a3481d5eb6eebf423e08",
-    "src/core/scene_properties.h": "e1cb13e5ba769a924cb0f9a9b191f6e2b87b3b4524a67ae1fcf04133c4146446",
+    "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
+    "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246",
     "src/core/shared_scene.cpp": "cf957c58fcb68be5cc9daa03d8c8a01bd505c4c6e04ef920da9c00d51d559173",
     "src/core/shared_scene.h": "b2d1f6613d250a64ebf1a165bbd2a6e1139475aff4df7d0f570169aee42d21f5"
   },
-  "tested_dll_sha256": "f1589d8ac6b011b1862750c883793debaad11b972f638ed6a7a2eea11abb4412",
+  "tested_dll_sha256": "20810bbc0084b219bd08014fe858af05b8d3ed7b1c2462b0053bbd8bdcf5f3c2",
   "comparisons": {
     "float_reserves": 500,
     "complete_float_vector_states": 3000,

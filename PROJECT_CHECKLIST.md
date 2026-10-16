@@ -86,10 +86,13 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Bind recovered XML animations through source IDs emitted by the group callbacks; compare 435 playback updates, owned matrix/state propagation and loaded LOD registration.
 - [x] Recover Camera construction/lifetime, I3D/script creation, parent-relative world pose and original follow/smoothing; compare 400 lifetimes, 127 XML cameras and 1,524 motion updates.
 - [x] Audit the Camera table and retain inherited TRS/LOD dispatch across four tables / 32 slots; validate Camera-to-LOD world updates.
-- [ ] Recover Camera projection/frustum/render consumption and general TRS/Camera cloning.
+- [x] Recover typed attribute cloning/map assignment, detached body/joint property copy, common TRS copy and Camera/LOD clone wrappers; compare 1,800 values, 900 properties and 90 complete scene lifetimes.
+- [x] Preserve native map self-copy clearing, independent string allocation, kind-4 retention and LOD clone distance-count behavior.
+- [ ] Recover original recursive clone/remap tables, unsupported derived resources and shared-animation rebinding.
+- [ ] Recover Camera projection/frustum/render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 150 bounded reconstructed native entries separately from 11,486 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 157 bounded reconstructed native entries separately from 11,479 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

@@ -20,15 +20,15 @@
     "src/core/shared_scene.h": "b2d1f6613d250a64ebf1a165bbd2a6e1139475aff4df7d0f570169aee42d21f5",
     "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
     "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
-    "src/core/scene_attributes.cpp": "d1df841d9efa6056fdf44629a349eaf400a97860a54e7345b009ec5674af87ba",
-    "src/core/scene_attributes.h": "299888f34ca2678936a0b30d0f6df58ce18a5706edce8a073dc860a4cfbe4e2e",
+    "src/core/scene_attributes.cpp": "a7f55f959a833fb782c0c1c8c1cd07812c84d032c5d4b1097ea75c08dfe23b63",
+    "src/core/scene_attributes.h": "a5549f983e3197d034a48254f379ebef0add22730d45fd8d2d77830d6cd18b51",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
     "src/core/scene_math.h": "d7e02e5aef957afb70ba31c68bb779ca44ed016b03df0b3091a70eebd9872408",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4"
   },
-  "tested_dll_sha256": "f1589d8ac6b011b1862750c883793debaad11b972f638ed6a7a2eea11abb4412",
+  "tested_dll_sha256": "20810bbc0084b219bd08014fe858af05b8d3ed7b1c2462b0053bbd8bdcf5f3c2",
   "cases": {
     "auto_data_constructor_destructor_pairs": 220,
     "data_constructor_records": 220,

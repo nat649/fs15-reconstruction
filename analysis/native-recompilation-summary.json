@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11486,
-  "validated_component_path_entries": 150,
+  "pseudocode_only": 11479,
+  "validated_component_path_entries": 157,
   "components": [
+    {
+      "name": "scene_attributes_properties_trs_and_derived_clone",
+      "entries": 7,
+      "evidence": "analysis/scene-clone-validation.json"
+    },
     {
       "name": "scene_camera_creation_xml_and_motion",
       "entries": 9,

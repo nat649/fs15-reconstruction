@@ -123,7 +123,7 @@ complete original scene loads. Pointer fields are normalized for comparison,
 opaque bytes are checked and transform/libm tolerance is `2e-5`. The asset-free
 portable test also covers Camera-to-LOD updates, script frames, nonfinite guards
 and allocation-failure cleanup. All sixteen portable tests pass on Windows x64,
-Linux x64 and ARM64 Linux under QEMU; all 21 native differential suites pass on
+Linux x64 and ARM64 Linux under QEMU; all 22 native differential suites pass on
 Windows. Platform checks are recorded separately in
 [the portable-core evidence](../analysis/portable-core-platform-validation.json).
 
@@ -135,8 +135,12 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
 Projection matrix construction, frustum/spatial culling, renderer consumption,
-general TRS/Camera cloning, the original XML tokenizer/complete loader, other
+recursive derived cloning, the original XML tokenizer/complete loader, other
 derived nodes, full engine startup and Switch execution remain open. Storing
 the projection parameters does not establish recovery of projection rendering.
 ReFarm continues to use its existing authored free-camera controls; this
 milestone validates native Camera services in the recovered core.
+
+The later [scene-copy component](SCENE_CLONE_RECOVERY.md) recovers the shared
+TRS/attribute/property copy and Camera single-record clone wrapper. Full
+recursive object/resource remapping remains open.

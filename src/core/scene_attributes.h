@@ -44,6 +44,15 @@ FS15_CORE_API int fs15_scene_attribute_frame(void*,size_t,unsigned,const FS15Sce
  * native cleanup behavior. No arbitrary derived resource destructors run. */
 FS15_CORE_API int fs15_scene_attributes_validate(const void*,size_t);
 FS15_CORE_API int fs15_scene_attributes_clear(void*,size_t,int,const FS15SceneLifecycleServices*);
+/* Recovered value/map cloning. Clone zero-initializes scalar payload storage,
+ * copies only the native active lane and duplicates kinds 3 and 4 strings.
+ * Kind 4 text still has the original map-cleanup retention quirk. Values/maps
+ * must be valid owned storage, with terminated string pointees. Map assignment
+ * clears the destination then inserts source keys in sorted order; self-copy
+ * therefore clears the map, as in GE6. Failures retain completed prefixes.
+ * Distinct owners must not share map/member allocations. */
+FS15_CORE_API int fs15_scene_attribute_value_clone(const FS15SceneAttributeValue*,size_t,const FS15SceneLifecycleServices*,FS15SceneAttributeValue**);
+FS15_CORE_API int fs15_scene_attributes_copy(void*,size_t,const void*,size_t,const FS15SceneLifecycleServices*);
 #ifdef __cplusplus
 }
 static_assert(sizeof(FS15SceneAttributeValue)==0x10);

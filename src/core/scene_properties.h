@@ -35,6 +35,11 @@ FS15_CORE_API int fs15_scene_property_destruct_detached(void*,uint32_t,const FS1
 typedef struct FS15ScenePropertyUpdates {void* user;int (*queue)(void*,uintptr_t,FS15RigidBodyProperty*);} FS15ScenePropertyUpdates;
 FS15_CORE_API int fs15_scene_property_flags(FS15RigidBodyProperty*,uint32_t,int,const FS15ScenePropertyUpdates*);
 FS15_CORE_API int fs15_scene_property_density(FS15RigidBodyProperty*,float,const FS15ScenePropertyUpdates*);
+/* Native metadata clone dispatch: base, rigid body and joint tables only.
+ * A new detached property belongs to owner. Backend handles/observer bindings
+ * are initialized afresh; source flags and documented metadata follow native
+ * copy/default/clamp rules. This does not clone a live physics actor. */
+FS15_CORE_API int fs15_scene_property_clone_owned(const void*,FS15SceneStateRecord*,const FS15SceneLifecycleServices*,void**);
 #ifdef __cplusplus
 }
 static_assert(sizeof(FS15RigidBodyProperty)==0x88);

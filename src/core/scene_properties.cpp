@@ -1,5 +1,6 @@
 // Recovered native property records; backend dispatch is an explicit host seam.
 #include "scene_properties.h"
+#include "shared_scene.h"
 #include <cmath>
 #include <cstring>
 namespace {
@@ -60,4 +61,35 @@ extern "C" int fs15_scene_property_density(FS15RigidBodyProperty* p,float densit
     p->flags&=~uint32_t(0x10000);p->density=density;
     if(!p->actor)return 1;
     const uint32_t old=p->changes;p->changes=old|0x400000u;return queued(*p,old,updates);
+}
+extern "C" int fs15_scene_property_clone_owned(const void* source,FS15SceneStateRecord* owner,const FS15SceneLifecycleServices* s,void** out) {
+    if(!source||!owner||!s||!s->allocate||!s->deallocate||!out)return 0;
+    const auto table=*static_cast<const uint64_t*>(source);
+    if(table==base_table) {
+        FS15ScenePropertyView* result=nullptr;
+        if(!fs15_scene_property_clone(static_cast<const FS15ScenePropertyView*>(source),sizeof(FS15ScenePropertyView),s,&result))return 0;
+        *out=result;return 1;
+    }
+    if(table!=body_table&&table!=joint_table)return 0;
+    if(table==body_table&&!std::isfinite(static_cast<const FS15RigidBodyProperty*>(source)->density))return 0;
+    const size_t bytes=table==body_table?sizeof(FS15RigidBodyProperty):sizeof(FS15JointProperty);
+    void* result=s->allocate(s->user,bytes);if(!result)return 0;
+    if(!fs15_scene_property_construct(table==body_table?0u:1u,result,bytes,owner)){s->deallocate(s->user,result);return 0;}
+    if(table==body_table) {
+        const auto& a=*static_cast<const FS15RigidBodyProperty*>(source);auto& b=*static_cast<FS15RigidBodyProperty*>(result);
+        b.flags|=a.flags;if(!(a.flags&0x800u))b.flags&=~uint32_t(0x800);b.flags&=~uint32_t(3);
+        b.collision_mask=a.collision_mask;b.restitution=a.restitution;b.static_friction=a.static_friction;b.dynamic_friction=a.dynamic_friction;
+        b.linear_damping=a.linear_damping;b.angular_damping=a.angular_damping;
+        fs15_scene_property_density(&b,a.density,nullptr);
+        if(a.flags&0x8000u){b.unknown70=a.unknown70;b.unknown74=a.unknown74;b.unknown78=a.unknown78;b.flags|=0x8000;}
+        b.solver_iterations=a.solver_iterations;b.changes=0;
+    }else {
+        const auto& a=*static_cast<const FS15JointProperty*>(source);auto& b=*static_cast<FS15JointProperty*>(result);
+        b.projection_distance=a.projection_distance;b.projection_angle=a.projection_angle;b.drive_force=a.drive_force;b.drive_spring=a.drive_spring;b.drive_damping=a.drive_damping;
+        std::memcpy(b.rotation_limited,a.rotation_limited,3);std::memcpy(b.translation_limited,a.translation_limited,3);
+        std::memcpy(b.rotation_min,a.rotation_min,12);std::memcpy(b.rotation_max,a.rotation_max,12);
+        std::memcpy(b.translation_min,a.translation_min,12);std::memcpy(b.translation_max,a.translation_max,12);
+        b.unknown80=a.unknown80;b.break_force=a.break_force;b.break_torque=a.break_torque;b.flags=(a.flags|b.flags)&~uint32_t(3);
+    }
+    *out=result;return 1;
 }

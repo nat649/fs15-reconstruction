@@ -18,8 +18,8 @@
   "rebuilt_source_sha256": {
     "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
     "src/core/scene_xml.h": "eb38a97d8e4d2bc642b2aa0e450f5d3028cbdb78d422a94bd2011b998c29ee64",
-    "src/core/scene_properties.cpp": "118a6e34d3f88b030c41351a29b33bdc25ee5d58f608a3481d5eb6eebf423e08",
-    "src/core/scene_properties.h": "e1cb13e5ba769a924cb0f9a9b191f6e2b87b3b4524a67ae1fcf04133c4146446",
+    "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
+    "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246",
     "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
     "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
     "src/core/shared_scene.cpp": "cf957c58fcb68be5cc9daa03d8c8a01bd505c4c6e04ef920da9c00d51d559173",
@@ -33,7 +33,7 @@
     "src/core/animation_xml.cpp": "bad44695ea73a69bccb024d67d9f934f63a792fd4073cbd4414f962fe7787858",
     "src/core/animation_xml.h": "c626f2343ccb426488cd59ce66b4e596ebd5ae9ef23d29828b2bdd209956574b"
   },
-  "tested_dll_sha256": "f1589d8ac6b011b1862750c883793debaad11b972f638ed6a7a2eea11abb4412",
+  "tested_dll_sha256": "20810bbc0084b219bd08014fe858af05b8d3ed7b1c2462b0053bbd8bdcf5f3c2",
   "comparisons": {
     "property_constructors": 800,
     "property_flag_updates": 1600,
@@ -49,7 +49,7 @@
     "local_asset_common_records": 1403,
     "registered_source_ids": 586
   },
-  "original_results_sha256": "eb2606fdbcd6f4b079c3c14f00668f9a4fc2bab0a0ddad37c43dec30a3eb18fd",
+  "original_results_sha256": "2a06fc413b8548b82a61754ce9c16b4a19238f4eeef479c554eb7dd8a1abc1d1",
   "local_assets": [
     {
       "name": "kroneSwadro2000.i3d",
