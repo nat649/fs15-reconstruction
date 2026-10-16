@@ -85,7 +85,7 @@ TRS/libm regions use scaled tolerance `1e-5` across successive operations.
 The asset-free `portable_scene_owned` check exercises the growth sequence,
 aliasing, multi-level ownership, insertion order, reparenting, inherited state,
 observer identity/order, failure cleanup, inconsistent membership and cycle
-rejection. All thirteen portable checks pass on Windows x64, Linux x64 and ARM64 Linux
+rejection. All fourteen portable checks pass on Windows x64, Linux x64 and ARM64 Linux
 under QEMU. The exact tested revision and CI job IDs are tracked in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 
