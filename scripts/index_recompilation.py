@@ -11,6 +11,10 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_xml_common_and_pending_properties', ['0x140194460','0x14018c100',
+        '0x140127910','0x140127d50','0x1401279a0','0x1401497e0',
+        '0x1401498b0','0x140149880','0x14009e5b0','0x14009e5f0',
+        '0x140129720','0x140299930'], 'analysis/scene-xml-validation.json'),
     ('animation_xml_callbacks', ['0x140026e60','0x140026850','0x140199890',
         '0x140199970','0x140199d70','0x140199e90','0x140199ec0',
         '0x140199fa0','0x14019a100'], 'analysis/animation-xml-validation.json'),

@@ -1,9 +1,14 @@
 {
   "catalogued": 12200,
   "eligible": 11635,
-  "pseudocode_only": 11527,
-  "validated_component_path_entries": 108,
+  "pseudocode_only": 11515,
+  "validated_component_path_entries": 120,
   "components": [
+    {
+      "name": "scene_xml_common_and_pending_properties",
+      "entries": 12,
+      "evidence": "analysis/scene-xml-validation.json"
+    },
     {
       "name": "animation_xml_callbacks",
       "entries": 9,

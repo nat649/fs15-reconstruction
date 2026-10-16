@@ -51,7 +51,7 @@ as code labels now resolve to 30 distinct newly catalogued functions. General sc
 of these descriptors; the count is not a unique total of engine subsystems.
 
 The [native recompilation report](NATIVE_RECOMPILATION.md) distinguishes the
-expanded pseudocode catalogue from 108 entries with compiled, bounded recovered
+expanded pseudocode catalogue from 120 entries with compiled, bounded recovered
 paths. It documents the newly recovered wheel-record layout/read adapters,
 32-bit scripting operations and portable-core build. Full native engine
 recompilation and Switch execution remain unverified.

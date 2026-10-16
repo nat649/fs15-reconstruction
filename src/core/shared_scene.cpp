@@ -1,5 +1,6 @@
 // Recovered CharacterSet/data lifetime, binding and default property ownership.
 #include "shared_scene.h"
+#include "scene_properties.h"
 #include "scene_math.h"
 #include "scene_trs.h"
 #include <cstring>
@@ -173,9 +174,13 @@ extern "C" FS15_CORE_API int fs15_scene_property_clone(const FS15ScenePropertyVi
     result->unknown00=property_table;result->flags=source->flags;*out=result;return 1;
 }
 extern "C" FS15_CORE_API int fs15_scene_property_replace(void* record,size_t bytes,FS15ScenePropertyView* replacement,const FS15SceneLifecycleServices* s) {
-    if(!record||bytes<0x120||!allocator(s)||(replacement&&replacement->unknown00!=property_table))return 0;
+    if(!record||bytes<0x120||!allocator(s)||(replacement&&replacement->unknown00!=property_table&&!fs15_scene_property_detached(replacement)))return 0;
     const auto old=read<uintptr_t>(record,0x118);
     if(old==reinterpret_cast<uintptr_t>(replacement)&&old)return 0;
-    if(old){if(read<uint64_t>(reinterpret_cast<void*>(old),0)!=property_table)return 0;s->deallocate(s->user,reinterpret_cast<void*>(old));}
+    if(old){
+        auto* property=reinterpret_cast<void*>(old);
+        if(read<uint64_t>(property,0)==property_table)s->deallocate(s->user,property);
+        else if(!fs15_scene_property_destruct_detached(property,1,s))return 0;
+    }
     write(record,0x118,reinterpret_cast<uintptr_t>(replacement));return 1;
 }

@@ -1,0 +1,74 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x140194460",
+    "0x14018c100",
+    "0x140127910",
+    "0x140127d50",
+    "0x1401279a0",
+    "0x1401497e0",
+    "0x1401498b0",
+    "0x140149880",
+    "0x14009e5b0",
+    "0x14009e5f0",
+    "0x140129720",
+    "0x140299930"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
+    "src/core/scene_xml.h": "eb38a97d8e4d2bc642b2aa0e450f5d3028cbdb78d422a94bd2011b998c29ee64",
+    "src/core/scene_properties.cpp": "118a6e34d3f88b030c41351a29b33bdc25ee5d58f608a3481d5eb6eebf423e08",
+    "src/core/scene_properties.h": "e1cb13e5ba769a924cb0f9a9b191f6e2b87b3b4524a67ae1fcf04133c4146446",
+    "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
+    "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
+    "src/core/shared_scene.cpp": "cf957c58fcb68be5cc9daa03d8c8a01bd505c4c6e04ef920da9c00d51d559173",
+    "src/core/shared_scene.h": "b2d1f6613d250a64ebf1a165bbd2a6e1139475aff4df7d0f570169aee42d21f5",
+    "src/core/scene_state.cpp": "5a611b6f80900828c91e7f105a29aa3d7969232731e413883c97a9411eefed4b",
+    "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
+    "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
+    "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
+    "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
+    "src/core/scene_math.h": "d7e02e5aef957afb70ba31c68bb779ca44ed016b03df0b3091a70eebd9872408",
+    "src/core/animation_xml.cpp": "bad44695ea73a69bccb024d67d9f934f63a792fd4073cbd4414f962fe7787858",
+    "src/core/animation_xml.h": "c626f2343ccb426488cd59ce66b4e596ebd5ae9ef23d29828b2bdd209956574b"
+  },
+  "tested_dll_sha256": "8dfbd74afdb9a0121e65398612a883b2828000e780822cbe83c776ec6c817a90",
+  "comparisons": {
+    "property_constructors": 800,
+    "property_flag_updates": 1600,
+    "property_density_updates": 400,
+    "property_non_deleting_destructors": 268,
+    "property_deleting_destructors": 532,
+    "attribute_lookups": 8172,
+    "complete_common_node_attribute_records": 2043,
+    "property_kind_0x10": 1699,
+    "complete_common_node_lifetimes": 2043,
+    "property_kind_0x88": 214,
+    "property_kind_0x90": 130,
+    "local_asset_common_records": 1403,
+    "registered_source_ids": 586
+  },
+  "original_results_sha256": "a6f55fdfc166dcd472405ff1608b6fd72751e7558188fdfc0a4f5ffbc4f6d487",
+  "local_assets": [
+    {
+      "name": "kroneSwadro2000.i3d",
+      "sha256": "6b1ba51b6f63e1bf2252b08cff45e0eae3364544451445d987878047cafddcf8",
+      "scene_nodes": 568,
+      "tested_common_attribute_records": 500
+    },
+    {
+      "name": "map01.i3d",
+      "sha256": "c10d4094b69b139142ab5860d58312c3cdf472e51fbcb5dfde9b7e4fa5c0e949",
+      "scene_nodes": 352365,
+      "tested_common_attribute_records": 451
+    },
+    {
+      "name": "map02.i3d",
+      "sha256": "ff778065b55b70fa02cc616accd46a1dfc832591e80d52d14a4b566c40be1104",
+      "scene_nodes": 113229,
+      "tested_common_attribute_records": 452
+    }
+  ],
+  "scope": "Common I3D node attributes on detached constructed TRS nodes, pending rigid-body/joint metadata, leaf flag/density updates and detached destructor/deleting paths. Full byte comparisons except normalized pointers and bounded libm transform tolerance 8e-6. XML decoding, CRT conversion and node registration transport are authored; original registration first-ID-wins is checked. Derived render classes, LOD, tokenizer, hierarchy loading, active physics/observers and trigger teardown are open."
+}

@@ -60,6 +60,7 @@
 !/analysis/animation-validation.json
 !/analysis/animation-resources-validation.json
 !/analysis/animation-xml-validation.json
+!/analysis/scene-xml-validation.json
 /logs/
 __pycache__/
 *.pyc

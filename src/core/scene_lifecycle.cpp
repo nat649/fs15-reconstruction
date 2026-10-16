@@ -1,6 +1,7 @@
 // Recovered object initialization/lifetime flow with authored platform services.
 #include "scene_lifecycle.h"
 #include "scene_attributes.h"
+#include "scene_properties.h"
 #include <cstring>
 #include <limits>
 #include <initializer_list>
@@ -86,7 +87,7 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
         if(kind>=FS15_OBJECT_MATRIX&&read<uintptr_t>(record,0x120)&&!s->release_shared)return 0;
         if(kind>=FS15_OBJECT_MATRIX) {
             const auto props=read<uintptr_t>(record,0x118);
-            if(props&&read<uint64_t>(reinterpret_cast<void*>(props),0)!=property_table)return 0;
+            if(props&&read<uint64_t>(reinterpret_cast<void*>(props),0)!=property_table&&!fs15_scene_property_detached(reinterpret_cast<void*>(props)))return 0;
         }
         if(kind>=FS15_OBJECT_TRS) {
             const auto props=read<uintptr_t>(record,0x118);
@@ -98,7 +99,11 @@ extern "C" FS15_CORE_API int fs15_scene_destruct(void* record,size_t bytes,unsig
     }
     if(kind>=FS15_OBJECT_MATRIX) {
         write(record,0,matrix_table);
-        if(const auto props=read<uintptr_t>(record,0x118))s->deallocate(s->user,reinterpret_cast<void*>(props));
+        if(const auto props=read<uintptr_t>(record,0x118)) {
+            auto* property=reinterpret_cast<void*>(props);
+            if(read<uint64_t>(property,0)==property_table)s->deallocate(s->user,property);
+            else if(!fs15_scene_property_destruct_detached(property,1,s))return 0;
+        }
         if(const auto shared=read<uintptr_t>(record,0x120))if(!s->release_shared(s->user,reinterpret_cast<void*>(shared)))return 0;
     }
     if(kind) {
