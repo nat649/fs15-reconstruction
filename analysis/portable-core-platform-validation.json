@@ -1,12 +1,15 @@
 {
   "status": "passed",
   "date": "2026-10-16",
-  "tested_source_commit": "ef852995509c61fc62269193ac38b1b022d038b5",
+  "tested_source_commit": "dcd2d05d5c413a3ef80a472d321b8260b6cbeccb",
   "source_sha256": {
     "src/core/animation.cpp": "c18ea288cd716752ae7d645b449dcfb414f3521b59f40d68ed19f9ba1a0a2099",
     "src/core/animation.h": "a4be6aaa3f9683d87c0dd42ef7d22c3d9df52ad136ab8e769756c4f0968671c8",
-    "src/core/animation_resources.cpp": "89496d118b75c660c053e5271844c70fd8bcc3568444ee7f0b0072a2e3d9936e",
+    "src/core/animation_resources.cpp": "e2a4c4b9be4d46d6057de5509ea2b9750c246c3d2d7676239e3f338bf756d142",
     "src/core/animation_resources.h": "793150f025a521e33c9703eb743dccca4c9b7d219b8f19269b0800a7f13f3e56",
+    "src/core/animation_storage.h": "ff4c248cdefaaaa3428d61c31f3c183e8c8440641a2a504dca10885d18359c85",
+    "src/core/animation_xml.cpp": "bad44695ea73a69bccb024d67d9f934f63a792fd4073cbd4414f962fe7787858",
+    "src/core/animation_xml.h": "c626f2343ccb426488cd59ce66b4e596ebd5ae9ef23d29828b2bdd209956574b",
     "src/core/api.h": "bc77ad476dfd63669effc65bb589f27c81fe3ed7a0d0680400ccc37b4b0d3028",
     "src/core/bit_operations.cpp": "0adb266f9fc5f10e15ab085309a001d59763b43a3bc0373611916dd91658eac9",
     "src/core/export.h": "75a4bb3e1577531703f25043d307c8c515276f0b5dc58e9a32efd3d0f5945720",
@@ -44,29 +47,30 @@
     "portable_scene_attributes",
     "portable_shared_scene",
     "portable_animation",
-    "portable_animation_resources"
+    "portable_animation_resources",
+    "portable_animation_xml"
   ],
   "platforms": [
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 10
+      "tests_passed": 11
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 10,
-      "job_id": 116748314798
+      "tests_passed": 11,
+      "job_id": 116753872024
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 10,
-      "job_id": 116748314612
+      "tests_passed": 11,
+      "job_id": 116753871792
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38830621286",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38832395661",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,

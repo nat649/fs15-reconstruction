@@ -37,8 +37,8 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has eleven asset-free component tests passing on Windows; platform evidence
-records the Linux/ARM64 tested revision separately. Of 64 Python fixtures,
+has eleven asset-free component tests passing on Windows, Linux and ARM64 Linux
+under QEMU. Of 64 Python fixtures,
 62 pass and two Windows symlink checks are skipped. All sixteen native
 differential suites also pass.
 
@@ -92,7 +92,7 @@ A new static [portability audit](native-portability-summary.json) records
 31,393 known call edges. The observed scripting roots reach 2,878 eligible
 functions, including 939 with computed calls. Types, virtual/dynamic dispatch
 and full linking remain unresolved. The recovered core cross-compiles for ARM64
-Linux and passes all ten asset-free tests under QEMU in CI. This is an intermediate
+Linux and passes all eleven asset-free tests under QEMU in CI. This is an intermediate
 CPU check; no full ARM64 GE6 or Switch build is available. See
 [platform evidence](portable-core-platform-validation.json).
 
