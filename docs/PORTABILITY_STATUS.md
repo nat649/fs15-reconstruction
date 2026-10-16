@@ -35,7 +35,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
-| CPU portability | All eighteen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
+| CPU portability | All nineteen asset-free core tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 
 See the [aggregate dependency evidence](../analysis/native-portability-summary.json),
 [component ledger](../analysis/native-recompilation-summary.json),

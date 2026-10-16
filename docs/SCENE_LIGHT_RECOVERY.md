@@ -146,8 +146,9 @@ original renderer update consumer.
 The asset-free test covers conditional XML parsing, nested-Light LOD tokens,
 pending deduplication, recursive copy, queue-capacity atomicity and cleanup
 across 24 allocation-failure attempts. These platform/container guards and
-callback transport are authored. CPU/platform results are recorded separately
-in [platform evidence](../analysis/portable-core-platform-validation.json).
+callback transport are authored. All 19 portable tests pass on Windows x64, Linux x64 and ARM64 Linux
+under QEMU. All 24 native differential suites pass on Windows. CPU/platform
+results are recorded separately in [platform evidence](../analysis/portable-core-platform-validation.json).
 
 ```powershell
 cmake --build build/native-recovery --config Release --target FS15Core
