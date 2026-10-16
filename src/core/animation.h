@@ -11,7 +11,7 @@ typedef struct FS15AnimationKey {
     float time;uint16_t flags;uint8_t rotation_offset,scale_offset;
 } FS15AnimationKey;
 typedef struct FS15AnimationChannel {
-    uint16_t unknown00,flags;uint32_t unknown04;
+    uint16_t node_index,flags;uint32_t unknown04;
     FS15SceneVector keys;uint64_t unknown20;
     uint16_t lookup[64];float index_scale,last_time,weights[3];uint32_t unknownbc;
     const FS15AnimationKey* first;const FS15AnimationKey* second;

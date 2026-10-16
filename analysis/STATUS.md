@@ -27,7 +27,7 @@ The affine point-transform leaf now passes 12,000 bit-exact native comparisons
 and runs in the experimental host's Lua transform service. Host GRLE8/16 loading
 uses recovered decoders behind strict file/run validation; invalid collision
 radii are rejected. The [recompilation ledger](native-recompilation-summary.json)
-separates 92 bounded reconstructed entries from 11,543 pseudocode-only entries. This is host component
+separates 99 bounded reconstructed entries from 11,536 pseudocode-only entries. This is host component
 validation; the complete engine and console build remain pending.
 See [scope and remaining work](../docs/NATIVE_RECOMPILATION.md).
 
@@ -37,9 +37,9 @@ hierarchical world-transform caching and four coordinate script adapters.
 original code bit for bit. ReFarm uses recovered local/world conversions through
 an authored matrix bridge; its scene ownership remains authored. Both maps pass
 the 24-run gameplay reliability suite after this change. The portable build now
-has nine asset-free component tests passing on Windows, Linux and ARM64 Linux
-under QEMU. Of 64 Python fixtures,
-62 pass and two Windows symlink checks are skipped. All fourteen native
+has ten asset-free component tests passing on Windows; platform evidence records
+the Linux/ARM64 tested revision separately. Of 64 Python fixtures,
+62 pass and two Windows symlink checks are skipped. All fifteen native
 differential suites also pass.
 
 Eleven additional TRS entries now reconstruct axis rotation, composition,
@@ -103,6 +103,14 @@ records and 2,240 successive animation/scene arenas match original code, with
 28,545 ordered notifications and bit-identical recorded float regions. Loading,
 scheduling, arbitrary callbacks, skinning and renderer consumption remain open.
 See [animation scope](../docs/ANIMATION_RECOVERY.md).
+
+Seven additional entries recover binary animation payload loading, Euler/key
+packing, ordered insertion, acceleration lookup construction and clip registration.
+90 synthetic files and the original `poettingerTop1252.i3d.anim` resource match
+native graphs and nested destruction. The original resource has one group,
+one clip, 56 channels and 326 keys; 637 loaded-resource pose updates match both
+evaluators. XML callbacks, file/archive/scene integration, scheduling and skeletal
+rendering remain open. See [resource scope](../docs/ANIMATION_RESOURCE_RECOVERY.md).
 See [concrete porting blockers](../docs/PORTABILITY_STATUS.md).
 
 The [unified graphical launcher](../docs/UNIFIED_LAUNCHER.md) now selects the

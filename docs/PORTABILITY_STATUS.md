@@ -11,7 +11,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,200 entries, 11,635 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 92 native entries with validated bounded paths | Remaining 11,543 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 99 native entries with validated bounded paths | Remaining 11,536 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 16 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -20,8 +20,9 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Object lifecycle | Thirteen supported constructor/name/destructor paths; 250 recursive forests / 2,470 deleting destructions match original code | Authored allocator/registry/dispatch services; shared resources, triggers, derived types and singleton/concurrent behavior |
 | Scene attributes | Eight paths; 12,780 complete trees, 12,600 setter / 25,200 getter frames; original getter reads reconstructed storage | Native allocation-retention quirks, individual erasure/cloning and complete resource/loader integration |
 | Shared animation resources | Twelve paths; 220 complete shared lifetimes, binding/rebinding and nested cleanup | Other shared classes, complete loading and concurrent update ownership |
-| Animation playback | Ten paths; 4,320 clip samples, 42,444 channels, 2,240 complete animation arenas and 28,545 notifications | Resource loading, scheduling, arbitrary callbacks, skinning and renderer consumption |
-| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 62 have validated components | 2,816 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
+| Animation playback | Ten paths; 4,320 clip samples, 42,444 channels, 2,240 complete animation arenas and 28,545 notifications | Complete resource integration, scheduling, arbitrary callbacks, skinning and renderer consumption |
+| Binary animation resources | Seven paths; 91 complete binary-load lifetimes and 637 loaded-resource pose updates, including an original resource | XML callbacks, complete file/archive/scene loading and renderer integration |
+| 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 63 have validated components | 2,815 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,311 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
@@ -83,6 +84,7 @@ repository contains authored tooling and aggregate evidence, not the inputs.
 
 Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
 update-list removal and nested clip destruction.
-[Bounded animation playback](ANIMATION_RECOVERY.md) is also recovered. Other
-resource classes, resource loading, scheduling, skinning, active triggers and
-complete startup remain open.
+[Bounded animation playback](ANIMATION_RECOVERY.md) and
+[binary animation resources](ANIMATION_RESOURCE_RECOVERY.md) are also recovered.
+Other resource classes, XML callbacks, complete file/archive/scene loading,
+scheduling, skinning, active triggers and complete startup remain open.

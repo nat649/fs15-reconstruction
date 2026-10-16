@@ -31,9 +31,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Native-layout attribute maps and script frames | Eight entries, including RB insertion and nonempty-map cleanup | 12,780 complete trees, 12,600 setters, 25,200 getters and 180 complete member-free-order traces; original getter also reads reconstructed storage directly |
 | Shared CharacterSet/data/clip ownership | Twelve entries | 220 shared lifetimes, 440 bindings, 4,310 node destructions and nested clip/channel cleanup |
 | Animation sampling, quaternion decoding and four-track playback | Ten entries | 4,320 clip samples, 42,444 complete channels, 2,240 successive animation arenas and 28,545 ordered notifications |
+| Binary animation resources, key packing and lookup generation | Seven entries | 90 synthetic files plus one original 56-channel/326-key resource; 637 loaded-resource pose updates |
 
-Those are **92 native entries with bounded reconstructed paths**. They are not
-92 completely proven engine functions or a percentage of GE6 completion.
+Those are **99 native entries with bounded reconstructed paths**. They are not
+99 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -180,6 +181,7 @@ The repository contains authored reconstruction/tooling and aggregate evidence.
 
 Known [CharacterSet/data/clip ownership](SHARED_SCENE_RECOVERY.md) now covers shared pose references, node rebinding,
 update-list removal and nested clip destruction.
-[Bounded playback](ANIMATION_RECOVERY.md) is also recovered. Other resource
-classes, resource loading, scheduling, skinning, active triggers and complete
-engine startup remain open.
+[Bounded playback](ANIMATION_RECOVERY.md) and
+[binary animation resources](ANIMATION_RESOURCE_RECOVERY.md) are also recovered.
+Other resource classes, XML callbacks, complete file/archive/scene loading,
+scheduling, skinning, active triggers and complete engine startup remain open.

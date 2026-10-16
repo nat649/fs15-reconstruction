@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('animation_resource_loading', ['0x1402805b0','0x1401cb5c0','0x1401bd190',
+        '0x1401bd2f0','0x1401768b0','0x1401751e0','0x1401ca840'],
+        'analysis/animation-resources-validation.json'),
     ('animation_playback', ['0x1400524b0','0x140174af0','0x1402806f0','0x1401766d0',
         '0x140176950','0x1401762a0','0x140176330','0x140176370','0x1401763b0',
         '0x140175820'], 'analysis/animation-validation.json'),
