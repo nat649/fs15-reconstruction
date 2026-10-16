@@ -28,7 +28,7 @@
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4"
   },
-  "tested_dll_sha256": "1dd29eba66081fc3d597617f047807721a24efb9e36a2292ead8e3b8e87d4d06",
+  "tested_dll_sha256": "7d4f65cae46e622ed393dd81dad35b2d0868b12c7e39821d88b49ee4fa69b2be",
   "cases": {
     "auto_data_constructor_destructor_pairs": 220,
     "data_constructor_records": 220,

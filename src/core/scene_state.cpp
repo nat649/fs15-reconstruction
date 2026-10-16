@@ -39,9 +39,10 @@ struct State {
             !v.kinds||v.kind_count<count||!range(v.kinds,v.kind_count,1)||
             (v.special_root!=none&&v.special_root>=count))throw std::runtime_error("Invalid scene views");
         nodes.resize(count);
-        if(d){if(d->count<count||!range(d->light_tokens,d->count,4))throw std::runtime_error("Invalid staged Light tokens");light_tokens.assign(d->light_tokens,d->light_tokens+count);}
+        if(d){if(d->count<count||!range(d->light_tokens,d->count,4))throw std::runtime_error("Invalid staged Light tokens");light_tokens.assign(count,0xffffffff);}
         for(size_t i=0;i<count;++i) {
             if(v.kinds[i]>(d?3:lod?2:1))throw std::runtime_error("Unknown virtual dispatch kind");
+            if(d&&v.kinds[i]==3)light_tokens[i]=d->light_tokens[i];
             std::memcpy(&nodes[i],static_cast<const uint8_t*>(v.nodes)+i*v.node_stride,sizeof(nodes[i]));
         }
         for(auto& node:nodes)if(node.parent)node.parent=reinterpret_cast<uintptr_t>(&nodes[source_index(node.parent)]);
