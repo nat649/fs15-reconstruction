@@ -61,7 +61,9 @@ struct Walk {
         if(depth>=256)return 0;
         const uint32_t flags=source->type_flags;
         if(flags&0x8000u){if(source->vtable!=0x1404c1078)return 0;}
-        else if(flags&0x6800u)return 0; // Shape, Light and external/reference resource dispatch remains open.
+        else if(flags&0x800u)return 0; // Shape clone dispatch remains open.
+        else if(flags&0x2000u){if(source->vtable!=0x1404c1d98)return 0;}
+        else if(flags&0x4000u)return 0; // External/reference resource dispatch remains open.
         else if(flags&0x80u){if(source->vtable!=0x1404c1c48)return 0;}
         else if(!(flags&0x40u))return 1;
         else if(source->vtable!=0x1404c5d98)return 0;

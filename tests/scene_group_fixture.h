@@ -2,6 +2,8 @@
 // Authored transport joining recovered group, animation and owned scene paths.
 #include "scene_groups.h"
 #include "scene_camera.h"
+#include "scene_light.h"
+#include "scene_derived.h"
 #include "scene_owned.h"
 #include "animation_fixture.h"
 #include <array>
@@ -18,10 +20,11 @@ struct Fixture:Owner {
     std::map<uint32_t,FS15SceneStateRecord*> ids;
     std::vector<std::pair<uint32_t,FS15CharacterSet*>> orphan_sets;
     FS15SceneStateRecord* current=nullptr;
-    FS15SceneLodContext lod{};
+    FS15SceneLodContext lod{};FS15SceneLightContext lights{};
     FS15SceneLodServices lod_services{this,&memory,nullptr,world,mark};
     FS15SceneGroupServices group_services{{this,&memory,rebuild,propagate,integer,registered_id},constructed,link};
     std::array<size_t,128> requests{};FS15SceneLodQueue queue{requests.data(),requests.size(),0};
+    std::array<size_t,128> light_requests{};FS15SceneLodQueue light_queue{light_requests.data(),light_requests.size(),0};
     size_t used=0;uint32_t attached=0;int warning=0;
     bool fail_constructed=false,fail_link=false;
     Fixture() {
@@ -31,19 +34,19 @@ struct Fixture:Owner {
     }
     FS15SceneOwnedView view(){return {nodes.data(),nodes.size(),kinds.data(),0};}
     static Fixture& memory_owner(void* p){return *static_cast<Fixture*>(static_cast<Owner*>(p));}
-    int enqueue(){for(size_t i=0;i<queue.count;++i)if(!fs15_scene_lod_enqueue(&lod,reinterpret_cast<FS15SceneLodRecord*>(nodes[requests[i]]),&memory)){queue.count=0;return 0;}queue.count=0;return 1;}
+    int enqueue(){for(size_t i=0;i<queue.count;++i)if(!fs15_scene_lod_enqueue(&lod,reinterpret_cast<FS15SceneLodRecord*>(nodes[requests[i]]),&memory)){queue.count=0;return 0;}queue.count=0;for(size_t i=0;i<light_queue.count;++i)if(!fs15_scene_light_enqueue(&lights,reinterpret_cast<FS15SceneLightRecord*>(nodes[light_requests[i]]),&memory)){light_queue.count=0;return 0;}light_queue.count=0;return 1;}
     static int rebuild(void* p,FS15SceneStateRecord* n) {
-        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_trs_lod(&v,f.indices.at(n),1,nullptr,0,nullptr,0,&f.used,&f.warning,&f.queue);return ok&&f.enqueue();
+        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_trs_derived(&v,f.indices.at(n),1,nullptr,0,nullptr,0,&f.used,&f.warning,&f.queue,&f.light_queue);return ok&&f.enqueue();
     }
     static int refresh(void* p,FS15SceneStateRecord* n) {
-        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_trs_lod(&v,f.indices.at(n),0,nullptr,0,nullptr,0,&f.used,&f.warning,&f.queue);return ok&&f.enqueue();
+        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_trs_derived(&v,f.indices.at(n),0,nullptr,0,nullptr,0,&f.used,&f.warning,&f.queue,&f.light_queue);return ok&&f.enqueue();
     }
     static int propagate(void* p,FS15SceneStateRecord* n,uint32_t mask,int32_t origin) {
-        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_state_lod(&v,f.indices.at(n),0,mask,origin,nullptr,0,&f.used,&f.queue);return ok&&f.enqueue();
+        auto& f=*static_cast<Fixture*>(p);auto v=f.view();const int ok=fs15_scene_owned_state_derived(&v,f.indices.at(n),0,mask,origin,nullptr,0,&f.used,&f.queue,&f.light_queue);return ok&&f.enqueue();
     }
     static int matrix(void* p,FS15SceneStateRecord* n,const float* m){auto& f=*static_cast<Fixture*>(p);auto v=f.view();return fs15_scene_owned_matrix(&v,f.indices.at(n),m,16);}
     static int world(void* p,FS15SceneStateRecord* n,float* out){auto& f=*static_cast<Fixture*>(p);auto v=f.view();return fs15_scene_owned_world(&v,f.indices.at(n),out,3);}
-    static int mark(void*,FS15SceneStateRecord* n,uint32_t){return fs15_scene_owned_mark_branch(n);}
+    static int mark(void* p,FS15SceneStateRecord* n,uint32_t token){auto& f=*static_cast<Fixture*>(p);return fs15_scene_light_mark_tree(n,token,&f.lights,&f.memory);}
     static int integer(void*,const char* text,uint32_t* out){*out=static_cast<uint32_t>(std::strtol(text,nullptr,10));return 1;}
     static int duration(void*,const char* text,float* out){*out=static_cast<float>(std::strtod(text,nullptr));return std::isfinite(*out);}
     static int registered_id(void* p,uint32_t id,FS15SceneStateRecord* n){static_cast<Fixture*>(p)->ids.emplace(id,n);return 1;}
@@ -52,7 +55,7 @@ struct Fixture:Owner {
     }
     static int link(void* p,FS15SceneStateRecord* parent,FS15SceneStateRecord* child,uint32_t position) {
         auto& f=*static_cast<Fixture*>(p);if(f.fail_link)return 0;auto v=f.view();
-        const int ok=fs15_scene_owned_link_lod(&v,f.indices.at(parent),f.indices.at(child),position,1,&f.memory,nullptr,0,&f.used,&f.attached,&f.queue);return ok&&f.enqueue();
+        const int ok=fs15_scene_owned_link_derived(&v,f.indices.at(parent),f.indices.at(child),position,1,&f.memory,nullptr,0,&f.used,&f.attached,&f.queue,&f.light_queue);return ok&&f.enqueue();
     }
     static int unlink(void*,void* parent,uint32_t slot,int suppress) {
         auto& n=*static_cast<FS15SceneStateRecord*>(parent);if(!suppress||n.vtable!=0x1404c7dd0)return 0;
@@ -63,6 +66,7 @@ struct Fixture:Owner {
     static int destroy(void* p,void* child) {
         auto& f=memory_owner(p);auto* n=static_cast<FS15SceneStateRecord*>(child);
         if(f.kinds[f.indices.at(n)]==2)return fs15_scene_lod_destruct(static_cast<FS15SceneLodRecord*>(child),sizeof(FS15SceneLodRecord),1,&f.lod,&f.lod_services);
+        if(n->vtable==0x1404c1d98)return fs15_scene_light_destruct(static_cast<FS15SceneLightRecord*>(child),sizeof(FS15SceneLightRecord),1,&f.lights,&f.memory);
         if(n->vtable==0x1404c1078)return fs15_scene_camera_destruct(static_cast<FS15SceneCameraRecord*>(child),sizeof(FS15SceneCameraRecord),1,&f.memory);
         return fs15_scene_destruct(n,sizeof(*n),FS15_OBJECT_TRS,1,&f.memory);
     }
@@ -84,9 +88,10 @@ struct Fixture:Owner {
         flush();std::vector<FS15SceneStateRecord*> roots;for(auto* n:nodes)if(!n->parent)roots.push_back(n);
         for(auto* n:roots)require(destroy(static_cast<Owner*>(this),n),"Destroy callback-created forest");node=nullptr;current=nullptr;
         for(const auto& orphan:orphan_sets)if(registry.count(orphan.first))require(fs15_character_set_destruct(orphan.second,sizeof(FS15CharacterSet),1,&context,&memory),"Release zero-node animation set");
-        require(!lod.manager.count&&lod.pending.begin==lod.pending.end&&context.active.begin==context.active.end&&context.pending.begin==context.pending.end,"All registered updates removed");
+        require(!lod.manager.count&&lod.pending.begin==lod.pending.end&&lights.pending.begin==lights.pending.end&&context.active.begin==context.active.end&&context.pending.begin==context.pending.end,"All registered updates removed");
         release(this,lod.manager.entries);release(this,reinterpret_cast<void*>(lod.pending.begin));
         release(this,reinterpret_cast<void*>(context.active.begin));release(this,reinterpret_cast<void*>(context.pending.begin));
+        release(this,reinterpret_cast<void*>(lights.pending.begin));lights={};
         lod={};context={};last=nullptr;nodes.clear();kinds.clear();indices.clear();ids.clear();orphan_sets.clear();
         require(blocks.empty()&&registry.empty(),"No callback-created resource leak");
     }

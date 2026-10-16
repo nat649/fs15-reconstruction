@@ -14,7 +14,7 @@ finalizer, skin/animation rebinding or unsupported derived resource classes.
 | `0x140096190` | Recursive map-node cleanup in descending unsigned-key order |
 | `0x140088360` | Clone-list pointer-vector reservation |
 | `0x140320740` | Clone-list 1.5x growth when an append needs space |
-| `0x1401b9d70` | Recursive clone dispatcher on known TRS, Camera and LOD branches |
+| `0x1401b9d70` | Recursive clone dispatcher on known TRS, Camera, LOD and Light branches |
 
 Existing constructors, single-record copy, typed attribute/property cloning,
 hierarchy dispatch and pointer-vector algorithms are reused. Distinct native
@@ -62,8 +62,9 @@ return the previous target. A fresh supported source is handled in this order:
 
 Camera flag `0x8000` takes precedence, followed by the original derived
 dispatch order. Known LOD flag `0x80` precedes plain TRS flag `0x40`. A plain
-root without `0x40` returns null. The Shape, Light and reference/resource clone
-branches remain unsupported and reject where encountered; they are not
+root without `0x40` returns null. Light flag `0x2000` now selects the
+[recovered Light wrapper](SCENE_LIGHT_RECOVERY.md), before reference/LOD/TRS
+dispatch. The Shape and reference/resource clone branches remain unsupported and reject where encountered; they are not
 reinterpreted as generic transforms. A completed prefix remains available.
 
 The cloned hierarchy retains local transforms, source names, supported

@@ -1,11 +1,12 @@
 // Recovered TRS/property/attribute copy and Camera/LOD clone wrappers.
 #include "scene_clone.h"
+#include "scene_light.h"
 #include "scene_attributes.h"
 #include "shared_scene.h"
 #include <cmath>
 #include <cstring>
 namespace {
-bool known(const FS15SceneStateRecord* n){return n&&(n->vtable==0x1404c5d98||n->vtable==0x1404c1c48||n->vtable==0x1404c1078);}
+bool known(const FS15SceneStateRecord* n){return n&&(n->vtable==0x1404c5d98||n->vtable==0x1404c1c48||n->vtable==0x1404c1078||n->vtable==0x1404c1d98);}
 bool memory(const FS15SceneLifecycleServices* s){return s&&s->allocate&&s->deallocate;}
 bool property(uintptr_t pointer,bool target) {
     if(!pointer)return false;
@@ -39,12 +40,18 @@ extern "C" int fs15_scene_trs_copy(FS15SceneStateRecord* target,FS15SceneStateRe
 }
 extern "C" int fs15_scene_clone_node(FS15SceneStateRecord* source,const FS15SceneCloneServices* s,FS15SceneGroupResult* result) {
     if(!known(source)||!s||!result||!memory(s->scene.memory)||!s->constructed)return 0;
-    *result={nullptr,0,0};const unsigned kind=source->vtable==0x1404c1c48?2u:1u;
-    const size_t bytes=source->vtable==0x1404c1078?sizeof(FS15SceneCameraRecord):kind==2?sizeof(FS15SceneLodRecord):sizeof(FS15SceneStateRecord);
+    *result={nullptr,0,0};const unsigned kind=source->vtable==0x1404c1d98?3u:source->vtable==0x1404c1c48?2u:1u;
+    const size_t bytes=kind==3?sizeof(FS15SceneLightRecord):source->vtable==0x1404c1078?sizeof(FS15SceneCameraRecord):kind==2?sizeof(FS15SceneLodRecord):sizeof(FS15SceneStateRecord);
     const char* name=source->name?reinterpret_cast<const char*>(source->name):"";const size_t name_bytes=std::strlen(name)+1;
     const auto* m=s->scene.memory;auto* target=static_cast<FS15SceneStateRecord*>(m->allocate(m->user,bytes));if(!target)return 0;
     int ok=0;
-    if(source->vtable==0x1404c1078) {
+    if(kind==3) {
+        const auto& light=*reinterpret_cast<const FS15SceneLightRecord*>(source);FS15SceneLightParameters p{};
+        p.type=light.type;std::memcpy(p.diffuse,light.diffuse,12);std::memcpy(p.specular,light.specular,12);
+        p.emit_diffuse=p.emit_specular=p.cast_shadow=p.perspective=1;p.depth_bias=light.depth_bias;p.depth_slope_bias=light.depth_slope_bias;p.depth_slope_clamp=light.depth_slope_clamp;p.depth_resolution=light.depth_resolution;p.range=light.range;p.decay=light.decay;p.cone_angle=light.cone_angle;p.drop_off=light.drop_off;p.shadow_far=light.shadow_far;p.shadow_extrusion=light.shadow_extrusion;p.shadow_perspective=light.shadow_perspective;p.shadow_splits=light.shadow_splits;p.shadow_split_parameter=light.shadow_split_parameter;
+        ok=fs15_scene_light_construct(reinterpret_cast<FS15SceneLightRecord*>(target),bytes,name,name_bytes,&p,nullptr,m);
+        if(ok)reinterpret_cast<FS15SceneLightRecord*>(target)->light_flags=light.light_flags;
+    }else if(source->vtable==0x1404c1078) {
         const auto* camera=reinterpret_cast<const FS15SceneCameraRecord*>(source);
         ok=fs15_scene_camera_construct(reinterpret_cast<FS15SceneCameraRecord*>(target),bytes,name,name_bytes,camera->fov,camera->near_clip,camera->far_clip,camera->orthographic,camera->orthographic_height,m);
     }else if(kind==2) {

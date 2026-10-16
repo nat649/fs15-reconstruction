@@ -127,5 +127,5 @@ This milestone does not recover projection/rendering, full startup or a Switch
 executable; the [remaining port work](PORTABILITY_STATUS.md) still applies.
 
 The later [recursive clone component](SCENE_CLONE_TREE_RECOVERY.md) adds native
-pointer remap storage, clone-list allocation and known TRS/Camera/LOD subtree
+pointer remap storage, clone-list allocation and known TRS/Camera/LOD/Light subtree
 assembly. Top-level shape/skin/resource finalization remains open.

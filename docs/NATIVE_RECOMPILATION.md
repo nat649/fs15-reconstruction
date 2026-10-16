@@ -41,8 +41,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Attribute/property/TRS copy and Camera/LOD single-record cloning | Seven entries | 1,800 value clones, 900 property clones, 270 existing-node copies and 90 complete scene lifetimes |
 | Pointer remap tree, clone-list allocation and recursive known-node cloning | Seven entries | 5,490 remap states, 3,000 vector states, 564 recursively copied nodes and 63 complete original subtrees |
 
-Those are **164 native entries with bounded reconstructed paths**. They are not
-164 completely proven engine functions or a percentage of GE6 completion.
+| Light metadata, decoded XML, virtual state/marker, pending lifetime and clone wrapper | Nine entries | 300 constructors/destructors, 6,460 node records, 1,104 forest states and six original Light subtrees |
+
+Those are **173 native entries with bounded reconstructed paths**. They are not
+173 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -158,7 +160,7 @@ catalogue now contains **12,201 entries, 11,636 eligible pseudocode exports and
 565 excluded thunks/external functions**. All 498 observed native scripting
 descriptors now resolve to catalogue function entries. This audit is limited
 to those explicit references and subsequent bounded scene-vtable audits that inspected
-32 slots across matrix, TRS, LOD and Camera tables and added five functions. Wider code discovery remains open.
+40 slots across matrix, TRS, LOD, Camera and Light tables and retained five discovered functions. Wider code discovery remains open.
 
 ```powershell
 scripts/analyze.ps1 -Target game-runtime -Existing -RecoverBindings -ExportName binding-discovery -JavaHome 'C:\path\to\jdk-21'

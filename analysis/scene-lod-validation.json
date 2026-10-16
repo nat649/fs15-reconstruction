@@ -17,11 +17,11 @@
     "0x140087e50"
   ],
   "rebuilt_source_sha256": {
-    "src/core/scene_lod.cpp": "a93032b309ba732f50af82251455ecd23d9b29d1faef17b3af9a5f664b6c22fb",
+    "src/core/scene_lod.cpp": "b8e55b7829bef4a4f75bdaba70c1f328f46d5aa0039518d1e90d7a7232f465b1",
     "src/core/scene_lod.h": "97d3dce8b87d8ebbb2ec0ad399ef6a41fc58d65fe2cbe3fadf137f15d7a8d1de",
-    "src/core/scene_owned.cpp": "6a4e839aa1dbafcbbb170563df268292e2600397c4ce20ea100e6d4c77fc6ff8",
-    "src/core/scene_owned.h": "53219d74f9017753912628ba9d8054c649473b13efb4b0acf4f48e88f3a00cfa",
-    "src/core/scene_state.cpp": "aa85854e822c139a5c83fcb54864d199599ef9c5b5d90cc14e744cb098259b74",
+    "src/core/scene_owned.cpp": "0ecc83314372cab34bc674460695015683b34c291c7cce3e51b41a5a981ee151",
+    "src/core/scene_owned.h": "d9fef57ceff2f548ad03fce063d45aedf1a382a01256b6cd6c6e6bce318df2a6",
+    "src/core/scene_state.cpp": "2587a3a4a67e8f739d71ca24a328d30c499ddf612b3fc9d35604a0cf5929afb2",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_lifecycle.cpp": "ea0ce84b59ffc859b93705e62aab370edb22775696f5fb7d60c85aac324776e7",
     "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
@@ -38,7 +38,7 @@
     "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
     "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246"
   },
-  "tested_dll_sha256": "0b5347327998577c8eb22c89b0b80586afd4b32445f80dd86bf65992a9636c51",
+  "tested_dll_sha256": "1dd29eba66081fc3d597617f047807721a24efb9e36a2292ead8e3b8e87d4d06",
   "comparisons": {
     "complete_lod_constructors": 160,
     "lod_child_token_queries": 3520,

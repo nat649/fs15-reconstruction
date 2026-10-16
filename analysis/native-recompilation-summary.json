@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11472,
-  "validated_component_path_entries": 164,
+  "pseudocode_only": 11463,
+  "validated_component_path_entries": 173,
   "components": [
+    {
+      "name": "scene_light_xml_state_pending_and_clone",
+      "entries": 9,
+      "evidence": "analysis/scene-light-validation.json"
+    },
     {
       "name": "scene_recursive_clone_and_pointer_remap",
       "entries": 7,

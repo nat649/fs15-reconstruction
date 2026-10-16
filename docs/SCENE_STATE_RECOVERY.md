@@ -69,7 +69,7 @@ state component is validated independently and is not yet connected to a full
 native object lifecycle in ReFarm or a fully recovered GE6 executable.
 
 ```powershell
-scripts/analyze.ps1 -Target game-runtime -Existing -Vtables '1404c0cd8:8','1404c5d98:8','1404c1c48:8','1404c1078:8' -ExportName scene-vtables -JavaHome 'C:\path\to\jdk-21'
+scripts/analyze.ps1 -Target game-runtime -Existing -Vtables '1404c0cd8:8','1404c5d98:8','1404c1c48:8','1404c1078:8','1404c1d98:8' -ExportName scene-vtables -JavaHome 'C:\path\to\jdk-21'
 scripts/analyze.ps1 -Target game-runtime -Existing -FullExport -ExportName game-full -FunctionTimeoutSeconds 300 -JavaHome 'C:\path\to\jdk-21'
 python scripts/index_native_exports.py
 python scripts/index_scene_vtables.py
@@ -77,7 +77,7 @@ python scripts/check_scene_state.py --dll build/native-recovery/Release/FS15Core
 ```
 
 A later [LOD table audit](SCENE_LOD_RECOVERY.md) added one more function. Across
-all four bounded tables including [Camera](SCENE_CAMERA_RECOVERY.md), 32 slots
-identify 14 distinct targets and five functions
+all five bounded tables including [Camera](SCENE_CAMERA_RECOVERY.md) and
+[Light](SCENE_LIGHT_RECOVERY.md), 40 slots identify 17 distinct targets and five functions
 discovered from explicit virtual references. LOD-aware state variants preserve
 derived post-processing and collect pending requests after base traversal.

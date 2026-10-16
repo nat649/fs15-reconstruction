@@ -48,8 +48,9 @@ camera motion reaches the descendant's world position in the LOD manager.
 Recursive destruction dispatches the Camera wrapper and releases its ordinary
 TRS members; no additional camera-owned allocation was observed here.
 
-Across four constructor-observed scene tables, 32 explicit slots resolve to
-14 distinct targets. The five earlier discovery records remain retained; the
+At the Camera milestone, four constructor-observed tables exposed 32 slots
+and 14 distinct targets. The later [Light audit](SCENE_LIGHT_RECOVERY.md)
+extends the total to five tables, 40 slots and 17 targets. The five earlier discovery records remain retained; the
 Camera audit created no new functions. This is not exhaustive class discovery.
 
 ## XML and script inputs

@@ -29,12 +29,12 @@ typedef struct FS15SceneCloneTreeServices {
     FS15SceneCloneServices clone;
     int (*link)(void*,FS15SceneStateRecord*,FS15SceneStateRecord*,uint32_t);
 } FS15SceneCloneTreeServices;
-/* Recovered 0x1401b9d70 on known TRS/Camera/LOD dispatch. Records are cloned
+/* Recovered 0x1401b9d70 on known TRS/Camera/LOD/Light dispatch. Records are cloned
  * pre-order, inserted into remap, appended to created, then children with type
  * flag 0x40 are recursively cloned and attached in order. Already-mapped input
  * returns success with null result, not the existing target. A root without
  * a supported derived bit or 0x40 also produces a successful null result.
- * Unrecovered Shape/Light/reference resources reject where encountered; no
+ * Unrecovered Shape/reference resources reject where encountered; no
  * reinterpretation or silent stripping. Bounds: 65535 calls, depth 256.
  * All fresh completed allocations must remain owned by constructed callbacks.
  * Failures keep map/vector/scene prefixes. result retains the root allocation;
