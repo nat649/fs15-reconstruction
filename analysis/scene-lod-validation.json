@@ -38,7 +38,7 @@
     "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
     "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246"
   },
-  "tested_dll_sha256": "6ee7610841c152b5f64fc2541c61c2dc99cca29562e03948e7ba919414561d1a",
+  "tested_dll_sha256": "abf5178743cf91e8ba0fc070dddccff32fa78a3cb027d3c2199145341ebed6b3",
   "comparisons": {
     "complete_lod_constructors": 160,
     "lod_child_token_queries": 3520,

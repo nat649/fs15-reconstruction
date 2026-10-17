@@ -18,7 +18,7 @@
     "src/core/scene_lifecycle.h": "a6e77608b172c1c39691de20068e1d1e4596c58ecdd007e3eab8c2f16d47f643",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d"
   },
-  "tested_dll_sha256": "6ee7610841c152b5f64fc2541c61c2dc99cca29562e03948e7ba919414561d1a",
+  "tested_dll_sha256": "abf5178743cf91e8ba0fc070dddccff32fa78a3cb027d3c2199145341ebed6b3",
   "cases": {
     "setter_frames": 12600,
     "complete_tree_comparisons": 12780,
@@ -31,6 +31,6 @@
     "complete_member_free_order_traces": 180,
     "nonempty_map_destructors": 180
   },
-  "original_results_sha256": "bdff9629c43aca3674dd50cb59cc8f92d4dbdcdd33e4754f2adaeedeced3a7b1",
+  "original_results_sha256": "db7657fc315f82d1c7002ac94146a874ba1942657863ab3a018766d916ca5d49",
   "scope": "Valid owned native-layout RB maps, short/heap byte keys, complete pointer-normalized node/value/padding topology, Lua frames, integer conversion, original getter reuse on reconstructed trees and nonempty-map cleanup/free order. Pointer residues from scalar overwrites are checked against their originating allocation before normalization. Retains String-to-scalar orphan allocations; fixture contexts reclaim those separately. Platform allocator, guards and failure cleanup are authored. No native exception/unwind, full resources/triggers, complete engine or console execution."
 }

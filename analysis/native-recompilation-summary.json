@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11440,
-  "validated_component_path_entries": 196,
+  "pseudocode_only": 11436,
+  "validated_component_path_entries": 200,
   "components": [
+    {
+      "name": "scene_camera_projection_and_projective_math",
+      "entries": 4,
+      "evidence": "analysis/scene-projection-validation.json"
+    },
     {
       "name": "scene_frustum_and_spatial_visibility_queries",
       "entries": 11,

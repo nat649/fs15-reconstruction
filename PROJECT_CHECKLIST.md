@@ -102,10 +102,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Reuse original-resource copies from the ignored local package only after matching recorded hashes when the installation drive is unavailable.
 - [ ] Recover complete Camera/view preparation, dynamic shadow-volume construction, Shape/audio pending/render consumers and GPU resources.
 - [ ] Recover Shape/reference clone branches, top-level finalization, skin remapping and shared-animation rebinding.
-- [ ] Recover Camera projection/frustum/render consumption.
+- [x] Recover perspective/orthographic matrices, full projective multiplication and native Camera basis conditioning; compare 18,000 complete math outputs and 18 original-I3D-parameter projection/view/frustum chains.
+- [ ] Recover complete Camera view construction, stereo handling and render/GPU consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 196 bounded reconstructed native entries separately from 11,440 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 200 bounded reconstructed native entries separately from 11,436 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

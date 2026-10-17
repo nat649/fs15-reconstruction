@@ -135,7 +135,9 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-Full Camera projection/view preparation, construction of dynamic shadow clip
+The later [projection component](SCENE_PROJECTION_RECOVERY.md) adds native
+projection matrices, projective products and Camera basis conditioning.
+Complete Camera view/GPU preparation, construction of dynamic shadow clip
 volumes, Shape/audio consumers, GPU resources, full scene/render startup and
 Switch execution remain open. ReFarm's renderer has not been changed by this
 component milestone. These checks establish query behavior, not rendered-frame

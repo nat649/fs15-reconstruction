@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x140042800",
+    "0x140042930",
+    "0x14001b060",
+    "0x1400b2130"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/scene_projection.cpp": "32fb4163cfa5f8aaf88c5cefaa9bb133a62e814723e9d40f4cf2ad808b9bb98a",
+    "src/core/scene_projection.h": "9f026abf8a70e0fb339ba4f7000ef8e1b161c2755923ff6e8f69e7a26530410e",
+    "src/core/scene_rsqrt.h": "3d74b60c12e6da1b246aac0fe6c2502abcf8171d196a60e1a63011042c73f5bf",
+    "src/core/scene_math.cpp": "c1b91aebd62a3a1ce5d30489853b76aa8a4e930f4b1f9af2c026ac291e8a3ed1",
+    "src/core/scene_math.h": "d7e02e5aef957afb70ba31c68bb779ca44ed016b03df0b3091a70eebd9872408",
+    "src/core/scene_visibility.cpp": "84ac15846a6bed699d610708126e96fbfea13ae08be816f819f05b138b39ed8a",
+    "src/core/scene_visibility.h": "31a88721f257941012ec8ba7fc618bf57d0516744077511f7b43548101db913d"
+  },
+  "tested_dll_sha256": "abf5178743cf91e8ba0fc070dddccff32fa78a3cb027d3c2199145341ebed6b3",
+  "comparisons": {
+    "exact_perspective_matrices_with_spares": 4000,
+    "exact_orthographic_matrices_with_spares": 4000,
+    "exact_full_projective_products_with_spares": 5000,
+    "exact_camera_basis_records_with_spares": 5000,
+    "original_i3d_parameter_projections": 18,
+    "exact_i3d_projection_view_chains": 18,
+    "exact_i3d_projection_frustums": 18,
+    "i3d_projected_point_predicates": 144
+  },
+  "original_results_sha256": "1d3d8c0e6d306cadae289906d36a19b3930f08185f09aacbccbd69ff255f7b5c",
+  "local_assets": [
+    {
+      "name": "map01.i3d",
+      "sha256": "c10d4094b69b139142ab5860d58312c3cdf472e51fbcb5dfde9b7e4fa5c0e949",
+      "camera_attribute_sets": 1
+    },
+    {
+      "name": "map02.i3d",
+      "sha256": "ff778065b55b70fa02cc616accd46a1dfc832591e80d52d14a4b566c40be1104",
+      "camera_attribute_sets": 1
+    },
+    {
+      "name": "deutzAgrostar661.i3d",
+      "sha256": "8538c582023bc310868e8748da380a81d9ff5c83f329b8f532940af408161b31",
+      "camera_attribute_sets": 2
+    },
+    {
+      "name": "newHollandT8320.i3d",
+      "sha256": "01cdbe80f9d274db6f2af4b839067093e6c829df8a364093ce1c299ddc573877",
+      "camera_attribute_sets": 2
+    }
+  ],
+  "scope": "Off-axis perspective and orthographic matrices, full projective multiplication and native Camera basis conditioning. Full records/spare lanes and original-I3D-parameter projection/inverse/frustum chains match original functions. FOV-to-extents calculation and world transforms are authored fixtures. Full view construction, stereo handling, resource lifetime, GPU upload, renderer and engine startup remain open."
+}

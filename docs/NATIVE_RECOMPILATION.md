@@ -40,15 +40,13 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Camera creation/lifetime, decoded XML/script adapters and pose/follow | Nine entries | 400 camera lifetimes, 127 XML cameras, 1,524 motion updates and 2,000 bit-exact vector normalizations |
 | Attribute/property/TRS copy and Camera/LOD single-record cloning | Seven entries | 1,800 value clones, 900 property clones, 270 existing-node copies and 90 complete scene lifetimes |
 | Pointer remap tree, clone-list allocation and recursive known-node cloning | Seven entries | 5,490 remap states, 3,000 vector states, 564 recursively copied nodes and 63 complete original subtrees |
-
 | Light metadata, decoded XML, virtual state/marker, pending lifetime and clone wrapper | Nine entries | 300 constructors/destructors, 6,460 node records, 1,104 forest states and six original Light subtrees |
-
 | Spatial grid storage/migration, packed registration and active Light consumer | Twelve entries | 72,816 index queries, 5,760 grid mutations, 48 migrations, 208 manager flushes and 66 active Light deletions |
-
 | Plane normalization/extraction, fixed/dynamic predicates and spatial volume/point queries | Eleven entries | 4,000 plane normalizations, 1,200 frustums, 57,600 predicates, 5,392 queries and full LOD cache/output comparisons |
+| Camera projection matrices, full projective product and basis conditioning | Four entries | 8,000 projection matrices, 5,000 products, 5,000 basis records and 18 original-I3D-parameter projection/view chains |
 
-Those are **196 native entries with bounded reconstructed paths**. They are not
-196 completely proven engine functions or a percentage of GE6 completion.
+Those are **200 native entries with bounded reconstructed paths**. They are not
+200 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
