@@ -75,7 +75,8 @@ extern "C" int fs15_scene_spatial_volume_query(const FS15SceneSpatialGrid* g,con
     }return 1;
 }
 extern "C" int fs15_scene_spatial_point_query(const FS15SceneSpatialGrid* g,const float* viewer,FS15SceneLodManager* m,uint32_t** out,uint32_t capacity,uint32_t* total){
-    if(!grid(g)||!finite(viewer,3)||!total||(capacity&&!out))return 0;*total=0;
+    if(!grid(g)||!finite(viewer,3)||!total||(capacity&&!out))return 0;
+    *total=0;
     for(uint32_t i=0;i<g->count;){const auto& c=g->cells[i];if(!cell(c))return 0;
         if(viewer[0]<c.center_x-c.half_x||c.half_x+c.center_x<viewer[0]||viewer[2]<c.center_z-c.half_z||c.half_z+c.center_z<viewer[2]){if(!skip(*g,i,c.skip))return 0;i=c.skip;continue;}
         for(uint32_t j=0;j<c.count;++j){const auto& e=c.entries[j];bool selected=false;if(!row(e)||!lod(m,e.lod_token,selected))return 0;if(!selected)continue;const float x=e.center[0]-viewer[0],y=e.center[1]-viewer[1],z=e.center[2]-viewer[2];if(z*z+(x*x+y*y)<=e.radius*e.radius){if(*total<capacity)out[*total]=e.token;++*total;}}
