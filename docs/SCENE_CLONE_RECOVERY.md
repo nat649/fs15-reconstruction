@@ -111,8 +111,8 @@ transform/libm tolerance is `1e-5`. Child-vector contents/capacities and names
 are compared separately. The portable test loads its source through recovered
 I3D group/Camera callbacks, validates independent attribute storage and LOD
 distance behavior, and exercises allocation failures with owned-prefix cleanup.
-All twenty portable tests pass on Windows x64, Linux x64 and ARM64 Linux
-under QEMU. All 25 native differential suites pass on Windows. Platform
+All twenty-one portable tests pass on Windows x64, Linux x64 and ARM64 Linux
+under QEMU. All 26 native differential suites pass on Windows. Platform
 validation is tracked in [the separate report](../analysis/portable-core-platform-validation.json).
 
 ```powershell

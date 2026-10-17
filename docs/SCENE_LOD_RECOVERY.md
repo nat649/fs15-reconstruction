@@ -112,7 +112,7 @@ Original executable bytes, raw pseudocode and scene resources remain local.
 The asset-free `portable_scene_lod` check covers constructor defaults, branch
 tokens, exact thresholds, cache reuse/low-bit wrap, visible/hidden registration,
 swap-removal, world-position moves, queue capacity and recursive ownership.
-All twenty portable checks pass on Windows x64, Linux x64 and ARM64 Linux
+All twenty-one portable checks pass on Windows x64, Linux x64 and ARM64 Linux
 under QEMU. The exact tested revision and CI job IDs are tracked in
 [platform evidence](../analysis/portable-core-platform-validation.json).
 

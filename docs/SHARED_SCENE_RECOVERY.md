@@ -66,6 +66,6 @@ python scripts/check_shared_scene.py --dll build/native-recovery/Release/FS15Cor
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-All twenty asset-free portable-core tests pass on Windows x64, Linux x64 and
+All twenty-one asset-free portable-core tests pass on Windows x64, Linux x64 and
 ARM64 Linux under QEMU. Original-code comparisons remain Windows-only; these
 platform checks do not validate a complete engine or console executable.

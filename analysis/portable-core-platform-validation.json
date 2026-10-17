@@ -1,9 +1,9 @@
 {
   "status": "passed",
-  "date": "2026-10-16",
-  "tested_source_commit": "4328ec7f13105a0b39cf620fa46670e97f968d5f",
+  "date": "2026-10-18",
+  "tested_source_commit": "1e9b2da455b0f29959e037497db62dd32d05f0b5",
   "source_sha256": {
-    "src/core/animation.cpp": "c18ea288cd716752ae7d645b449dcfb414f3521b59f40d68ed19f9ba1a0a2099",
+    "src/core/animation.cpp": "713dde1e220ac460b3a82b3ddc86ccec25a02bac54e53e712d5c6b72699fb7ff",
     "src/core/animation.h": "a4be6aaa3f9683d87c0dd42ef7d22c3d9df52ad136ab8e769756c4f0968671c8",
     "src/core/animation_resources.cpp": "e2a4c4b9be4d46d6057de5509ea2b9750c246c3d2d7676239e3f338bf756d142",
     "src/core/animation_resources.h": "793150f025a521e33c9703eb743dccca4c9b7d219b8f19269b0800a7f13f3e56",
@@ -18,7 +18,7 @@
     "src/core/rle8.cpp": "af0c818d72404b7fb680351b4045b3a4997ffdd10298551d29f0bec6b7f5fccc",
     "src/core/scene_attributes.cpp": "a7f55f959a833fb782c0c1c8c1cd07812c84d032c5d4b1097ea75c08dfe23b63",
     "src/core/scene_attributes.h": "a5549f983e3197d034a48254f379ebef0add22730d45fd8d2d77830d6cd18b51",
-    "src/core/scene_camera.cpp": "c7f7d8d4368e8c466966a706e84851544a914b4b57760f71292647b792647b35",
+    "src/core/scene_camera.cpp": "f8c0221df7c1029d15292a0521769e76fbb616c3eb2c9ba0888871cdcd49a4d3",
     "src/core/scene_camera.h": "85b9a889c467f9471c67f63083bad20ffce8f0ada47f7755f1da22030d7b8201",
     "src/core/scene_clone.cpp": "309b0d411cdbc881d183d2dfd001618d6b9e7292b46ae8eda9b4e94c9a55ecfa",
     "src/core/scene_clone.h": "cc80952dd9fa87c3295d3a5ad59d19459e003414ab7d42a8a15fbfa7b3264b3c",
@@ -41,12 +41,15 @@
     "src/core/scene_owned.h": "d9fef57ceff2f548ad03fce063d45aedf1a382a01256b6cd6c6e6bce318df2a6",
     "src/core/scene_properties.cpp": "ba261e987b95b017dbe7b10b2b71169b41ff2ddfe801550b57e8212beaffb280",
     "src/core/scene_properties.h": "6d5dabfe11b5e10c22aa60614053a4c3a434496b39fe44d117085041fb406246",
+    "src/core/scene_rsqrt.h": "3d74b60c12e6da1b246aac0fe6c2502abcf8171d196a60e1a63011042c73f5bf",
     "src/core/scene_spatial.cpp": "c763177823e5b874dd4c53b9e8641af946acb8ce02c99e57926a81314e8f29df",
     "src/core/scene_spatial.h": "23f72bf9d9fee892dea2b67ed41351be80864f87409b4b57d999be5080d83910",
     "src/core/scene_state.cpp": "87920d2f9c3841e9f009d21628629840c1956099ef1d85281f353cc7cefd95a3",
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
+    "src/core/scene_visibility.cpp": "84ac15846a6bed699d610708126e96fbfea13ae08be816f819f05b138b39ed8a",
+    "src/core/scene_visibility.h": "31a88721f257941012ec8ba7fc618bf57d0516744077511f7b43548101db913d",
     "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
     "src/core/scene_xml.h": "eb38a97d8e4d2bc642b2aa0e450f5d3028cbdb78d422a94bd2011b998c29ee64",
     "src/core/shared_scene.cpp": "cf957c58fcb68be5cc9daa03d8c8a01bd505c4c6e04ef920da9c00d51d559173",
@@ -59,6 +62,7 @@
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef"
   },
   "tests": [
+    "portable_scene_visibility",
     "portable_scene_spatial",
     "portable_native_core",
     "portable_scene_core",
@@ -84,23 +88,23 @@
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 20
+      "tests_passed": 21
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 20,
-      "job_id": 116805847673
+      "tests_passed": 21,
+      "job_id": 117516708637
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 20,
-      "job_id": 116805847951
+      "tests_passed": 21,
+      "job_id": 117516708501
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/38849009266",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39073810384",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,

@@ -127,8 +127,8 @@ match exactly on Windows. Existing forest comparisons use transform/libm
 tolerance `1e-5`; the remaining Light fields compare byte for byte. The portable
 test checks packed-slot swaps, root sentinels, allocation/extent guards, a
 native spot-center result, hide/show registration and active deletion.
-All 20 portable tests pass on Windows x64, Linux x64 and ARM64 Linux under
-QEMU. All 25 native differential suites pass on Windows. Platform builds
+All 21 portable tests pass on Windows x64, Linux x64 and ARM64 Linux under
+QEMU. All 26 native differential suites pass on Windows. Platform builds
 are recorded separately in
 [CPU evidence](../analysis/portable-core-platform-validation.json).
 

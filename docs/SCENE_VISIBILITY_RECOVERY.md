@@ -113,7 +113,9 @@ tolerance `1e-5`.
 The portable test covers exact boundary rejection, an empty dynamic volume,
 root sentinels, ordered output truncation/count-only queries, point-in-sphere
 inclusion, cache refresh before rejection and malformed/nonfinite guards.
-Platform evidence is recorded separately in
+All 21 portable tests pass on Windows x64, Linux x64 and ARM64 Linux under
+QEMU. All 26 native differential suites pass on Windows. Platform evidence
+is recorded separately in
 [CPU checks](../analysis/portable-core-platform-validation.json).
 
 ## Local original-resource inputs
