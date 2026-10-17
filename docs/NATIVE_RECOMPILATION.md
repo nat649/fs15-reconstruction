@@ -44,9 +44,10 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Spatial grid storage/migration, packed registration and active Light consumer | Twelve entries | 72,816 index queries, 5,760 grid mutations, 48 migrations, 208 manager flushes and 66 active Light deletions |
 | Plane normalization/extraction, fixed/dynamic predicates and spatial volume/point queries | Eleven entries | 4,000 plane normalizations, 1,200 frustums, 57,600 predicates, 5,392 queries and full LOD cache/output comparisons |
 | Camera projection matrices, full projective product and basis conditioning | Four entries | 8,000 projection matrices, 5,000 products, 5,000 basis records and 18 original-I3D-parameter projection/view chains |
+| Camera view/stereo assembly and shader-block packing | Two entries | 3,000 exact upload records, 2,418 view/cache chains, 5,418 complete map/unmap trace pairs and prepared-volume culling queries; explicit tangent/platform and GPU transport boundaries |
 
-Those are **200 native entries with bounded reconstructed paths**. They are not
-200 completely proven engine functions or a percentage of GE6 completion.
+Those are **202 native entries with bounded reconstructed paths**. They are not
+202 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.

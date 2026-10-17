@@ -138,8 +138,10 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 The later [projection component](SCENE_PROJECTION_RECOVERY.md) recovers
 matrix construction, full projective products and Camera basis conditioning.
 Known frustum/spatial queries are covered by the
-[visibility component](SCENE_VISIBILITY_RECOVERY.md). Complete view/GPU
-preparation, renderer consumption,
+[visibility component](SCENE_VISIBILITY_RECOVERY.md). The
+[view component](SCENE_VIEW_RECOVERY.md) adds supported Camera view/stereo
+assembly and shader packing through explicit map/unmap transport. Render-view
+construction, real GPU operations, renderer consumption,
 recursive derived cloning, the original XML tokenizer/complete loader, other
 derived nodes, full engine startup and Switch execution remain open. Storing
 the projection parameters does not establish recovery of projection rendering.

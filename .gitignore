@@ -71,6 +71,7 @@
 !/analysis/scene-spatial-validation.json
 !/analysis/scene-visibility-validation.json
 !/analysis/scene-projection-validation.json
+!/analysis/scene-view-validation.json
 /logs/
 __pycache__/
 *.pyc

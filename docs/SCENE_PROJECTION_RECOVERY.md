@@ -74,8 +74,10 @@ behavior and atomic rejection of malformed/nonfinite/overflow outputs.
 
 ## Remaining work
 
-Complete view construction, stereo offsets, render-view allocation, GPU
-constant-buffer mapping/upload (`0x14012cca0`), derived render consumers,
+The later [view component](SCENE_VIEW_RECOVERY.md) recovers the supported
+Camera view/stereo preparation and `0x14012cca0` shader-block packing through
+explicit owned map/unmap transport. Render-view allocation, other view
+variants, real GPU buffer/backend operations and derived render consumers,
 dynamic shadow-volume construction, native startup and renderer/resource
 ownership remain open. ReFarm's renderer has not been substituted for these
 native components. No complete GE6 or Switch `.nro` build is established.

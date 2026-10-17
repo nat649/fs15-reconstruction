@@ -58,6 +58,8 @@
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
+    "src/core/scene_view.cpp": "98f6f7d2b2b6102e2aee160e0cedc0b27827a4a0bbe9632c1d38902cb53ccc2f",
+    "src/core/scene_view.h": "77c7987a6490564312b8958297da8d01891763bed141834a89efb8c2da4b45dd",
     "src/core/scene_visibility.cpp": "84ac15846a6bed699d610708126e96fbfea13ae08be816f819f05b138b39ed8a",
     "src/core/scene_visibility.h": "31a88721f257941012ec8ba7fc618bf57d0516744077511f7b43548101db913d",
     "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
@@ -71,7 +73,7 @@
     "src/core/wheel_queries.cpp": "f06b5cba3143210202b8fe5e247d065725b43915761a436148131d9607301155",
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef"
   },
-  "tested_dll_sha256": "abf5178743cf91e8ba0fc070dddccff32fa78a3cb027d3c2199145341ebed6b3",
+  "tested_dll_sha256": "ed4245b0faf4daf787aaff21d4bacc6cf39b7b440cb7912ee6770d132b075f27",
   "comparisons": {
     "complete_value_clones": 1800,
     "complete_property_clones": 900,

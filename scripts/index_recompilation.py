@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_camera_view_stereo_and_shader_block', ['0x14012cca0','0x1400b3e20'],
+        'analysis/scene-view-validation.json'),
     ('scene_camera_projection_and_projective_math', ['0x140042800','0x140042930',
         '0x14001b060','0x1400b2130'], 'analysis/scene-projection-validation.json'),
     ('scene_frustum_and_spatial_visibility_queries', ['0x14006d6c0','0x140289cc0',

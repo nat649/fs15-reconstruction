@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11436,
-  "validated_component_path_entries": 200,
+  "pseudocode_only": 11434,
+  "validated_component_path_entries": 202,
   "components": [
+    {
+      "name": "scene_camera_view_stereo_and_shader_block",
+      "entries": 2,
+      "evidence": "analysis/scene-view-validation.json"
+    },
     {
       "name": "scene_camera_projection_and_projective_math",
       "entries": 4,

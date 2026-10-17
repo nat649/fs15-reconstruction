@@ -44,8 +44,8 @@ class NativeGarCipher:
                 raise RuntimeError("The native reference's preferred address range is unavailable")
             C.memmove(self.base, data[:pe.size_headers], pe.size_headers)
             for section in pe.sections:
-                # Optional inspected cosine helper, used only by the tire-force
-                # differential process. Never map/execute .bind or the entry point.
+                # Optional inspected math helpers, used by tire-force and Camera
+                # view comparisons. Never map/execute .bind or the entry point.
                 if section["name"] not in ((".text", ".rdata", ".data", ".pdata", "text") if math_helpers else (".text", ".rdata", ".data", ".pdata")):
                     continue
                 block = data[section["raw_offset"]:section["raw_offset"] + section["raw_size"]]
