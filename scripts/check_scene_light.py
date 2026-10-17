@@ -21,6 +21,7 @@ from check_scene_xml import XmlServices,REBUILD,PROPAGATE,INTEGER,REGISTER
 from check_animation_xml import attributes
 from check_scene_lod import Context,Manager,LodServices,BASE,WORLD,MARK,Queue
 from check_scene_attributes import tree
+from local_reference_assets import reference_asset
 
 F=C.c_float;U=C.c_uint32;B=C.c_uint8
 UNSIGNED=C.CFUNCTYPE(C.c_int,P,C.c_char_p,C.POINTER(U))
@@ -53,7 +54,7 @@ def configure(core):
 def local_cases():
     inventory=ROOT/'analysis/inventory.json';paths=[ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']
     if inventory.is_file():
-        game=Path(json.loads(inventory.read_text())['game_root']);paths.extend([game/'data/vehicles/steerable/deutz/deutzAgrostar661.i3d',game/'data/vehicles/steerable/newHolland/newHollandT8320.i3d'])
+        paths.extend([reference_asset('data/vehicles/steerable/deutz/deutzAgrostar661.i3d'),reference_asset('data/vehicles/steerable/newHolland/newHollandT8320.i3d')])
     cases=[];assets=[]
     for path in paths:
         if not path.is_file():continue

@@ -162,7 +162,8 @@ ctest --test-dir build/portable-core -C Release --output-on-failure
 
 Spatial registration/removal and LOD/Light deferred consumption are now
 covered by the separate [spatial component](SCENE_SPATIAL_RECOVERY.md). Spatial
-visibility/frustum queries, Shape/audio dispatch, GPU lighting/shadows,
+queries are covered by the later [visibility component](SCENE_VISIBILITY_RECOVERY.md).
+Full Camera preparation, Shape/audio dispatch, GPU lighting/shadows,
 Shape/reference cloning, skin/animation finalization, full engine startup and
 Switch execution remain open. ReFarm's authored renderer is unchanged by this
 milestone; metadata/state parity does not establish original-GE6 lighting output.

@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **185 native entries on bounded tested paths**. The affine component passes
+  **196 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -158,8 +158,13 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   cell indexing/storage, packed owner tokens, registration/movement/removal,
   Light bounds and the original LOD-then-Light pending order. 72,816 index
   queries, 48 nonempty grid migrations and 26 active forest lifetimes match
-  GE6, including active deletion. Frustum queries, Shape/audio consumer paths
+  GE6, including active deletion. Full Camera preparation, Shape/audio consumer paths
   and GPU resources remain open. See [spatial scope](docs/SCENE_SPATIAL_RECOVERY.md).
+- **Native visibility queries:** eleven additional paths recover plane normalization,
+  matrix-to-frustum extraction, fixed/dynamic volume predicates and ordered grid
+  volume/point queries. 57,600 predicates and 5,392 queries match GE6, including
+  output truncation and LOD cache effects. Full Camera/view preparation and
+  rendering remain open. See [visibility scope](docs/SCENE_VISIBILITY_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

@@ -113,8 +113,8 @@ def main():
     args=parser.parse_args();core=C.CDLL(str(args.dll.resolve()))
     inventory=ROOT/'analysis/inventory.json'
     if not args.anim and inventory.is_file():
-        game=Path(json.loads(inventory.read_text())['game_root'])
-        candidate=game/'data/vehicles/tools/poettinger/poettingerTop1252.i3d.anim'
+        from local_reference_assets import reference_asset
+        candidate=reference_asset('data/vehicles/tools/poettinger/poettingerTop1252.i3d.anim')
         if candidate.is_file():args.anim.append(candidate)
     signatures={'fs15_animation_euler_quaternion':[P,P,N],
         'fs15_animation_key_create':[C.c_float,C.c_uint32,P,P,P,C.c_int,C.POINTER(Services),C.POINTER(P)],

@@ -17,6 +17,7 @@ from check_scene_xml import XmlServices,REBUILD,PROPAGATE,INTEGER,REGISTER
 from check_scene_lifecycle import PortableServices,Services,DESTROY,P,N,read,put,canonical
 from check_scene_owned import OwnedView
 from check_scene_groups import GroupServices,Result,CREATED,LINK
+from local_reference_assets import reference_asset
 
 WORLD=C.CFUNCTYPE(C.c_int,P,P,P)
 class CameraServices(C.Structure):
@@ -27,8 +28,7 @@ def local_cases():
     paths=[ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']
     inventory=ROOT/'analysis/inventory.json'
     if inventory.is_file():
-        game=Path(json.loads(inventory.read_text())['game_root'])
-        paths.extend([game/'data/vehicles/steerable/deutz/deutzAgrostar661.i3d',game/'data/vehicles/steerable/newHolland/newHollandT8320.i3d'])
+        paths.extend([reference_asset('data/vehicles/steerable/deutz/deutzAgrostar661.i3d'),reference_asset('data/vehicles/steerable/newHolland/newHollandT8320.i3d')])
     cases=[];assets=[]
     for path in paths:
         if not path.is_file():continue

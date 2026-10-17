@@ -1,7 +1,7 @@
 // Recovered GE6 animation algorithms; bounded guards/callback transport authored.
 #include "animation.h"
 #include "scene_math.h"
-#include <array>
+#include "scene_rsqrt.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -23,25 +23,11 @@ template<class T>T& at(const FS15SceneVector& v,size_t i) {
     if(i>=length<T>(v))throw std::runtime_error("Animation index outside vector");
     return reinterpret_cast<T*>(v.begin)[i];
 }
-const std::array<uint32_t,512>& table() {
-    static const auto data=[] {
-        std::array<uint32_t,512> a{};
-        for(uint32_t i=0;i<512;++i) {
-            const float seed=value((i|0x7e00u)<<15);
-            a[i]=(bits(static_cast<float>(1.0/std::sqrt(static_cast<double>(seed))))+0x2000u)&0x7f8000u;
-        }
-        a[256]=0x7f8000u;return a;
-    }();return data;
-}
 void normalize(float* q) {
     for(unsigned i=0;i<4;++i)finite(q[i]);
     // Instruction grouping differs from decompiler's double-expression output.
     const float sum=((q[1]*q[1]+q[2]*q[2])+q[3]*q[3])+q[0]*q[0];finite(sum);
-    const uint32_t b=bits(sum);
-    const uint32_t seed=(((0x17cu-((b>>23)&255u))<<22)&0xff800000u)|table()[(b>>15)&511u];
-    double r=static_cast<double>(value(seed));const double half=static_cast<double>(sum)*0.5;
-    r=r*(1.5-(r*r)*half);
-    const float inv=static_cast<float>((1.5-(r*r)*half)*r);
+    const float inv=fs15_scene_math_detail::inverse_length(sum);
     for(unsigned i=0;i<4;++i){q[i]=q[i]*inv;finite(q[i]);}
 }
 void nlerp(const float* a,const float* b,float t,float* out) {
@@ -181,7 +167,7 @@ void update(FS15CharacterSet& set,float dt,const FS15AnimationServices& services
     dirty(set,0);
 }
 }
-extern "C" int fs15_animation_rsqrt_table(uint32_t* out,size_t count){if(!out||count<512)return 0;std::memcpy(out,table().data(),2048);return 1;}
+extern "C" int fs15_animation_rsqrt_table(uint32_t* out,size_t count){if(!out||count<512)return 0;std::memcpy(out,fs15_scene_math_detail::rsqrt_table().data(),2048);return 1;}
 extern "C" int fs15_animation_normalize(float* q,size_t count){if(!q||count<4)return 0;try{float a[4];std::memcpy(a,q,16);normalize(a);std::memcpy(q,a,16);return 1;}catch(...){return 0;}}
 extern "C" int fs15_animation_nlerp(const float* a,const float* b,float t,float* out,size_t count){if(!a||!b||!out||count<4)return 0;try{float q[4];nlerp(a,b,t,q);std::memcpy(out,q,16);return 1;}catch(...){return 0;}}
 extern "C" int fs15_animation_rotation(const FS15AnimationChannel* c,float* out,size_t count){if(!c||!out||count<4)return 0;try{float q[4];rotation(*c,q);std::memcpy(out,q,16);return 1;}catch(...){return 0;}}

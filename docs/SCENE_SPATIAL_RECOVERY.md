@@ -5,6 +5,8 @@ registration, movement and removal, then connects these paths to Light bounds
 and the original pending-update order. This replaces the earlier authored
 Light-queue clearing fixture in a separate differential comparison. It does
 not recover visibility queries, frustum traversal or GPU lighting/shadows.
+The later [visibility component](SCENE_VISIBILITY_RECOVERY.md) adds known
+plane-volume and point queries; full render preparation remains open.
 
 ## Native paths and records
 
@@ -137,6 +139,8 @@ cmake --build build/portable-core --config Release
 ctest --test-dir build/portable-core -C Release --output-on-failure
 ```
 
-Full scene/resource loading, spatial visibility/frustum queries, Shape/audio
-dispatch, GPU resources/shadows, native subsystem startup and Switch execution
+Known plane-volume and point queries are now covered by the separate
+[visibility component](SCENE_VISIBILITY_RECOVERY.md). Full scene/resource loading,
+Camera/view preparation, Shape/audio dispatch, GPU resources/shadows, native
+subsystem startup and Switch execution
 remain open. ReFarm's renderer is unchanged by this component milestone.

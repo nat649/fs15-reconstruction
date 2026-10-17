@@ -2,7 +2,7 @@
 #include "scene_camera.h"
 #include "scene_math.h"
 #include "scene_trs.h"
-#include <array>
+#include "scene_rsqrt.h"
 #include <cmath>
 #include <cstring>
 namespace {
@@ -13,17 +13,7 @@ bool finite(const float* values,size_t n){if(!values)return false;for(size_t i=0
 bool camera(const FS15SceneCameraRecord* n){return n&&n->node.vtable==camera_table;}
 bool memory(const FS15SceneLifecycleServices* s){return s&&s->allocate&&s->deallocate;}
 bool services(const FS15SceneCameraServices* s){return s&&s->world&&s->refresh&&s->rebuild;}
-uint32_t bits(float f){uint32_t b;std::memcpy(&b,&f,4);return b;}
-float value(uint32_t b){float f;std::memcpy(&f,&b,4);return f;}
 float scalar(const void* p){float f;std::memcpy(&f,p,4);return f;}
-const std::array<uint32_t,512>& table() {
-    // Same recovered 0x1400524b0 initialization used by animation normalization.
-    static const auto data=[] {
-        std::array<uint32_t,512> a{};
-        for(uint32_t i=0;i<512;++i){const float seed=value((i|0x7e00u)<<15);a[i]=(bits(static_cast<float>(1.0/std::sqrt(static_cast<double>(seed))))+0x2000u)&0x7f8000u;}
-        a[256]=0x7f8000u;return a;
-    }();return data;
-}
 void identity(float* out){std::memset(out,0,64);out[0]=out[5]=out[10]=out[15]=1;}
 bool field(const FS15SceneXmlAttribute* attrs,size_t count,const char* key,float& out) {
     const char* text=nullptr;if(!fs15_scene_xml_find(attrs,count,key,std::strlen(key)+1,&text))return false;
@@ -76,9 +66,7 @@ extern "C" int fs15_scene_camera_script_create(const void* frame,size_t bytes,si
 extern "C" int fs15_scene_normalize3(float* vector,size_t count) {
     if(count<3||!finite(vector,3))return 0;
     const float sum=(vector[0]*vector[0]+vector[1]*vector[1])+vector[2]*vector[2];if(!std::isfinite(sum))return 0;
-    const uint32_t b=bits(sum),seed=(((0x17cu-((b>>23)&255u))<<22)&0xff800000u)|table()[(b>>15)&511u];
-    double r=static_cast<double>(value(seed));const double half=static_cast<double>(sum)*0.5;
-    r=r*(1.5-(r*r)*half);const float inv=static_cast<float>((1.5-(r*r)*half)*r);
+    const float inv=fs15_scene_math_detail::inverse_length(sum);
     float out[3];for(unsigned i=0;i<3;++i)out[i]=vector[i]*inv;
     if(!finite(out,3))return 0;
     std::memcpy(vector,out,12);return 1;

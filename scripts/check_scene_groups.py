@@ -52,8 +52,9 @@ def synthetic(rng,case):
 def asset_cases():
     inventory=ROOT/'analysis/inventory.json'
     if not inventory.is_file():return [],[]
-    game=Path(json.loads(inventory.read_text())['game_root']);cases=[];assets=[]
-    for path in [game/'data/vehicles/tools/krone/kroneSwadro2000.i3d',ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']:
+    from local_reference_assets import reference_asset
+    cases=[];assets=[]
+    for path in [reference_asset('data/vehicles/tools/krone/kroneSwadro2000.i3d'),ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']:
         if not path.is_file():continue
         scene=ET.parse(path).getroot().find('Scene')
         if scene is None:continue

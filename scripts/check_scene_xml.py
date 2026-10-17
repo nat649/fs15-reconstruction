@@ -114,8 +114,8 @@ def main():
         cases[1]=(None,[('name',None),('name','ignored'),('nodeId',None),('refId','123')],1)
         inventory=ROOT/'analysis/inventory.json'
         if inventory.is_file():
-            game=Path(json.loads(inventory.read_text())['game_root'])
-            paths=[game/'data/vehicles/tools/krone/kroneSwadro2000.i3d',ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']
+            from local_reference_assets import reference_asset
+            paths=[reference_asset('data/vehicles/tools/krone/kroneSwadro2000.i3d'),ROOT/'recovered/gar/data/maps/map01.i3d',ROOT/'recovered/gar/data/maps/map02.i3d']
             for path in paths:
                 if not path.is_file():continue
                 scene=ET.parse(path).getroot().find('Scene')

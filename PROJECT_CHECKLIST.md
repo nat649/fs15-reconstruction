@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-16**. Checked items have supporting local build, analysis
+Updated: **2026-10-18**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Current native milestone:** the installed GIANTS Engine 6.0.2 opens its menu,
@@ -97,12 +97,15 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover spatial grid initialization/migration, cell storage, packed tokens and add/move/swap-removal; compare 72,816 index queries, 5,760 grid mutations and 48 nonempty migrations.
 - [x] Recover Light bounds, active registration/removal/destruction and the original manager consumer with Shape/audio queues empty; compare 208 flushes, 26 forest lifetimes and 66 active Light deletions.
 - [x] Verify retained old per-cell allocations during grid reinitialization and compare all 662 retained buffers; keep authored reclamation explicit.
-- [ ] Recover spatial visibility/frustum queries, Shape/audio pending consumer paths and GPU/shadow resources.
+- [x] Recover plane normalization/matrix extraction and six fixed/dynamic volume predicates; compare 4,000 plane normalizations, 1,200 frustums and 57,600 predicates.
+- [x] Recover ordered spatial volume/point queries and LOD/clip filtering; compare 5,392 queries, 3,363 truncated outputs and six original Light subtrees.
+- [x] Reuse original-resource copies from the ignored local package only after matching recorded hashes when the installation drive is unavailable.
+- [ ] Recover complete Camera/view preparation, dynamic shadow-volume construction, Shape/audio pending/render consumers and GPU resources.
 - [ ] Recover Shape/reference clone branches, top-level finalization, skin remapping and shared-animation rebinding.
 - [ ] Recover Camera projection/frustum/render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 185 bounded reconstructed native entries separately from 11,451 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 196 bounded reconstructed native entries separately from 11,440 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.

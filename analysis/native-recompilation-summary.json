@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11451,
-  "validated_component_path_entries": 185,
+  "pseudocode_only": 11440,
+  "validated_component_path_entries": 196,
   "components": [
+    {
+      "name": "scene_frustum_and_spatial_visibility_queries",
+      "entries": 11,
+      "evidence": "analysis/scene-visibility-validation.json"
+    },
     {
       "name": "scene_spatial_grid_and_active_light_consumer",
       "entries": 12,

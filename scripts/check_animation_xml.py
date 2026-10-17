@@ -87,9 +87,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--dll',type=Path,required=True);parser.add_argument('--i3d',action='append',default=[],type=Path);args=parser.parse_args()
     inventory=ROOT/'analysis/inventory.json'
     if not args.i3d and inventory.is_file():
-        game=Path(json.loads(inventory.read_text())['game_root'])
+        from local_reference_assets import reference_asset
         for name in ('krone/kroneSwadro2000','kuhn/kuhnGA8521','poettinger/poettingerTop1252'):
-            path=game/'data/vehicles/tools'/f'{name}.i3d'
+            path=reference_asset(f'data/vehicles/tools/{name}.i3d')
             if path.is_file():args.i3d.append(path)
     core=C.CDLL(str(args.dll.resolve()));rng=random.Random(0xf515199);counts=Counter();digest=hashlib.sha256();assets=[]
     signatures={'fs15_parse_scene_float':[P,N,P,C.POINTER(N)],'fs15_parse_scene_float_vector':[P,N,P,N,C.POINTER(N)],

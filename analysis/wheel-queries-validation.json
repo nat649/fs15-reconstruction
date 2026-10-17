@@ -2,7 +2,7 @@
   "status": "passed",
   "reference_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
   "lookup_routine": "0x1400c9e50",
-  "rebuilt_dll_sha256": "3ee11fd4df051a486bf4485e623454084329714e178c6bb00d13eac881c2ca78",
+  "rebuilt_dll_sha256": "a2e1fdca09659166cadeb5b863da24806447a7ca8fbfb3dbfe6496831bd781f3",
   "rebuilt_source_sha256": {
     "src/core/wheel_queries.cpp": "f06b5cba3143210202b8fe5e247d065725b43915761a436148131d9607301155",
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef",

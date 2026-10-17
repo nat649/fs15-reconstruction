@@ -11,6 +11,10 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('scene_frustum_and_spatial_visibility_queries', ['0x14006d6c0','0x140289cc0',
+        '0x140289e90','0x140289f00','0x140289f80','0x1401af460','0x1401af4e0',
+        '0x1401af560','0x1400d6580','0x1400d7250','0x1400d7460'],
+        'analysis/scene-visibility-validation.json'),
     ('scene_spatial_grid_and_active_light_consumer', ['0x1400d6170','0x1400d62b0',
         '0x1400d6440','0x1400d64e0','0x1400d6660','0x1400d6d90','0x1400d6f00',
         '0x1400d6fc0','0x1400d7060','0x1400da2e0','0x1400da450','0x140087f00'],

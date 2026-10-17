@@ -11,7 +11,7 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,201 entries, 11,636 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 185 native entries with validated bounded paths | Remaining 11,451 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 196 native entries with validated bounded paths | Remaining 11,440 eligible entries only have pseudocode in this ledger |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 40 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -31,7 +31,8 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 | Scene copy and derived clone | Seven paths; 1,800 value clones, 900 property clones, 270 existing-node copies and 60 Camera/LOD wrappers | Unsupported derived resources, top-level finalization, live physics and animation rebinding remain open |
 | Recursive clone/remap | Seven further paths; 564 recursively copied nodes, 63 complete original subtrees, 99 forest lifetimes and 5,490 standalone remap states | Shape/reference branches, top-level finalization, skin/animation rebinding and full scene startup remain open |
 | Light nodes | Nine paths; 6,460 node records, 1,104 forest states, 206 clones and six original Light subtrees | Spatial paths and LOD/Light pending consumption are covered below; GPU/shadow ownership remains open |
-| Spatial grid / active Light updates | Twelve paths; 6,594 complete grid states, 662 retained buffers, 26 active forest lifetimes and 208 original manager flushes | Visibility/frustum queries, Shape/audio consumer paths, GPU/shadow resources and full startup remain open |
+| Spatial grid / active Light updates | Twelve paths; 6,594 complete grid states, 662 retained buffers, 26 active forest lifetimes and 208 original manager flushes | Known volume/point queries are covered below; complete Camera preparation, Shape/audio consumers, GPU/shadow resources and startup remain open |
+| Spatial visibility queries | Eleven paths; 57,600 volume predicates, 5,392 grid queries and complete output/cache comparisons | Full Camera/view preparation, dynamic shadow-volume construction, Shape/audio consumers and GPU integration remain open |
 | 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 96 have validated components | 2,782 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
