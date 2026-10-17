@@ -94,6 +94,10 @@ failure retains already written values and the old Camera identity. Prefix
 and world-cache mutations can remain after callback failure; no transaction
 across external services is promised.
 
+All 23 portable tests pass on Windows x64, Linux x64 and ARM64 Linux under
+QEMU. All 28 native differential suites and the separate original mesh-cipher
+check pass on Windows. See [platform evidence](../analysis/portable-core-platform-validation.json).
+
 ## Remaining work
 
 Render-view allocation/initialization, other view variants, real GPU buffer

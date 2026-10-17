@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "date": "2026-10-18",
-  "tested_source_commit": "357d25719d0dfee66cf436fd72326932c4101e5c",
+  "tested_source_commit": "48776a450042257b8d5f091ad63e59dfbfe01ad2",
   "source_sha256": {
     "src/core/animation.cpp": "713dde1e220ac460b3a82b3ddc86ccec25a02bac54e53e712d5c6b72699fb7ff",
     "src/core/animation.h": "a4be6aaa3f9683d87c0dd42ef7d22c3d9df52ad136ab8e769756c4f0968671c8",
@@ -50,6 +50,8 @@
     "src/core/scene_state.h": "38e283950c87f8f79e2295165ce99a2354696053a0b90a584ecfe5d5fc8fb21d",
     "src/core/scene_trs.cpp": "3a014603870af4a8f5a791b0e42f1c54dbc1f9831d91e2cd2e62d59696878638",
     "src/core/scene_trs.h": "30e30e57e1516939dfdac1f16ea47c4e671907205b016f7c93e2a65318caa4b4",
+    "src/core/scene_view.cpp": "98f6f7d2b2b6102e2aee160e0cedc0b27827a4a0bbe9632c1d38902cb53ccc2f",
+    "src/core/scene_view.h": "77c7987a6490564312b8958297da8d01891763bed141834a89efb8c2da4b45dd",
     "src/core/scene_visibility.cpp": "84ac15846a6bed699d610708126e96fbfea13ae08be816f819f05b138b39ed8a",
     "src/core/scene_visibility.h": "31a88721f257941012ec8ba7fc618bf57d0516744077511f7b43548101db913d",
     "src/core/scene_xml.cpp": "cbaddb56c20fc79ce1bf1615d6e5cdc395d1d11c4d1df91ecb251479e32c913a",
@@ -64,6 +66,7 @@
     "src/core/wheel_record.h": "47654d3c4160a479b1a8adac273bbb98b04977ef18919d7cc2f6e8bfe02054ef"
   },
   "tests": [
+    "portable_scene_view",
     "portable_scene_projection",
     "portable_scene_visibility",
     "portable_scene_spatial",
@@ -91,23 +94,23 @@
     {
       "target": "Windows x64",
       "execution": "native local host",
-      "tests_passed": 22
+      "tests_passed": 23
     },
     {
       "target": "Linux x64",
       "execution": "GitHub runner",
-      "tests_passed": 22,
-      "job_id": 117518474467
+      "tests_passed": 23,
+      "job_id": 117537226988
     },
     {
       "target": "ARM64 Linux",
       "compiler": "aarch64-linux-gnu-g++ (GNU 13.3.0)",
       "execution": "QEMU user-mode",
-      "tests_passed": 22,
-      "job_id": 117518474263
+      "tests_passed": 23,
+      "job_id": 117537226795
     }
   ],
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39074409712",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39080825583",
   "full_native_engine_linked": false,
   "switch_nro_built": false,
   "switch_hardware_tested": false,
