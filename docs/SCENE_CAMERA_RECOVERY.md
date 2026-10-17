@@ -123,8 +123,8 @@ Original camera attributes are retained; these isolated fixtures are not
 complete original scene loads. Pointer fields are normalized for comparison,
 opaque bytes are checked and transform/libm tolerance is `2e-5`. The asset-free
 portable test also covers Camera-to-LOD updates, script frames, nonfinite guards
-and allocation-failure cleanup. All twenty-one portable tests pass on Windows x64,
-Linux x64 and ARM64 Linux under QEMU; all 26 native differential suites pass on
+and allocation-failure cleanup. All twenty-two portable tests pass on Windows x64,
+Linux x64 and ARM64 Linux under QEMU; all 27 native differential suites pass on
 Windows. Platform checks are recorded separately in
 [the portable-core evidence](../analysis/portable-core-platform-validation.json).
 

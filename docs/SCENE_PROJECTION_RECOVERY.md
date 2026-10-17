@@ -80,7 +80,9 @@ dynamic shadow-volume construction, native startup and renderer/resource
 ownership remain open. ReFarm's renderer has not been substituted for these
 native components. No complete GE6 or Switch `.nro` build is established.
 
-CPU platform evidence is tracked separately in the
+All 22 portable tests pass on Windows x64, Linux x64 and ARM64 Linux under
+QEMU. All 27 native differential suites and the separate original mesh-cipher
+check pass on Windows. CPU platform evidence is tracked separately in the
 [portability status](PORTABILITY_STATUS.md).
 
 ## Reproduce locally
