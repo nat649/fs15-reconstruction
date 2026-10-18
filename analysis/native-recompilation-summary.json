@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11430,
-  "validated_component_path_entries": 206,
+  "pseudocode_only": 11427,
+  "validated_component_path_entries": 209,
   "components": [
+    {
+      "name": "buffered_default_disk_read_seek_status",
+      "entries": 3,
+      "evidence": "analysis/buffered-file-validation.json"
+    },
     {
       "name": "file_stream_read_seek_size_and_tell",
       "entries": 4,

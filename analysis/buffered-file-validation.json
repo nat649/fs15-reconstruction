@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x1402e86b0",
+    "0x1402e8830",
+    "0x1402e8930"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/buffered_file.cpp": "b84a5f3d9e3a4c88ce71e8bcb24db25f3891858a2e8dd01b93d55dff1a0244e3",
+    "src/core/buffered_file.h": "d799f2d38f9da353387a53c6fb9c974110d606b02df0fc38f2b4347c66bc8c8e"
+  },
+  "comparison_counts": {
+    "status": 674,
+    "complete_record_bytes": 71067528,
+    "os_events": 1680,
+    "output_buffer_bytes": 21878582,
+    "read": 726,
+    "seek": 763,
+    "sequences": 35,
+    "injected_failure_sequences": 3,
+    "injected_short_read_sequences": 1
+  },
+  "comparison_digest": "6d010b9b67a5360672d554e28a4a2e503fe9dd4b47958707fc97fae51a92c1c0",
+  "original_resource_inputs": [
+    {
+      "path": "recovered/lua/dataS/scripts/I18N.lua",
+      "bytes": 8951,
+      "sha256": "10316e5854d563761bdecb68a210849e9196ba1436aa0614243fbdd5823d6b0b"
+    },
+    {
+      "path": "recovered/gar/dataS/l10n_en.xml",
+      "bytes": 126434,
+      "sha256": "6e6142ec03a2ee94d159b74759c0dcbab5831ad723b01793f124a111de918080"
+    },
+    {
+      "path": "recovered/gar/shared/font/defaultFont.font",
+      "bytes": 12248,
+      "sha256": "02f7366bf229890b8fe9093ce1401aa5c7ae2cc90ad2a263891da3aaf5f70401"
+    },
+    {
+      "path": "recovered/gar/dataS2/menu/main_logo_en.dds",
+      "bytes": 131200,
+      "sha256": "0991178b90549c7757b17f23ad9de5e51f6676859fd218eed9c3cb14ece25bb3"
+    }
+  ],
+  "scope": "Three bounded native buffered default-disk read/seek/status paths; complete records, guarded outputs and ordered OS event traces against original native callbacks and disk methods. Original open/close allocation, write callbacks, arbitrary derived vtables, corruption diagnostics and full VFS are outside this comparison."
+}

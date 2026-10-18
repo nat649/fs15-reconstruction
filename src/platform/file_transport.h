@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <vector>
 #include "file_stream.h"
+#include "buffered_file.h"
 
 namespace fs15platform {
 // Authored read-only OS transport around the recovered stream operations.
@@ -22,8 +23,21 @@ public:
     bool eof() const {return record_[0x10]!=0;}
     uint64_t full_size() const;
 private:
+    friend class BufferedReadOnlyFile;
     std::array<unsigned char,0x38> record_{};
     FS15_FileServices services_{};
+};
+// Authored ownership around the recovered default-disk buffered callbacks.
+class BufferedReadOnlyFile {
+public:
+    explicit BufferedReadOnlyFile(const std::filesystem::path& path);
+    uint32_t read(void* destination,uint32_t count);
+    uint32_t seek(uint32_t offset,int origin);
+    uint32_t status() const;
+    uint64_t full_size() const {return file_.full_size();}
+private:
+    ReadOnlyFile file_;
+    std::array<unsigned char,FS15_BUFFERED_FILE_BYTES> record_{};
 };
 std::vector<uint8_t> read_file_bounded(const std::filesystem::path& path,uint64_t maximum);
 }

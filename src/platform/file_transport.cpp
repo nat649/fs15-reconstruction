@@ -86,11 +86,17 @@ uint64_t ReadOnlyFile::full_size() const{
 #endif
 }
 std::vector<uint8_t> read_file_bounded(const std::filesystem::path& path,uint64_t maximum){
-    ReadOnlyFile file(path);
+    BufferedReadOnlyFile file(path);
     const auto size=file.full_size();
     if(size>maximum||size>=UINT32_MAX)throw std::runtime_error("Resource exceeds bounded stream size: "+path.u8string());
     std::vector<uint8_t> bytes(static_cast<size_t>(size));
     if(file.read(bytes.data(),static_cast<uint32_t>(size))!=size)throw std::runtime_error("Resource changed or read failed: "+path.u8string());
     return bytes;
 }
+BufferedReadOnlyFile::BufferedReadOnlyFile(const std::filesystem::path& path):file_(path){
+    std::memcpy(record_.data(),file_.record_.data(),file_.record_.size());
+}
+uint32_t BufferedReadOnlyFile::read(void* output,uint32_t count){return fs15_buffered_file_read(record_.data(),record_.size(),output,count,count,&file_.services_);}
+uint32_t BufferedReadOnlyFile::seek(uint32_t offset,int origin){return fs15_buffered_file_seek(record_.data(),record_.size(),offset,origin,&file_.services_);}
+uint32_t BufferedReadOnlyFile::status() const{return fs15_buffered_file_status(record_.data(),record_.size());}
 }

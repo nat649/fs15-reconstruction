@@ -5,6 +5,7 @@ target_compile_definitions(FS15FileTransport PUBLIC FS15_CORE_STATIC)
 # Keep this small static dependency usable by the standalone Windows menu
 # without introducing the complete core DLL or a mismatched MSVC CRT.
 target_sources(FS15FileTransport PRIVATE ../core/file_stream.cpp)
+target_sources(FS15FileTransport PRIVATE ../core/buffered_file.cpp)
 if(MSVC)
   target_compile_options(FS15FileTransport PRIVATE /W4 /WX /utf-8)
   set_property(TARGET FS15FileTransport PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

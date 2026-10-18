@@ -30,6 +30,13 @@ int main(){
             check(file.seek(0)&&!file.eof());
         }
         check(fs15platform::read_file_bounded(path,8)==expected);
+        {
+            fs15platform::BufferedReadOnlyFile file(path);unsigned char data[12]{};
+            check(file.status()==0&&file.read(data,3)==3&&data[2]==2);
+            check(file.seek(1,0)==0&&file.read(data,2)==2&&data[0]==1&&data[1]==2);
+            check(file.seek(2,2)==0&&file.read(data,12)==2&&data[0]==128&&data[1]==42&&file.status()==0);
+            check(file.seek(0,0)==0&&file.read(data,8)==8&&file.status()==0);
+        }
         bool bounded=false,missing=false,directory=false;
         try{fs15platform::read_file_bounded(path,7);}catch(const std::runtime_error&){bounded=true;}
         try{fs15platform::ReadOnlyFile file(root/"missing");}catch(const std::runtime_error&){missing=true;}
