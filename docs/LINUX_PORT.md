@@ -24,9 +24,12 @@ not replace GE6 with a newly authored game engine.
 
 `FS15PortableHost` is an authored **headless portability host**, linked to the
 recovered C++17 core. Its `--probe` path runs recovered Camera construction,
-world-cache refresh, view/projection/shader-block preparation, spatial grid
-allocation/registration, Camera-volume visibility and Camera destruction.
-Allocator/registry/world/buffer transport is authored. The buffer is CPU memory.
+world-cache refresh, render-view construction, view/projection/shader-block
+preparation, spatial grid allocation/registration, Camera-volume visibility,
+registry-to-tire-force evaluation, render-view teardown and Camera destruction.
+Allocator/registry/world/buffer transport is authored. Two CPU buffers now
+follow the recovered driver allocation/destruction requests. See
+[startup, 3D and physics scope](STARTUP_3D_PHYSICS.md).
 
 The process checks balanced map/unmap, one visible and one outside object,
 and zero retained allocations/registry entries after cleanup. It emits JSON

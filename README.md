@@ -61,6 +61,14 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 
 ## Current results
 
+- **Native startup, 3D and physics:** recovered render-view creation/destruction
+  now initializes state and requests/releases two buffers through explicit
+  driver services. A recovered wheel-force adapter connects the native wheel
+  registry, tangent and tire math to script results. Comparisons cover 1,024
+  view lifetimes and 4,096 force frames. Both paths run in the portable CPU
+  probe; real GPU and physics-world startup remain open. See
+  [implementation and evidence](docs/STARTUP_3D_PHYSICS.md).
+
 - **Native recompilation:** 30 uncovered binding targets
   were identified as functions and decompiled. The enlarged catalogue has
   **11,642 eligible exports**, after five scene-vtable targets and six
@@ -69,7 +77,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **215 native entries on bounded tested paths**. The affine component passes
+  **218 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.

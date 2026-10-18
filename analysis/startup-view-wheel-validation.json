@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x14012ca00",
+    "0x14012cc40",
+    "0x1400e76c0"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/scene_view_lifecycle.cpp": "a3f9dc5eacc4157fbc973c3f6a5bb8b5b1bfb12538a583e0e6c1f3e8755b42e0",
+    "src/core/scene_view_lifecycle.h": "807dcb85bc052e193795f266ba8663abdd67e21996930dd0992c9fd748b19e6d",
+    "src/core/wheel_forces.cpp": "af6708eddb8648dd1df4c98ad028f9514b5ad210ae575feae5d5e462d0616edd",
+    "src/core/wheel_forces.h": "cc0f0d016686872f8e50463bf1db058027a4a51f8ed6c417a45c8af700623072"
+  },
+  "view_lifetimes": 1024,
+  "buffer_failure_masks": 4,
+  "wheel_force_frames": 4096,
+  "maximum_scaled_force_error": 0.0,
+  "force_tolerance": 2e-05,
+  "comparison_digest": "67bd964a2a0c75f7cbd779a49bbb41dabe4689fa63d7637ed8942ef1c098b799",
+  "excluded_native_branch": "Missing-wheel diagnostics require unlinked CRT imports; missing wheel behavior is covered by portable authored fixtures only.",
+  "tangent_backends": {
+    "original_math_boundary": 2048,
+    "platform_math": 2048
+  },
+  "scope": "Unchanged original view constructor/destructor with synthetic driver/buffer slots, complete records and ordered callback snapshots; unchanged wheel adapter with original lookup/tire math and authored registry fixtures. No actual GPU, world solver or full startup executed."
+}

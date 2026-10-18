@@ -1,6 +1,9 @@
 // Authored platform/CLI transport around recovered GE6 components.
 // This is a headless portability probe, not native engine/game startup.
 #include "scene_view.h"
+#include "scene_view_lifecycle.h"
+#include "wheel_forces.h"
+#include "wheel_record.h"
 #include "scene_graph.h"
 #include <algorithm>
 #include <cstdlib>
@@ -44,10 +47,22 @@ const char* architecture(){
 void require(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
 struct Probe {
     std::vector<void*> allocations;uint32_t next=0,registered=0;void* object=nullptr;bool transport_ok=true,constructed=false;
-    unsigned maps=0,unmaps=0,worlds=0;float shader[64]{};
-    FS15SceneCameraRecord camera{};FS15SceneSpatialGrid grid{};FS15SceneRenderView view{};FS15SceneViewSettings settings{};
+    unsigned maps=0,unmaps=0,worlds=0,creates=0,destroys=0;bool view_constructed=false;
+    std::vector<float> buffers[2];
+    FS15SceneCameraRecord camera{};FS15SceneSpatialGrid grid{};FS15SceneRenderView view{};FS15SceneViewContext context{};
     FS15SceneLifecycleServices memory{this,allocate,release,identifier,add,remove,nullptr,nullptr,nullptr};
     FS15SceneViewServices services{this,world,map,unmap,nullptr};
+    FS15SceneViewLifetimeServices lifetime{this,create_buffer,destroy_buffer};
+    static uintptr_t create_buffer(void* u,uint32_t bytes,uintptr_t initial,uint32_t flags){
+        auto& p=*static_cast<Probe*>(u);const unsigned i=p.creates++;
+        if(i>=2||bytes!=(i?176u:196u)||initial||flags!=8){p.transport_ok=false;return 0;}
+        try{p.buffers[i].resize(bytes/4);}catch(...){return 0;}return i+1;
+    }
+    static void destroy_buffer(void* u,uintptr_t token,uint32_t deleting){
+        auto& p=*static_cast<Probe*>(u);++p.destroys;
+        if(token!=p.destroys||token>2||deleting!=1){p.transport_ok=false;return;}
+        std::vector<float>().swap(p.buffers[token-1]);
+    }
     static void* allocate(void* u,size_t n){
         auto& p=*static_cast<Probe*>(u);void* ptr=std::calloc(1,n);if(!ptr)return nullptr;
         try{p.allocations.push_back(ptr);}catch(...){std::free(ptr);return nullptr;}return ptr;
@@ -68,10 +83,11 @@ struct Probe {
     static float* map(void* u,uintptr_t token,size_t* count){
         auto& p=*static_cast<Probe*>(u);++p.maps;
         if(token!=1||p.view.volume!=reinterpret_cast<uintptr_t>(&p.view)||p.view.camera!=0)p.transport_ok=false;
-        *count=64;return p.shader;
+        *count=p.buffers[0].size();return p.buffers[0].data();
     }
     static int unmap(void* u,uintptr_t token){auto& p=*static_cast<Probe*>(u);++p.unmaps;if(token!=1||p.view.camera!=0)p.transport_ok=false;return p.transport_ok?1:0;}
     ~Probe(){
+        if(view_constructed)fs15_scene_view_destruct(&view,sizeof(view),&lifetime);
         if(grid.cells)fs15_scene_spatial_release(&grid,&memory);
         if(constructed)fs15_scene_camera_destruct(&camera,sizeof(camera),0,&memory);
         for(void* p:allocations)std::free(p);
@@ -79,9 +95,21 @@ struct Probe {
     void run(){
         constexpr char name[]="Portable host Camera";
         require(fs15_scene_camera_construct(&camera,sizeof(camera),name,sizeof(name),60,1,100,0,1,&memory),"Recovered Camera construction failed");constructed=true;
-        view.frustum.vtable=0x1404c7cc0;view.settings=&settings;view.buffer=1;
+        context.width=1280;context.height=720;
+        require(fs15_scene_view_construct(&view,sizeof(view),&context,sizeof(context),&lifetime),"Recovered render-view construction failed");view_constructed=true;
+        require(view.buffer&&view.secondary_buffer&&creates==2,"Render-view buffers unavailable");
         require(fs15_scene_view_prepare(&view,sizeof(view),&camera,16.0f/9.0f,0,0,1250,&services),"Recovered Camera view preparation failed");
-        require(maps==1&&unmaps==1&&worlds==1&&shader[48]==1.25f&&view.camera==reinterpret_cast<uintptr_t>(&camera),"Camera buffer/identity transport failed");
+        require(maps==1&&unmaps==1&&worlds==1&&buffers[0][48]==1.25f&&view.camera==reinterpret_cast<uintptr_t>(&camera),"Camera buffer/identity transport failed");
+        fs15::WheelRecord wheel{};wheel.shape_id=7;wheel.radius=0.5f;wheel.lateral_stiffness=2;wheel.reference_load=1;wheel.longitudinal_stiffness=8;wheel.friction=1.1f;
+        fs15::WheelSet set{};set.count=1;set.records=&wheel;
+        fs15::WheelTreeNode nil{},entry{};nil.is_nil=1;nil.parent=&entry;entry.left=entry.right=&nil;entry.actor_key=42;entry.value=&set;
+        fs15::PhysicsManagerView manager{};manager.wheels=&nil;
+        fs15::PhysicsActorData actor{};actor.flags=8;actor.actor_key=42;fs15::SceneObjectView body{};body.physics=&actor;
+        uint8_t frame[0x130]{};const int32_t wheel_id=7;const float slip=0.2f,angle=-0.1f,load=2;
+        std::memcpy(frame,&wheel_id,4);std::memcpy(frame+0x10,&slip,4);std::memcpy(frame+0x20,&angle,4);std::memcpy(frame+0x30,&load,4);
+        require(fs15_script_wheel_forces(&manager,&body,frame,sizeof(frame),nullptr,nullptr),"Recovered registry-to-tire-force path failed");
+        float longitudinal,lateral;std::memcpy(&longitudinal,frame+0xf0,4);std::memcpy(&lateral,frame+0x100,4);
+        require(longitudinal>0&&lateral>0&&frame[0xf8]==3&&frame[0x108]==3,"Recovered tire-force frame invalid");
         const float low[]={-256,-256,-256},high[]={256,256,256};
         require(fs15_scene_spatial_init(&grid,low,high,4,&memory),"Recovered spatial grid initialization failed");
         uint32_t tokens[2]{};FS15SceneSpatialSphere sphere{};sphere.center[2]=-5;sphere.radius=0.5f;
@@ -90,6 +118,8 @@ struct Probe {
         uint32_t* visible[2]{};uint32_t count=0;
         require(fs15_scene_spatial_volume_query(&grid,reinterpret_cast<void*>(view.volume),view.position,1,nullptr,visible,2,&count)&&count==1&&visible[0]==tokens,"Recovered Camera-to-grid visibility failed");
         require(fs15_scene_spatial_release(&grid,&memory),"Spatial allocation release failed");
+        const bool view_destroyed=fs15_scene_view_destruct(&view,sizeof(view),&lifetime)!=0;view_constructed=false;
+        require(view_destroyed&&destroys==2&&buffers[0].empty()&&buffers[1].empty(),"Render-view cleanup failed");
         const bool destroyed=fs15_scene_camera_destruct(&camera,sizeof(camera),0,&memory)!=0;constructed=false;
         require(destroyed,"Recovered Camera destruction failed");
         require(allocations.empty()&&!registered&&transport_ok,"Portable transport retained allocations or registry entries");
@@ -136,7 +166,7 @@ int main(int argc,char** argv){
         if(!o.game.empty()&&!o.report.empty()&&inside(fs::weakly_canonical(o.report),fs::weakly_canonical(o.game)))throw std::invalid_argument("Report must be outside the read-only game directory");
         Probe probe;probe.run();
         std::ostringstream result;result<<"{\n  \"schema_version\":1,\n  \"status\":\"passed\",\n  \"host_kind\":\"authored_headless_portability_host\",\n  \"platform\":"<<quoted(platform())<<",\n  \"architecture\":"<<quoted(architecture())
-            <<",\n  \"native_engine_started\":false,\n  \"renderer_started\":false,\n  \"playable\":false,\n  \"cpu_probe\":{\"camera_constructed_and_destroyed\":true,\"view_prepared\":true,\"shader_block_floats\":49,\"map_calls\":"<<probe.maps<<",\"unmap_calls\":"<<probe.unmaps<<",\"visible_objects\":1,\"outside_objects\":1,\"retained_allocations\":0},\n  \"resources\":"<<inventory<<"\n}\n";
+            <<",\n  \"native_engine_started\":false,\n  \"renderer_started\":false,\n  \"playable\":false,\n  \"physics_world_started\":false,\n  \"cpu_probe\":{\"view_constructed_and_destroyed\":true,\"buffers_created\":2,\"buffers_destroyed\":2,\"wheel_registry_force_adapter\":true,\"camera_constructed_and_destroyed\":true,\"view_prepared\":true,\"shader_block_floats\":49,\"map_calls\":"<<probe.maps<<",\"unmap_calls\":"<<probe.unmaps<<",\"visible_objects\":1,\"outside_objects\":1,\"retained_allocations\":0},\n  \"resources\":"<<inventory<<"\n}\n";
         const std::string json=result.str();
         if(!o.report.empty()){
             std::ofstream stream(o.report,std::ios::binary|std::ios::trunc);if(!stream)throw std::runtime_error("Cannot open report file");stream<<json;stream.close();if(!stream)throw std::runtime_error("Cannot write report file");

@@ -107,9 +107,13 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 215 bounded reconstructed native entries separately from 11,427 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 218 bounded reconstructed native entries separately from 11,424 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
+- [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
+- [x] Connect native wheel registry lookup and tire math through the recovered script force adapter; compare 4,096 complete frames and execute it in the portable host.
+- [ ] Connect the recovered view's resource requests to an actual Linux graphics driver and validate drawing consumers.
+- [ ] Recover physics-manager creation, events/worker dispatch and backend world initialization.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.

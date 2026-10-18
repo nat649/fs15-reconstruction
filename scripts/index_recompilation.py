@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('render_view_lifetime_and_wheel_force_adapter', ['0x14012ca00','0x14012cc40',
+        '0x1400e76c0'], 'analysis/startup-view-wheel-validation.json'),
     ('memory_stream_valid_read_seek_size_tell_eof', ['0x14006bc00','0x14006bcf0',
         '0x14006bd50','0x14005f670','0x14006bc10','0x14006bd60'], 'analysis/memory-file-validation.json'),
     ('buffered_default_disk_read_seek_status', ['0x1402e86b0','0x1402e8830',

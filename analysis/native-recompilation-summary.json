@@ -1,9 +1,14 @@
 {
   "catalogued": 12207,
   "eligible": 11642,
-  "pseudocode_only": 11427,
-  "validated_component_path_entries": 215,
+  "pseudocode_only": 11424,
+  "validated_component_path_entries": 218,
   "components": [
+    {
+      "name": "render_view_lifetime_and_wheel_force_adapter",
+      "entries": 3,
+      "evidence": "analysis/startup-view-wheel-validation.json"
+    },
     {
       "name": "memory_stream_valid_read_seek_size_tell_eof",
       "entries": 6,

@@ -58,6 +58,9 @@ def main():
     bindings=json.loads((ROOT/'analysis/engine-bindings.json').read_text())['bindings']
     seeds={row['implementation'].removeprefix('0x') for row in bindings}
     roots={'script_descriptors':seeds,'native_crt_startup':{'1403fc96c'}}
+    roots['render_view_lifetime']={'14012ca00','14012cc40'}
+    roots['wheel_force_adapter']={'1400e76c0'}
+    roots['physics_manager_startup']={'1400c29d0'}
     vtable_path=ROOT/'analysis/vtable-discovery/slots.csv'
     if vtable_path.exists():
         with vtable_path.open(newline='',encoding='utf-8') as stream:
