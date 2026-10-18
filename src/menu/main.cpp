@@ -1,10 +1,16 @@
 // Independently built GUI host for recovered FS15 menu Lua. No original engine
 // code is loaded. This milestone intentionally has no world/physics runtime.
+#ifdef _WIN32
 #include <windows.h>
 #include <objbase.h>
 #include <windowsx.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#else
+#include <SDL.h>
+#include <SDL_image.h>
+#include <cctype>
+#endif
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -31,19 +37,28 @@ static std::ofstream runtime_log;
 static lua_State* vm = nullptr;
 static std::unique_ptr<fs15menu::Renderer> renderer;
 static bool exit_requested = false, failed = false, smoke_mode = false;
+#ifdef _WIN32
 static HWND menu_window = nullptr;
+#else
+static SDL_Window* menu_window = nullptr;
+#endif
 static std::vector<std::string> loaded_scripts;
 static std::set<std::string> loaded_assets;
 static std::string fatal_error;
 static size_t frame_count = 0, unavailable_count = 0;
-static void draw(HDC dc = nullptr);
+static void draw(fs15menu::DrawTarget dc = nullptr);
 
 static void log_line(const std::string& message) {
     runtime_log << message << '\n';
     runtime_log.flush();
+    #ifdef _WIN32
     OutputDebugStringA((message + "\n").c_str());
+    #else
+    std::cout << message << std::endl;
+    #endif
 }
 
+#ifdef _WIN32
 static std::wstring wide(const std::string& text) {
     if (text.empty()) return {};
     const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), nullptr, 0);
@@ -53,6 +68,7 @@ static std::wstring wide(const std::string& text) {
     return result;
 }
 
+#endif
 static fs::path relative_resource(const std::string& name) {
     std::string normalized = name;
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
@@ -216,10 +232,15 @@ static int menu_unavailable(lua_State* state) {
     const char* name = luaL_checkstring(state, 1);
     ++unavailable_count;
     log_line("UNAVAILABLE screen=" + std::string(name));
+    #ifdef _WIN32
     if (!smoke_mode) {
         const auto message = wide("The recovered interface requested " + std::string(name) + ".\n\nThis milestone rebuilds the game frontend. Game worlds and multiplayer still need an engine implementation.");
         MessageBoxW(menu_window, message.c_str(), L"FS15 reconstruction progress", MB_OK | MB_ICONINFORMATION);
     }
+    #else
+    if (!smoke_mode) SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,"Linux frontend test",
+        (std::string("Unavailable in this Linux test build: ")+name).c_str(),menu_window);
+    #endif
     return 0;
 }
 
@@ -229,6 +250,7 @@ static int get_screen_info(lua_State* state) {
     lua_pushinteger(state, 60);
     return 3;
 }
+#ifdef _WIN32
 static std::wstring quote_argument(const std::wstring& value) {
     std::wstring out=L"\"";size_t slashes=0;
     for(wchar_t ch:value){if(ch==L'\\'){++slashes;continue;}
@@ -265,10 +287,21 @@ static int launch_world(lua_State* state) {
     }
     return error?lua_error(state):1;
 }
+#else
+static int launch_world(lua_State* state) {
+    const std::string map=luaL_checkstring(state,1);
+    const auto difficulty=luaL_checkinteger(state,2),slot=luaL_checkinteger(state,3);
+    if((map!="Map01"&&map!="Map02")||difficulty<1||difficulty>3||slot<1||slot>20)
+        return luaL_error(state,"Invalid world selection");
+    log_line("WORLD_UNAVAILABLE platform=linux map="+map+" native_engine_started=false");
+    lua_pushboolean(state,0);return 1;
+}
+#endif
 static int get_screen_mode(lua_State* state) { lua_pushinteger(state, 0); return 1; }
 static int num_gamepads(lua_State* state) { lua_pushinteger(state, 0); return 1; }
 static int upper_utf8(lua_State* state) {
     const char* input = luaL_checkstring(state, 1);
+    #ifdef _WIN32
     bool error = false;
     {
         try {
@@ -285,6 +318,12 @@ static int upper_utf8(lua_State* state) {
         } catch (const std::exception& exception) { lua_pushstring(state, exception.what()); error = true; }
     }
     return error ? lua_error(state) : 1;
+    #else
+    // English frontend only. Preserve non-ASCII bytes; no Unicode parity claim.
+    std::string text=input;
+    for(char& c:text)if(c>='a'&&c<='z')c=static_cast<char>(c-'a'+'A');
+    lua_pushlstring(state,text.data(),text.size());return 1;
+    #endif
 }
 
 static void global_number(const char* name, double value) { lua_pushnumber(vm, value); lua_setglobal(vm, name); }
@@ -327,10 +366,12 @@ static void update() {
     lua_getglobal(vm, "fs15_menu_update");
     lua_pushnumber(vm, 16);
     call_checked(1);
+    #ifdef _WIN32
     if (exit_requested && menu_window) PostMessageW(menu_window, WM_CLOSE, 0, 0);
+    #endif
 }
 
-static void draw(HDC dc) {
+static void draw(fs15menu::DrawTarget dc) {
     renderer->begin_frame();
     lua_getglobal(vm, "fs15_menu_draw");
     call_checked(0);
@@ -353,9 +394,15 @@ static void report_failure(const std::exception& exception) {
     failed = true;
     fatal_error = exception.what();
     log_line("FATAL " + fatal_error);
+    #ifdef _WIN32
     if (!smoke_mode) MessageBoxW(menu_window, wide(fatal_error).c_str(), L"FS15 menu startup error", MB_OK | MB_ICONERROR);
+    #else
+    std::cerr << fatal_error << std::endl;
+    if (!smoke_mode) SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,"FS15 Linux menu error",fatal_error.c_str(),menu_window);
+    #endif
 }
 
+#ifdef _WIN32
 static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
     try {
         switch (message) {
@@ -523,3 +570,95 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
     if (SUCCEEDED(com)) CoUninitialize();
     return result;
 }
+
+#else
+static int menu_key(SDL_Keycode key) {
+    switch(key){
+    case SDLK_UP:return 38;case SDLK_DOWN:return 40;case SDLK_LEFT:return 37;case SDLK_RIGHT:return 39;
+    case SDLK_RETURN:case SDLK_KP_ENTER:return 13;case SDLK_ESCAPE:return 27;
+    case SDLK_TAB:return 9;case SDLK_BACKSPACE:return 8;case SDLK_SPACE:return 32;
+    case SDLK_DELETE:return 46;case SDLK_HOME:return 36;case SDLK_END:return 35;
+    case SDLK_PAGEUP:return 33;case SDLK_PAGEDOWN:return 34;
+    default:return key>=SDLK_a&&key<=SDLK_z?int(key-'a'+'A'):int(key);
+    }
+}
+int main(int argc,char** argv) {
+    int result=0;bool test_inputs=false;fs::path screenshot,output="test-results";std::string start="MainScreen";
+    resource_root=fs::current_path();
+    try{
+        for(int i=1;i<argc;++i){
+            const std::string arg=argv[i];
+            auto value=[&](){if(i+1==argc)throw std::runtime_error("Missing value for "+arg);return std::string(argv[++i]);};
+            if(arg=="--root")resource_root=fs::absolute(value());
+            else if(arg=="--output-dir")output=fs::absolute(value());
+            else if(arg=="--save-dir")save_directory=fs::absolute(value());
+            else if(arg=="--empty-saves")save_directory.clear();
+            else if(arg=="--capture-dir")capture_directory=fs::absolute(value());
+            else if(arg=="--screenshot")screenshot=fs::absolute(value());
+            else if(arg=="--screen")start=value();
+            else if(arg=="--smoke")smoke_mode=true;
+            else if(arg=="--test-inputs")test_inputs=true;
+            else if(arg=="--help"){
+                std::cout<<"FS15MenuLinux [--root PATH] [--output-dir PATH] [--smoke] [--test-inputs] [--screenshot PATH] [--capture-dir PATH] [--screen NAME] [--save-dir PATH|--empty-saves]\nEnglish recovered frontend only; Linux world/physics unavailable.\n";return 0;
+            }else throw std::runtime_error("Unknown option: "+arg);
+        }
+        fs::create_directories(output);
+        runtime_log.open(output/"menu-runtime.log",std::ios::trunc);
+        if(!runtime_log)throw std::runtime_error("Cannot create menu runtime log");
+        if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0)throw std::runtime_error(SDL_GetError());
+        if((IMG_Init(IMG_INIT_PNG)&IMG_INIT_PNG)==0)throw std::runtime_error(IMG_GetError());
+        log_line("LINUX_FRONTEND authored_sdl_transport=true native_engine_started=false playable=false language=en");
+        log_line("SAVE_SERVICE read_only=true profile="+std::string(save_directory.empty()?"empty-slots":"local-profile"));
+        boot("en");
+        auto show=[&](){
+            const std::vector<std::string> allowed{"MainScreen","CareerScreen","DifficultyScreen","MapSelectionScreen","CreditsScreen"};
+            if(std::find(allowed.begin(),allowed.end(),start)==allowed.end())throw std::runtime_error("Unknown screen: "+start);
+            lua_getglobal(vm,"fs15_menu_show");lua_pushstring(vm,start.c_str());call_checked(1);
+        };
+        if(smoke_mode){
+            if(!test_inputs)show();
+            for(int frame=0;frame<120;++frame){update();draw();}
+            if(test_inputs){
+                lua_getglobal(vm,"fs15_menu_test_inputs");call_checked(0);
+                if(!exit_requested||!unavailable_count)throw std::runtime_error("Menu input checks did not reach Quit and unsupported boundaries");
+                log_line("INPUT_CHECK_OK recovered callbacks exercised");show();draw();
+            }
+            if(renderer->missing_asset_count())throw std::runtime_error("Menu has missing assets");
+            if(!screenshot.empty())renderer->save_png(screenshot);
+            log_line("SMOKE_OK frames="+std::to_string(frame_count)+" scripts="+std::to_string(loaded_scripts.size()));
+        }else{
+            menu_window=SDL_CreateWindow("FS15 / ReFarm - Linux frontend test",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,screen_width,screen_height,SDL_WINDOW_SHOWN);
+            if(!menu_window)throw std::runtime_error(SDL_GetError());
+            show();draw(menu_window);
+            if(!screenshot.empty())renderer->save_png(screenshot);
+            log_line("WINDOW_OPEN linux recovered frontend");
+            while(!exit_requested){
+                const auto begin=SDL_GetTicks();SDL_Event event;
+                while(SDL_PollEvent(&event)){
+                    switch(event.type){
+                    case SDL_QUIT:exit_requested=true;break;
+                    case SDL_MOUSEMOTION:mouse(event.motion.x,event.motion.y,false,false);break;
+                    case SDL_MOUSEBUTTONDOWN:case SDL_MOUSEBUTTONUP:
+                        if(event.button.button==SDL_BUTTON_LEFT){SDL_CaptureMouse(event.type==SDL_MOUSEBUTTONDOWN?SDL_TRUE:SDL_FALSE);mouse(event.button.x,event.button.y,event.type==SDL_MOUSEBUTTONDOWN,event.type==SDL_MOUSEBUTTONUP);}break;
+                    case SDL_MOUSEWHEEL:{
+                        int x,y;SDL_GetMouseState(&x,&y);
+                        int delta=event.wheel.y*(event.wheel.direction==SDL_MOUSEWHEEL_FLIPPED?-1:1);
+                        for(int step=0;step<std::min(20,std::abs(delta));++step){mouse(x,y,true,false,delta>0?4:5);mouse(x,y,false,true,delta>0?4:5);}break;
+                    }
+                    case SDL_KEYDOWN:case SDL_KEYUP:
+                        if(!event.key.repeat){lua_getglobal(vm,"fs15_menu_key");lua_pushinteger(vm,menu_key(event.key.keysym.sym));lua_pushboolean(vm,event.type==SDL_KEYDOWN);call_checked(2);}break;
+                    default:break;
+                    }
+                }
+                if(exit_requested)break;
+                update();draw(menu_window);
+                const auto elapsed=SDL_GetTicks()-begin;if(elapsed<16)SDL_Delay(16-elapsed);
+            }
+        }
+    }catch(const std::exception& error){report_failure(error);result=1;}
+    log_line("SHUTDOWN exit="+std::to_string(result)+" frames="+std::to_string(frame_count));
+    if(vm){lua_close(vm);vm=nullptr;}renderer.reset();
+    if(menu_window)SDL_DestroyWindow(menu_window);
+    IMG_Quit();SDL_Quit();return result;
+}
+#endif

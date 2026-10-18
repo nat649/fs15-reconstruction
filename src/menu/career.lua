@@ -106,7 +106,9 @@ function fs15_install_career()
         if savegame.isValid then
             menuUnavailable("Load saved game simulation (map scene viewer available for new selections)")
         else
-            assert(menuLaunchWorld(savegame.mapId, savegame.difficulty, savegame.savegameIndex), "Map scene runtime was not launched")
+            if not menuLaunchWorld(savegame.mapId, savegame.difficulty, savegame.savegameIndex) then
+                menuUnavailable("Launch world simulation (unavailable on this platform)")
+            end
         end
     end
 

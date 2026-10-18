@@ -1,5 +1,9 @@
 #pragma once
+#ifdef _WIN32
 #include <windows.h>
+#else
+struct SDL_Window;
+#endif
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -8,6 +12,11 @@
 struct lua_State;
 
 namespace fs15menu {
+#ifdef _WIN32
+using DrawTarget = HDC;
+#else
+using DrawTarget = SDL_Window*;
+#endif
 using ResourceResolver = std::function<std::filesystem::path(const std::string&)>;
 
 // Independently authored drawing backend for the recovered game's Lua GUI.
@@ -18,7 +27,7 @@ public:
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
     void begin_frame();
-    void present(HDC dc);
+    void present(DrawTarget target);
     void save_png(const std::filesystem::path& path);
     bool delete_overlay(int id);
     int overlay_count() const;

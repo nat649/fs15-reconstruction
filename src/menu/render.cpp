@@ -1,6 +1,11 @@
 #include "render.h"
+#ifdef _WIN32
 #include <objidl.h>
 #include <gdiplus.h>
+#else
+#include <SDL.h>
+#include <SDL_image.h>
+#endif
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -22,7 +27,9 @@ extern "C" {
 
 namespace fs15menu {
 namespace {
+#ifdef _WIN32
 using namespace Gdiplus;
+#endif
 using Bytes = std::vector<std::uint8_t>;
 Bytes read_bytes(const std::filesystem::path& path) {
     std::ifstream stream(path, std::ios::binary | std::ios::ate);
@@ -59,11 +66,18 @@ struct Texture {
     int width=0, height=0;
     bool opaque=false;
     std::vector<std::uint32_t> pixels;
+#ifdef _WIN32
     std::unique_ptr<Bitmap> bitmap;
+#else
+    SDL_Texture* bitmap=nullptr;
+    ~Texture(){if(bitmap)SDL_DestroyTexture(bitmap);}
+#endif
     void finish() {
         opaque=std::all_of(pixels.begin(),pixels.end(),[](std::uint32_t value){return(value>>24)==255;});
+        #ifdef _WIN32
         bitmap=std::make_unique<Bitmap>(width,height,width*4,PixelFormat32bppARGB,reinterpret_cast<BYTE*>(pixels.data()));
         if (bitmap->GetLastStatus()!=Ok) throw std::runtime_error("Could not create decoded bitmap");
+        #endif
     }
 };
 std::shared_ptr<Texture> decode_dds(const std::filesystem::path& path) {
@@ -104,7 +118,7 @@ std::shared_ptr<Texture> decode_dds(const std::filesystem::path& path) {
         }
     } else {
         const unsigned bits=little32(b,88); const bool luminance=(flags&0x20000)!=0;
-        if ((bits!=8&&bits!=16&&bits!=24&&bits!=32) || !(flags&0x40) && !luminance)
+        if ((bits!=8&&bits!=16&&bits!=24&&bits!=32) || (!(flags&0x40) && !luminance))
             throw std::runtime_error("DDS uncompressed pixel format unsupported");
         const std::array<unsigned,4> masks{little32(b,92),little32(b,96),little32(b,100),little32(b,104)};
         const unsigned pixelBytes=bits/8, packedPitch=width*pixelBytes;
@@ -125,6 +139,7 @@ std::shared_ptr<Texture> decode_dds(const std::filesystem::path& path) {
 std::shared_ptr<Texture> decode_image(const std::filesystem::path& path) {
     auto ext=path.extension().wstring(); std::transform(ext.begin(),ext.end(),ext.begin(),::towlower);
     if(ext==L".dds") return decode_dds(path);
+    #ifdef _WIN32
     Bitmap source(path.c_str(),FALSE);
     if(source.GetLastStatus()!=Ok) throw std::runtime_error("Cannot decode image: "+path.u8string());
     auto t=std::make_shared<Texture>(); t->width=static_cast<int>(source.GetWidth()); t->height=static_cast<int>(source.GetHeight());
@@ -134,6 +149,19 @@ std::shared_ptr<Texture> decode_image(const std::filesystem::path& path) {
     if(source.LockBits(&rect,ImageLockModeRead,PixelFormat32bppARGB,&data)!=Ok) throw std::runtime_error("Cannot read decoded image");
     for(int y=0;y<t->height;++y) std::memcpy(t->pixels.data()+std::size_t(y)*t->width,static_cast<BYTE*>(data.Scan0)+std::ptrdiff_t(y)*data.Stride,std::size_t(t->width)*4);
     source.UnlockBits(&data); t->finish(); return t;
+    #else
+    auto* decoded=IMG_Load(path.c_str());
+    if(!decoded)throw std::runtime_error("Cannot decode image: "+path.u8string()+": "+IMG_GetError());
+    auto* surface=SDL_ConvertSurfaceFormat(decoded,SDL_PIXELFORMAT_ARGB8888,0);
+    SDL_FreeSurface(decoded);
+    if(!surface)throw std::runtime_error(SDL_GetError());
+    std::unique_ptr<SDL_Surface,decltype(&SDL_FreeSurface)> owned(surface,SDL_FreeSurface);
+    auto t=std::make_shared<Texture>();t->width=surface->w;t->height=surface->h;
+    if(t->width<=0||t->height<=0||t->width>16384||t->height>16384)throw std::runtime_error("Invalid image dimensions");
+    t->pixels.resize(std::size_t(t->width)*t->height);
+    for(int y=0;y<t->height;++y)std::memcpy(t->pixels.data()+std::size_t(y)*t->width,static_cast<const char*>(surface->pixels)+std::ptrdiff_t(y)*surface->pitch,std::size_t(t->width)*4);
+    t->finish();return t;
+    #endif
 }
 float clamp(float v){return std::clamp(v,0.0f,1.0f);}
 unsigned byte(float v){return static_cast<unsigned>(std::lround(clamp(v)*255));}
@@ -178,10 +206,20 @@ std::vector<std::size_t> utf8_boundaries(const std::string& text) {
 
 struct Renderer::Impl {
     struct Glyph {unsigned x=0,y=0,w=0,h=0;int dx=0,dy=0;float advance=0;};
-    struct Overlay {std::shared_ptr<Texture> texture,tinted;std::unique_ptr<Bitmap> raster;const Texture* rasterTexture=nullptr;int rasterWidth=0,rasterHeight=0;std::array<float,8> rasterUV{};std::array<float,8> uv{0,0,0,1,1,0,1,1};std::array<float,4> color{1,1,1,1};float angle=0,cx=0,cy=0;};
+    struct Overlay {std::shared_ptr<Texture> texture,tinted;
+#ifdef _WIN32
+    std::unique_ptr<Bitmap> raster;
+#endif
+    const Texture* rasterTexture=nullptr;int rasterWidth=0,rasterHeight=0;std::array<float,8> rasterUV{};std::array<float,8> uv{0,0,0,1,1,0,1,1};std::array<float,4> color{1,1,1,1};float angle=0,cx=0,cy=0;};
     struct Line {std::vector<std::uint32_t> chars;float width=0;std::size_t consumed=0;};
-    ResourceResolver resolver;int width,height,nextOverlay=1,missingAssets=0;ULONG_PTR token=0;
+    ResourceResolver resolver;int width,height,nextOverlay=1,missingAssets=0;
+#ifdef _WIN32
+    ULONG_PTR token=0;
     std::unique_ptr<Bitmap> canvas;std::unique_ptr<Graphics> graphics;
+#else
+    SDL_Surface* canvas=nullptr;
+    SDL_Renderer* graphics=nullptr;
+#endif
     std::unordered_map<int,Overlay> overlays;
     std::map<std::filesystem::path,std::weak_ptr<Texture>> textureCache;
     std::unordered_map<std::uint32_t,std::array<Glyph,2>> glyphs;
@@ -192,6 +230,7 @@ struct Renderer::Impl {
 
     Impl(ResourceResolver r,int w,int h):resolver(std::move(r)),width(w),height(h) {
         if(width<=0||height<=0||width>16384||height>16384) throw std::runtime_error("Invalid renderer size");
+        #ifdef _WIN32
         GdiplusStartupInput startup;
         if(GdiplusStartup(&token,&startup,nullptr)!=Ok) throw std::runtime_error("GDI+ startup failed");
         try {
@@ -208,6 +247,28 @@ struct Renderer::Impl {
         graphics->SetInterpolationMode(InterpolationModeHighQualityBilinear);
         graphics->SetPixelOffsetMode(PixelOffsetModeHalf);
     }
+    #else
+        canvas=SDL_CreateRGBSurfaceWithFormat(0,width,height,32,SDL_PIXELFORMAT_ARGB8888);
+        if(!canvas)throw std::runtime_error(SDL_GetError());
+        graphics=SDL_CreateSoftwareRenderer(canvas);
+        if(!graphics){SDL_FreeSurface(canvas);throw std::runtime_error(SDL_GetError());}
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,"linear");
+        try{load_font();}catch(...){SDL_DestroyRenderer(graphics);SDL_FreeSurface(canvas);throw;}
+    }
+    ~Impl(){overlays.clear();glyphCache.clear();fontTexture.reset();SDL_DestroyRenderer(graphics);SDL_FreeSurface(canvas);}
+    // SDL owns only the platform drawing transport. DDS decoding, UV origin,
+    // original font metrics, SDF coverage and GUI layout remain shared.
+    void copy(Texture& texture,const SDL_Rect& src,const SDL_FRect& dst,double angle=0,const SDL_FPoint* center=nullptr,SDL_RendererFlip flip=SDL_FLIP_NONE,const std::array<float,4>* color=nullptr){
+        if(!texture.bitmap){
+            texture.bitmap=SDL_CreateTexture(graphics,SDL_PIXELFORMAT_ARGB8888,SDL_TEXTUREACCESS_STATIC,texture.width,texture.height);
+            if(!texture.bitmap)throw std::runtime_error(SDL_GetError());
+            if(SDL_UpdateTexture(texture.bitmap,nullptr,texture.pixels.data(),texture.width*4)!=0||SDL_SetTextureBlendMode(texture.bitmap,SDL_BLENDMODE_BLEND)!=0)throw std::runtime_error(SDL_GetError());
+        }
+        SDL_SetTextureColorMod(texture.bitmap,color?byte(linear_to_srgb((*color)[0])):255,color?byte(linear_to_srgb((*color)[1])):255,color?byte(linear_to_srgb((*color)[2])):255);
+        SDL_SetTextureAlphaMod(texture.bitmap,color?byte((*color)[3]):255);
+        if(SDL_RenderCopyExF(graphics,texture.bitmap,&src,&dst,angle,center,flip)!=0)throw std::runtime_error(SDL_GetError());
+    }
+    #endif
     std::shared_ptr<Texture> load_texture(const std::string& name) {
         try {
             const auto path=resolver(name);
@@ -269,7 +330,11 @@ struct Renderer::Impl {
     template<int(Impl::*Method)(lua_State*)>static int invoke(lua_State* L){try{return(self(L).*Method)(L);}catch(const std::exception& e){return luaL_error(L,"%s",e.what());}catch(...){return luaL_error(L,"Renderer failure");}}
     int create_image(lua_State* L){const std::string name=luaL_checkstring(L,1);Overlay o;o.texture=load_texture(name);const int id=nextOverlay++;overlays.emplace(id,std::move(o));lua_pushinteger(L,id);return 1;}
     int set_uv(lua_State* L){auto& o=overlay(L);for(int i=0;i<8;++i)o.uv[i]=float(luaL_checknumber(L,i+2));return 0;}
-    int set_color(lua_State* L){auto& o=overlay(L);std::array<float,4> value;for(int i=0;i<4;++i)value[i]=clamp(float(luaL_checknumber(L,i+2)));if(value!=o.color){o.color=value;o.tinted.reset();o.raster.reset();}return 0;}
+    int set_color(lua_State* L){auto& o=overlay(L);std::array<float,4> value;for(int i=0;i<4;++i)value[i]=clamp(float(luaL_checknumber(L,i+2)));if(value!=o.color){o.color=value;o.tinted.reset();
+#ifdef _WIN32
+        o.raster.reset();
+#endif
+        }return 0;}
     int set_rotation(lua_State* L){auto& o=overlay(L);o.angle=float(luaL_checknumber(L,2));o.cx=float(luaL_optnumber(L,3,0));o.cy=float(luaL_optnumber(L,4,0));return 0;}
     int draw_overlay(lua_State* L){auto& o=overlay(L);const float x=float(luaL_checknumber(L,2)),y=float(luaL_checknumber(L,3)),w=float(luaL_checknumber(L,4)),h=float(luaL_checknumber(L,5));
         if(w==0||h==0||o.color[3]<=0)return 0;
@@ -284,6 +349,7 @@ struct Renderer::Impl {
         // DDS/native overlay UVs use the lower left as their texture origin.
         const float left=o.uv[0]*texture->width,right=o.uv[4]*texture->width,top=(1-o.uv[3])*texture->height,bottom=(1-o.uv[1])*texture->height;
         if(left==right||top==bottom)return 0;
+        #ifdef _WIN32
         const auto saved=graphics->Save();
         const float centerX=(x+o.cx)*width,centerY=(1-y-o.cy)*height;
         if(o.angle!=0){graphics->TranslateTransform(centerX,centerY);graphics->RotateTransform(-o.angle*180/3.14159265358979323846f);graphics->TranslateTransform(-centerX,-centerY);}
@@ -310,7 +376,18 @@ struct Renderer::Impl {
             status=graphics->DrawImage(o.raster.get(),rasterX,rasterY,rasterWidth,rasterHeight);
         }else status=graphics->DrawImage(texture->bitmap.get(),dest,3,std::min(left,right),std::min(top,bottom),std::abs(right-left),std::abs(bottom-top),UnitPixel,&attributes);
         graphics->Restore(saved);if(status!=Ok)throw std::runtime_error("Overlay drawing failed");return 0;
+        #else
+        const SDL_Rect src{int(std::floor(std::min(left,right))),int(std::floor(std::min(top,bottom))),
+            std::max(1,int(std::ceil(std::abs(right-left)))),std::max(1,int(std::ceil(std::abs(bottom-top))))};
+        const SDL_FRect dst{x*width,(1-y-h)*height,w*width,h*height};
+        if(w<0||h<0)throw std::runtime_error("Negative overlay dimensions are unsupported");
+        const SDL_FPoint center{o.cx*width,(h-o.cy)*height};
+        const auto flip=static_cast<SDL_RendererFlip>((right<left?SDL_FLIP_HORIZONTAL:0)|(bottom<top?SDL_FLIP_VERTICAL:0));
+        copy(*texture,src,dst,-o.angle*180/3.14159265358979323846,&center,flip);
+        return 0;
+        #endif
     }
+
     int set_text_color(lua_State* L){for(int i=0;i<4;++i)textColor[i]=clamp(float(luaL_checknumber(L,i+1)));return 0;}
     int set_bold(lua_State* L){bold=lua_toboolean(L,1)!=0;return 0;}
     int set_alignment(lua_State* L){alignment=int(luaL_checkinteger(L,1));return 0;}
@@ -355,6 +432,7 @@ struct Renderer::Impl {
     int draw_text(lua_State* L){const float x=float(luaL_checknumber(L,1))*width,y=(1-float(luaL_checknumber(L,2)))*height,size=std::max(0.0f,float(luaL_checknumber(L,3)))*height;const auto lines=layout(size,luaL_checkstring(L,4));if(size<=0||textColor[3]<=0)return 0;
         const int end=lineLimit?std::min(int(lines.size()),firstLine+lineLimit):int(lines.size());float baseline=y;
         if(verticalAlignment==1)baseline+=size*0.5f;else if(verticalAlignment==2)baseline+=size;
+        #ifdef _WIN32
         ColorMatrix color{};color.m[0][0]=linear_to_srgb(textColor[0]);color.m[1][1]=linear_to_srgb(textColor[1]);color.m[2][2]=linear_to_srgb(textColor[2]);color.m[3][3]=textColor[3];color.m[4][4]=1;
         ImageAttributes attributes;attributes.SetColorMatrix(&color);attributes.SetWrapMode(WrapModeClamp);
         // SDF coverage is already sampled and antialiased at the output size.
@@ -362,16 +440,39 @@ struct Renderer::Impl {
         // transparent glyph bitmaps. Copy their coverage without a second filter.
         const auto previousInterpolation=graphics->GetInterpolationMode();
         graphics->SetInterpolationMode(InterpolationModeNearestNeighbor);
+        #endif
         for(int i=firstLine;i<end;++i){const auto&line=lines[i];float cursor=x;if(alignment==1)cursor-=line.width/2;else if(alignment==2)cursor-=line.width;
             const float lineY=baseline-(firstLine-i)*size*lineScale;
             for(auto c:line.chars){const auto& g=glyph(c);const float scale=size/nominalFontSize;
-                if(c!=' '&&g.w&&g.h){auto raster=raster_glyph(c,size);RectF dest(cursor+g.dx*scale,lineY-g.dy*scale,g.w*scale,g.h*scale);graphics->DrawImage(raster->bitmap.get(),dest,0,0,float(raster->width),float(raster->height),UnitPixel,&attributes);}
+                if(c!=' '&&g.w&&g.h){auto raster=raster_glyph(c,size);
+                    #ifdef _WIN32
+                    RectF dest(cursor+g.dx*scale,lineY-g.dy*scale,g.w*scale,g.h*scale);graphics->DrawImage(raster->bitmap.get(),dest,0,0,float(raster->width),float(raster->height),UnitPixel,&attributes);
+                    #else
+                    const SDL_Rect src{0,0,raster->width,raster->height};
+                    const SDL_FRect dst{cursor+g.dx*scale,lineY-g.dy*scale,g.w*scale,g.h*scale};
+                    copy(*raster,src,dst,0,nullptr,SDL_FLIP_NONE,&textColor);
+                    #endif
+                }
                 cursor+=g.advance*scale;
             }
-        }graphics->SetInterpolationMode(previousInterpolation);return 0;
+        }
+        #ifdef _WIN32
+        graphics->SetInterpolationMode(previousInterpolation);
+        #endif
+        return 0;
     }
+#ifdef _WIN32
     int set_clip(lua_State* L){if(lua_gettop(L)==0||lua_isnil(L,1)){graphics->ResetClip();return 0;}float x=float(luaL_checknumber(L,1)),y=float(luaL_checknumber(L,2)),w=float(luaL_checknumber(L,3)),h=float(luaL_checknumber(L,4));graphics->SetClip(RectF(x*width,(1-y-h)*height,w*width,h*height),CombineModeReplace);return 0;}
     int reset_clip(lua_State*){graphics->ResetClip();return 0;}
+#else
+    int reset_clip(lua_State*){if(SDL_RenderSetClipRect(graphics,nullptr)!=0)throw std::runtime_error(SDL_GetError());return 0;}
+    int set_clip(lua_State* L){
+        if(lua_gettop(L)==0||lua_isnil(L,1))return reset_clip(L);
+        const float x=float(luaL_checknumber(L,1)),y=float(luaL_checknumber(L,2)),w=float(luaL_checknumber(L,3)),h=float(luaL_checknumber(L,4));
+        const SDL_Rect clip{int(std::floor(x*width)),int(std::floor((1-y-h)*height)),std::max(0,int(std::ceil(w*width))),std::max(0,int(std::ceil(h*height)))};
+        if(SDL_RenderSetClipRect(graphics,&clip)!=0)throw std::runtime_error(SDL_GetError());return 0;
+    }
+#endif
     void bind(lua_State* L,const char* name,lua_CFunction fn){lua_pushlightuserdata(L,this);lua_pushcclosure(L,fn,1);lua_setglobal(L,name);}
     void register_lua(lua_State* L){
 #define BIND(Name,Method) bind(L,Name,&invoke<&Impl::Method>)
@@ -413,6 +514,7 @@ struct Renderer::Impl {
 
 Renderer::Renderer(ResourceResolver r,int width,int height):impl_(std::make_unique<Impl>(std::move(r),width,height)){}
 Renderer::~Renderer()=default;
+#ifdef _WIN32
 void Renderer::begin_frame(){impl_->graphics->ResetTransform();impl_->graphics->ResetClip();impl_->graphics->Clear(Color(255,0,0,0));}
 void Renderer::present(HDC dc){impl_->graphics->Flush(FlushIntentionSync);Graphics target(dc);target.DrawImage(impl_->canvas.get(),0,0,impl_->width,impl_->height);}
 void Renderer::save_png(const std::filesystem::path& path){
@@ -422,6 +524,21 @@ void Renderer::save_png(const std::filesystem::path& path){
     auto status=found?impl_->canvas->Save(path.c_str(),&encoder,nullptr):UnknownImageFormat;impl_->reset_graphics();
     if(status!=Ok)throw std::runtime_error("Cannot save menu screenshot: "+path.u8string());
 }
+#else
+void Renderer::begin_frame(){
+    SDL_RenderSetClipRect(impl_->graphics,nullptr);SDL_SetRenderDrawColor(impl_->graphics,0,0,0,255);
+    if(SDL_RenderClear(impl_->graphics)!=0)throw std::runtime_error(SDL_GetError());
+}
+void Renderer::present(DrawTarget window){
+    SDL_RenderPresent(impl_->graphics);
+    auto* target=SDL_GetWindowSurface(window);
+    if(!target||SDL_BlitScaled(impl_->canvas,nullptr,target,nullptr)!=0||SDL_UpdateWindowSurface(window)!=0)throw std::runtime_error(SDL_GetError());
+}
+void Renderer::save_png(const std::filesystem::path& path){
+    SDL_RenderPresent(impl_->graphics);
+    if(IMG_SavePNG(impl_->canvas,path.c_str())!=0)throw std::runtime_error("Cannot save screenshot: "+std::string(IMG_GetError()));
+}
+#endif
 bool Renderer::delete_overlay(int id){return impl_->overlays.erase(id)!=0;}
 int Renderer::overlay_count()const{return static_cast<int>(impl_->overlays.size());}
 int Renderer::missing_asset_count()const{return impl_->missingAssets;}
