@@ -16,7 +16,7 @@ retried with a longer per-function timeout.
 
 The [aggregate report](../analysis/native-export-summary.json) records the
 catalogue, eligible exports, remaining failures and a digest of the verified
-export set. The current pass verified **11,636 / 11,636 eligible functions**,
+export set. The current pass verified **11,642 / 11,642 eligible functions**,
 with no remaining export failures in this catalogue. The two large functions
 at `0x1400f8420` and `0x1401f59a0` now have verified local exports. Increasing
 the timeout exposed a response-buffer limit. The exporter now allows 128 MiB
@@ -26,9 +26,12 @@ retry brief Windows sharing conflicts, and the wrapper checks completion even
 when Ghidra returns success after a script error.
 An explicit binding audit added 30 previously uncovered executable functions
 after the earlier 11,601-export pass, bringing the catalogue to 12,196 entries.
-The subsequent audit of 16 explicit slots in two scene vtables discovered four
-more targets, bringing the current catalogue to **12,201 entries**. All four
-have local pseudocode exports; see [scene state recovery](SCENE_STATE_RECOVERY.md).
+Subsequent bounded scene-table audits discovered five targets, bringing that
+catalogue to 12,201 entries; see [scene state recovery](SCENE_STATE_RECOVERY.md).
+Two [memory-stream tables](MEMORY_FILE_RECOVERY.md) then exposed six further
+uncovered functions. The current catalogue has **12,207 entries** and all
+11,642 eligible entries have local pseudocode exports. Shared constant-return
+methods in those tables are analysis-only unless listed in the component ledger.
 The remaining 565 catalogue entries are thunks or external functions.
 Detailed recovered code stays under `recovered/decompiled/game-full`
 and is excluded from Git. A complete pass through this catalogue does not prove

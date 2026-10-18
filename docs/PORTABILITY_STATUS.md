@@ -18,9 +18,10 @@ desktop validation and native GE6 startup remain open.
 
 | Evidence | Observed result | What remains open |
 |---|---|---|
-| Existing native catalogue | 12,201 entries, 11,636 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 209 native entries with validated bounded paths | Remaining 11,427 eligible entries only have pseudocode in this ledger |
+| Existing native catalogue | 12,207 entries, 11,642 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
+| Recovered portable C++17 core | 215 native entries with validated bounded paths | Remaining 11,427 eligible entries only have pseudocode in this ledger |
 | File-stream platform boundary | Four native read/seek/size/tell paths, 2,492 matching original-operation results and complete state/output checks; read-only POSIX transport connected to Linux frontend loading | Constructors/destructors, buffered/archive/write services, Windows path/locking and full VFS semantics remain open; [details](FILE_STREAM_RECOVERY.md) |
+| Memory-stream operations | Six native valid/read/seek/size/tell/EOF paths; 13,366 matching operations and immutable borrowed storage, connected to staged script loading | Ownership/factories, archive decryption and full loader remain open; [details](MEMORY_FILE_RECOVERY.md) |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 40 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
 | Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
@@ -46,9 +47,9 @@ desktop validation and native GE6 startup remain open.
 | Camera view/stereo and shader block | Two paths; 3,000 exact uploads, 2,418 view/cache chains and prepared-volume queries; explicit original-tangent/platform comparison modes and owned CPU map/unmap transport | Render-view constructors/other variants, real GPU resources/backend, render consumers and startup remain open |
 | 491 distinct observed script-descriptor roots | 2,878 eligible reachable functions, of which 100 have validated components | 2,778 reachable entries without a validated component; 939 functions contain 2,495 computed call sites |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
-| Prototype recovery | 11,312 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
+| Prototype recovery | 11,318 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
-| CPU portability | All twenty-six asset-free component/transport tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
+| CPU portability | All twenty-seven asset-free component/transport tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 
 See the [aggregate dependency evidence](../analysis/native-portability-summary.json),
 [component ledger](../analysis/native-recompilation-summary.json),

@@ -16,6 +16,7 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 
 | Component | Native coverage | Validation |
 |---|---|---|
+| Memory-stream operations | Six entries for validity, read, clamped seek, size, position and EOF | 13,366 comparisons in 238 sequences; [scope and ownership limits](MEMORY_FILE_RECOVERY.md) |
 | Buffered default-disk read/seek/status | Three native entries over the recovered disk methods | 2,163 matching operations across 35 sequences; [scope and limits](BUFFERED_FILE_RECOVERY.md) |
 | File read/seek/size/tell | Four entries; explicit OS service seams | 2,492 operation comparisons in 37 sequences, complete records and guarded buffers; [scope and limits](FILE_STREAM_RECOVERY.md) |
 | RLE8 decoder | `0x14028f430` | 266 comparisons / 853,086 values |
@@ -50,8 +51,8 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Camera projection matrices, full projective product and basis conditioning | Four entries | 8,000 projection matrices, 5,000 products, 5,000 basis records and 18 original-I3D-parameter projection/view chains |
 | Camera view/stereo assembly and shader-block packing | Two entries | 3,000 exact upload records, 2,418 view/cache chains, 5,418 complete map/unmap trace pairs and prepared-volume culling queries; explicit tangent/platform and GPU transport boundaries |
 
-Those are **209 native entries with bounded reconstructed paths**. They are not
-209 completely proven engine functions or a percentage of GE6 completion.
+Those are **215 native entries with bounded reconstructed paths**. They are not
+215 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
@@ -163,11 +164,14 @@ It does not recover shared resources, arbitrary derived teardown or full loading
 Auditing the 32 scripting references previously emitted as code labels found
 **30 distinct uncovered executable entries**. All 30 were created as functions
 without splitting existing function bodies, and then decompiled. The enlarged
-catalogue now contains **12,201 entries, 11,636 eligible pseudocode exports and
+catalogue now contains **12,207 entries, 11,642 eligible pseudocode exports and
 565 excluded thunks/external functions**. All 498 observed native scripting
 descriptors now resolve to catalogue function entries. This audit is limited
 to those explicit references and subsequent bounded scene-vtable audits that inspected
-40 slots across matrix, TRS, LOD, Camera and Light tables and retained five discovered functions. Wider code discovery remains open.
+40 slots across matrix, TRS, LOD, Camera and Light tables and retained five
+discovered functions. Two memory-stream tables then added 24 audited slots and
+six uncovered functions. Their roots and the scene roots are tracked separately.
+Wider code discovery remains open.
 
 ```powershell
 scripts/analyze.ps1 -Target game-runtime -Existing -RecoverBindings -ExportName binding-discovery -JavaHome 'C:\path\to\jdk-21'

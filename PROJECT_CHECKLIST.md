@@ -29,9 +29,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Inventory installed files and record original executable/archive hashes.
 - [x] Capture the normally loaded native code section for local analysis.
 - [x] Set up a pinned Ghidra toolchain and reproducible export scripts.
-- [x] Catalogue 12,201 native functions, including 30 entries from binding targets and five from explicit scene-vtable slots.
+- [x] Catalogue 12,207 native functions, including 30 binding targets, five scene-vtable targets and six memory-stream targets.
 - [x] Attempt every non-thunk/non-external function in the existing catalogue with resumable exports.
-- [x] Verify all 11,636 eligible local pseudocode exports with no remaining catalogue export failures.
+- [x] Verify all 11,642 eligible local pseudocode exports with no remaining catalogue export failures.
 - [x] Unblock the two large exports with a larger response limit and C-only output; retry Windows progress-file sharing conflicts.
 - [x] Index 498 explicit native scripting descriptors across three registration functions, preserving the earlier 205 mappings.
 - [x] Audit 32 code-label references, identify 30 distinct uncovered executable functions and decompile all 30.
@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 209 bounded reconstructed native entries separately from 11,427 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 215 bounded reconstructed native entries separately from 11,427 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
@@ -126,6 +126,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Compile the shared recovered-frontend host on Linux with authored SDL2 window/render/input transport and package a local tester with hash checks and result archives.
 - [x] Recover four native file read/seek/size/tell paths; compare 2,492 operations with original routines and connect a read-only Windows/POSIX transport to frontend resource loading.
 - [x] Recover native 32 KiB buffered read/seek/status callbacks; compare 2,163 operations and ordered OS events, then connect them to frontend resource reads.
+- [x] Audit two memory-stream vtables, recover six read/seek/query paths, compare 13,366 operations and connect them to staged script loading.
 - [ ] Validate the recovered menu with original local resources and interactive input on a Linux tester's desktop.
 - [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
@@ -139,7 +140,7 @@ See [Linux build/run instructions and current limits](docs/LINUX_PORT.md).
 - [x] Isolate Windows symbol exports and add a portable-only build path.
 - [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
 - [x] Choose Switch homebrew `.nro` as the future packaging route; console work is deferred.
-- [x] Cross-compile the recovered core for ARM64 Linux and pass all twenty-six asset-free component/transport tests under QEMU in CI; this is separate from Switch hardware validation.
+- [x] Cross-compile the recovered core for ARM64 Linux and pass all twenty-seven asset-free component/transport tests under QEMU in CI; this is separate from Switch hardware validation.
 - [ ] Configure the console toolchain and packaging target.
 - [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
 - [ ] Recover/link the complete native engine and its platform/middleware interfaces.

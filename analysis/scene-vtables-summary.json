@@ -12,7 +12,7 @@
     "0x1400d7db0",
     "0x14010fce0"
   ],
-  "discovery_csv_sha256": "965e5427a1464426e90a5ab06b1f38ff52e5817d03dc6756a869f2a1000b0278",
+  "discovery_csv_sha256": "7ebccca5c4cb87d0a08fbf5040e2c3ade77753f1dec662b128e6f70a08ac600e",
   "existing_function_bodies_split": false,
   "scope": "Five constructor-observed scene-node tables including LOD, Camera and Light, eight explicit slots each. All targets have local pseudocode exports. This is not an exhaustive engine vtable, class or lifecycle recovery."
 }

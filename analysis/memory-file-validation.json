@@ -63,5 +63,43 @@
     "existing_function_bodies_split": false,
     "discovery_csv_sha256": "7ebccca5c4cb87d0a08fbf5040e2c3ade77753f1dec662b128e6f70a08ac600e"
   },
-  "scope": "Six bounded memory-stream valid/read/seek/size/tell/EOF paths against unchanged native routines, complete records, guarded outputs and immutable borrowed sources. Native factories, ownership transfer/free, archive decryption and full loader startup remain outside this comparison. Authored capacity/state checks exclude original read overflow and invalid-span behavior."
+  "scope": "Six bounded memory-stream valid/read/seek/size/tell/EOF paths against unchanged native routines, complete records, guarded outputs and immutable borrowed sources. Native factories, ownership transfer/free, archive decryption and full loader startup remain outside this comparison. Authored capacity/state checks exclude original read overflow and invalid-span behavior.",
+  "platform_validation": {
+    "tested_source_commit": "e57b1c0",
+    "linux_ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39123910117",
+    "windows_x64_component_and_transport_tests": 27,
+    "linux_x64_component_and_transport_tests": 27,
+    "arm64_linux_qemu_component_and_transport_tests": 27,
+    "linux_frontend_tester_checks": 10,
+    "linux_script_host_checks": 6,
+    "windows_script_host_checks": 6,
+    "windows_original_localization_parity": {
+      "texts": 1425,
+      "descriptions": 165,
+      "labels": 7,
+      "factors": 3
+    },
+    "windows_original_menu": {
+      "scripts": 36,
+      "frames": 127,
+      "input_checks_passed": true,
+      "log_sha256": "f6e615a0c0820509e2e13d28376c35efd4c2fee49355e47655d77a313c7a79db",
+      "executable_sha256": "2bb5eefe9e40ffff62261d2f70edd2f8525ca1398d44fd31810bbe37a99928b4"
+    },
+    "linux_runtime_archive_sha256": "ae3a5a74831d1826f0b85da5953e2aab60bf3ee54d7b774b080d28649f530b1d",
+    "linux_executables_sha256": {
+      "FS15MenuLinux": "13244a5f10ef23388c2dd6efbf34e9c289abb7daa7c6f0d341bceca9b216b346",
+      "FS15ScriptHost": "2dbd6a2c19ed6a21fc76c150cc2c9f099b62a6194d0965df850bdd1dfd8d54a8",
+      "FS15PortableHost": "0f340c129ed8e4ed63c6e1b920b81b785aa547c5c2a3ccfd9fe4968cf8088389"
+    },
+    "linux_original_resource_desktop_validation": false,
+    "full_native_engine_started_on_linux": false
+  },
+  "host_source_sha256": {
+    "src/platform/memory_file.h": "5bf0b2ab746b474110f1cb57de0bf902099eb4b5834b3534622e037903950d23",
+    "src/platform/file_transport.cpp": "27992caee733b5d32cd26a1b56af3f6413a79f23f77bbd4bd632c56153ef9f28",
+    "src/platform/file_transport.h": "d0c483d0981befd4d44b7866b9e6619a020675a7c55810c54b422be35d7ee222",
+    "src/menu/main.cpp": "448a7a4295a22f34d8bac32882baf75d74a50a74ab14821888e33e23caeff086",
+    "src/portable/script_runtime.cpp": "8bf530d48286eecdde1d4c0880d286436792dc0d13fee47917f3a4dd292d1abe"
+  }
 }

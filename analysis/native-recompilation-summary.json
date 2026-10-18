@@ -1,9 +1,14 @@
 {
-  "catalogued": 12201,
-  "eligible": 11636,
+  "catalogued": 12207,
+  "eligible": 11642,
   "pseudocode_only": 11427,
-  "validated_component_path_entries": 209,
+  "validated_component_path_entries": 215,
   "components": [
+    {
+      "name": "memory_stream_valid_read_seek_size_tell_eof",
+      "entries": 6,
+      "evidence": "analysis/memory-file-validation.json"
+    },
     {
       "name": "buffered_default_disk_read_seek_status",
       "entries": 3,

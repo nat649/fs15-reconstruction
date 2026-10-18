@@ -11,6 +11,9 @@ and Linux XML input. This is bounded native behavior behind authored OS seams,
 not a complete Windows API compatibility layer or a linked GE6 startup.
 The [32 KiB buffered callbacks](BUFFERED_FILE_RECOVERY.md) are also recovered
 and now sit above those disk methods in the frontend resource-read helper.
+Recovered [memory-stream operations](MEMORY_FILE_RECOVERY.md) now also provide
+the final borrowed-buffer read into the Lua script loader, without rewriting
+resource bytes or changing their encoding.
 
 Linux x64 is the next platform target while the native GE6 recovery continues.
 The later Switch homebrew target remains deferred. This stage keeps recovered
