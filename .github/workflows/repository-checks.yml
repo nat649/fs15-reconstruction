@@ -28,16 +28,23 @@ jobs:
         run: |
           c++ -std=c++17 -Wall -Wextra -Werror tests/simulation_clock.cpp -o /tmp/fs15-simulation-clock
           /tmp/fs15-simulation-clock
+      - name: Install Linux script/XML development dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config
       - name: Build and test recovered portable components without Windows or original resources
         run: |
-          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
       - name: Install and exercise the Linux x64 headless host
         run: |
           cmake --install build/ci-portable-core --prefix build/linux-portable-host
           python tests/check_portable_host.py --exe build/linux-portable-host/bin/FS15PortableHost --workdir build/linux-host-integration --report build/linux-host-validation.json
+          build/ci-portable-core/src/portable/FS15PortableMetadataCheck build/linux-script-metadata
+          python tests/check_script_host.py --exe build/linux-portable-host/bin/FS15ScriptHost --workdir build/linux-script-integration --report build/linux-script-host-validation.json
           ldd build/linux-portable-host/bin/FS15PortableHost > build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
+          ldd build/linux-portable-host/bin/FS15ScriptHost >> build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
           tar -C build/linux-portable-host -czf build/fs15-linux-x64-portable-host.tar.gz .
           cd build
           sha256sum fs15-linux-x64-portable-host.tar.gz > fs15-linux-x64-portable-host.sha256
@@ -49,6 +56,7 @@ jobs:
             build/fs15-linux-x64-portable-host.tar.gz
             build/fs15-linux-x64-portable-host.sha256
             build/linux-host-validation.json
+            build/linux-script-host-validation.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 0

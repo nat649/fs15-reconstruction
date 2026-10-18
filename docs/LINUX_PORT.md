@@ -74,6 +74,57 @@ The host never copies or modifies those resources, and rejects a report path
 inside that game directory. Original-resource version/hash verification and
 full archive/scene loading remain separate recovery work.
 
+## Script/XML and localization stage
+
+`FS15ScriptHost` is a second headless executable. It runs a text-only subset
+bootstrap using caller-supplied `class.lua`, `Utils.lua`, `I18N.lua` and local
+localization XML. The original menu window and full `main.lua` do not execute.
+The shared read-only XML/property and save-metadata adapters now build on Linux.
+Windows keeps XmlLite; Linux uses **Expat**, a third-party decoder. This is
+platform transport, not recovery of the native GE6 XML tokenizer.
+
+Install LuaJIT development headers, Expat development headers and pkg-config
+through your distribution. On Ubuntu these packages are `libluajit-5.1-dev`,
+`libexpat1-dev` and `pkg-config`. Add this option to the build command above:
+
+The prebuilt script executable needs the corresponding runtime packages
+(`libluajit-5.1-2` and `libexpat1` on the CI Ubuntu distribution); they are not
+bundled into the archive. The original CPU-only host keeps its earlier
+standard C/C++ runtime dependencies.
+
+```sh
+cmake -S . -B build/linux-host \
+  -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON \
+  -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build/linux-host --parallel
+./build/linux-host/src/portable/FS15ScriptHost --i18n-probe \
+  --root "/path/to/your/local/reconstruction/workspace" --language en
+```
+
+The root supplies `recovered/lua/dataS/scripts/...` and
+`recovered/gar/dataS/...`, or the equivalent `lua/...` and `assets/...`
+directories in a prepared local package. Required missing files fail explicitly;
+bytecode is rejected by the runtime. Sources and assets are never modified.
+The JSON report labels input as caller-supplied text; it does not certify its
+provenance simply because it has the expected filename.
+
+Local Windows parity checks compare all 1,425 English texts, 165 descriptions,
+seven menu labels and three conversion factors with the original compiled Lua
+chunks. The reference-bytecode entry is test-only and is never installed.
+Recovered `I18N.lua` is classified `syntax_only` by the earlier recovery manifest;
+this comparison establishes these exercised outputs, not universal equivalence.
+
+Linux CI uses independently authored Lua/XML fixtures, never uploaded game
+assets. Its installed-host checks are separate from that local original-code
+comparison. XML tests cover repeated zero-based paths, Unicode/entities/CDATA,
+typed values, DTD rejection, size/depth limits and VM document cleanup. The
+same tests exercise existing read-only save snapshots; mutations still reject.
+
+The local French `descriptions_fr.xml` is rejected by strict XML parsing at
+line 217 (adjacent attributes without whitespace). It remains unchanged. No
+French runtime/parity success is claimed; native-tokenizer compatibility needs
+separate recovery. The current validated original-resource language is English.
+
 ## Remaining Linux milestones
 
 - Recover and link complete native subsystem startup and the script bootstrap.

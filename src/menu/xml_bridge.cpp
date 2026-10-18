@@ -2,10 +2,16 @@
 // This does not load a game executable, resolve its imports, or write game files.
 #include "xml_bridge.h"
 
+#ifdef _WIN32
 #include <windows.h>
 #include <shlwapi.h>
 #include <xmllite.h>
 #include <wrl/client.h>
+#else
+#include <expat.h>
+#include <exception>
+#include <fstream>
+#endif
 
 extern "C" {
 #include "lua.h"
@@ -30,7 +36,9 @@ extern "C" {
 namespace fs15menu {
 namespace {
 
+#ifdef _WIN32
 using Microsoft::WRL::ComPtr;
+#endif
 
 struct Node {
     std::string name;
@@ -54,6 +62,7 @@ struct Context {
     }
 };
 
+#ifdef _WIN32
 void check(HRESULT result, const char* operation) {
     if (FAILED(result)) {
         throw std::runtime_error(std::string(operation) + " failed (HRESULT " +
@@ -173,6 +182,57 @@ std::unique_ptr<Node> parse_xml_memory(std::string_view xml) {
     if (!stream) throw std::runtime_error("Cannot create XML memory stream");
     return parse_xml_stream(stream.Get());
 }
+#else
+// Expat is a third-party XML decoder, not the recovered GE6 tokenizer. The
+// platform-neutral DOM/property/ownership layer below remains shared with the
+// Windows XmlLite adapter. Never unwind a C++ exception through Expat callbacks.
+struct Parser {
+    XML_Parser parser=nullptr;
+    std::unique_ptr<Node> root;
+    std::vector<Node*> stack;
+    size_t count=0;
+    std::exception_ptr error;
+    Parser(){parser=XML_ParserCreate(nullptr);if(!parser)throw std::bad_alloc();}
+    ~Parser(){XML_ParserFree(parser);}
+    template<class F> void callback(F body) noexcept {
+        if(error)return;
+        try{body();}catch(...){error=std::current_exception();XML_StopParser(parser,XML_FALSE);}
+    }
+    static void start(void* user,const XML_Char* name,const XML_Char** attributes){
+        auto& p=*static_cast<Parser*>(user);p.callback([&]{
+            if(++p.count>200000)throw std::runtime_error("XML has too many elements");
+            if(p.stack.size()>=512)throw std::runtime_error("XML exceeds the depth limit");
+            auto node=std::make_unique<Node>();node->name=name;
+            for(size_t i=0;attributes[i];i+=2)if(!node->attributes.emplace(attributes[i],attributes[i+1]).second)throw std::runtime_error("Duplicate XML attribute");
+            Node* current=node.get();
+            if(p.stack.empty()){if(p.root)throw std::runtime_error("XML has multiple root elements");p.root=std::move(node);}
+            else p.stack.back()->children.push_back(std::move(node));
+            p.stack.push_back(current);
+        });
+    }
+    static void end(void* user,const XML_Char*){auto& p=*static_cast<Parser*>(user);p.callback([&]{if(p.stack.empty())throw std::runtime_error("Unmatched XML closing element");p.stack.pop_back();});}
+    static void text(void* user,const XML_Char* text,int size){auto& p=*static_cast<Parser*>(user);p.callback([&]{if(!p.stack.empty())p.stack.back()->text.append(text,static_cast<size_t>(size));});}
+    static void dtd(void* user,const XML_Char*,const XML_Char*,const XML_Char*,int){auto& p=*static_cast<Parser*>(user);p.callback([]{throw std::runtime_error("XML DTD is prohibited");});}
+    static int external(XML_Parser,const XML_Char*,const XML_Char*,const XML_Char*,const XML_Char*){return XML_STATUS_ERROR;}
+};
+std::unique_ptr<Node> parse_xml_memory(std::string_view xml){
+    if(xml.empty())throw std::runtime_error("XML memory input is empty");
+    if(xml.size()>max_xml_bytes)throw std::runtime_error("XML exceeds the 8 MiB limit");
+    Parser p;XML_SetUserData(p.parser,&p);XML_SetElementHandler(p.parser,Parser::start,Parser::end);XML_SetCharacterDataHandler(p.parser,Parser::text);
+    XML_SetStartDoctypeDeclHandler(p.parser,Parser::dtd);XML_SetExternalEntityRefHandler(p.parser,Parser::external);XML_SetParamEntityParsing(p.parser,XML_PARAM_ENTITY_PARSING_NEVER);
+    const auto result=XML_Parse(p.parser,xml.data(),static_cast<int>(xml.size()),XML_TRUE);
+    if(p.error)std::rethrow_exception(p.error);
+    if(result!=XML_STATUS_OK)throw std::runtime_error("Invalid XML at line "+std::to_string(XML_GetCurrentLineNumber(p.parser))+": "+XML_ErrorString(XML_GetErrorCode(p.parser)));
+    if(!p.root||!p.stack.empty())throw std::runtime_error("XML has no complete root element");
+    return std::move(p.root);
+}
+std::unique_ptr<Node> parse_xml(const std::filesystem::path& path){
+    std::ifstream in(path,std::ios::binary|std::ios::ate);if(!in)throw std::runtime_error("Cannot open XML file "+path.u8string());
+    const auto end=in.tellg();if(end<0||static_cast<uint64_t>(end)>max_xml_bytes)throw std::runtime_error("XML exceeds the 8 MiB limit");
+    std::string data(static_cast<size_t>(end),'\0');in.seekg(0);if(!data.empty()&&!in.read(data.data(),static_cast<std::streamsize>(data.size())))throw std::runtime_error("Cannot read XML file");
+    return parse_xml_memory(data);
+}
+#endif
 
 struct Segment {
     std::string_view name;

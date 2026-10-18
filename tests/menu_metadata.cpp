@@ -2,8 +2,10 @@
 #include "savegames.h"
 #include "xml_bridge.h"
 
+#ifdef _WIN32
 #include <windows.h>
 #include <objbase.h>
+#endif
 
 extern "C" {
 #include "lua.h"
@@ -139,12 +141,25 @@ void memory_xml() {
         assert(getXMLString(xml, 'careerSavegame.mod(0)#title') == 'A & B')
         assert(getXMLString(xml, 'careerSavegame.mod(1)#title') == 'second')
         assert(not hasXMLProperty(xml, 'careerSavegame.mod(2)'))
+        assert(getXMLString(xml, 'careerSavegame.mod(-1)#title') == nil)
+        assert(getXMLString(xml, 'careerSavegame.mod(0).#title') == nil)
+        local unicode = loadXMLFileFromMemory('unicode', '<r><v name="caf&#233;"/><v><![CDATA[é & café]]></v></r>')
+        assert(getXMLString(unicode, 'r.v(0)#name') == 'café')
+        assert(getXMLString(unicode, 'r.v(1)') == 'é & café')
+        delete(unicode)
+        local scalar = loadXMLFileFromMemory('scalar', '<r integer="+42" invalid="1tail" number="1.25" infinite="inf" yes="TRUE" no="0"/>')
+        assert(getXMLInt(scalar, 'r#integer') == 42 and getXMLInt(scalar, 'r#invalid') == nil)
+        assert(getXMLFloat(scalar, 'r#number') == 1.25 and getXMLFloat(scalar, 'r#infinite') == nil)
+        assert(getXMLBool(scalar, 'r#yes') == true and getXMLBool(scalar, 'r#no') == false)
+        delete(scalar)
         assert(not pcall(loadXMLFileFromMemory, 'empty', ''))
         assert(not pcall(loadXMLFileFromMemory, 'broken', '<careerSavegame>'))
         assert(not pcall(loadXMLFileFromMemory, 'roots', '<a/><b/>'))
         assert(not pcall(loadXMLFileFromMemory, 'dtd', '<!DOCTYPE x [<!ENTITY v "blocked">]><x>&v;</x>'))
         assert(not pcall(loadXMLFileFromMemory, 'external', '<!DOCTYPE x SYSTEM "file:///authored-does-not-exist"><x/>'))
         assert(not pcall(loadXMLFileFromMemory, 'large', string.rep('x', 8 * 1024 * 1024 + 1)))
+        assert(not pcall(loadXMLFileFromMemory, 'deep', string.rep('<n>', 514) .. string.rep('</n>', 514)))
+        assert(not pcall(loadXMLFileFromMemory, 'duplicate', '<r x="1" x="2"/>'))
         delete(xml)
         assert(not hasXMLProperty(xml, 'careerSavegame'))
         -- Leave one live handle to verify that closing the Lua state frees it.
@@ -202,9 +217,13 @@ void metadata_files(const std::filesystem::path& root) {
 
 }  // namespace
 
+#ifdef _WIN32
 int wmain(int argc, wchar_t** argv) {
     const HRESULT initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(initialized)) return 2;
+#else
+int main(int argc,char** argv) {
+#endif
     int result = 0;
     try {
         if (argc != 2) throw std::runtime_error("Expected build fixture directory");
@@ -217,6 +236,8 @@ int wmain(int argc, wchar_t** argv) {
         std::cerr << error.what() << '\n';
         result = 1;
     }
+#ifdef _WIN32
     CoUninitialize();
+#endif
     return result;
 }

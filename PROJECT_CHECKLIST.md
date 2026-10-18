@@ -120,6 +120,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Add an installable headless portability host using recovered Camera/view/shader, spatial visibility and lifetime paths, with authored CPU/platform transport.
 - [x] Verify six installed-host CLI/filesystem checks on Windows; original resources are optional and read-only.
 - [x] Verify all six installed-host checks on Linux x64 and publish an authored-only CI artifact; verify the downloaded ELF and archive hashes.
+- [x] Port shared read-only XML/property and save-metadata adapters to Linux through Expat; retain XmlLite on Windows.
+- [x] Add a text-only localization subset host and compare 1,425 English texts, 165 descriptions, seven labels and three factors with original Lua bytecode locally on Windows.
+- [ ] Verify Linux Lua/XML/save-metadata and installed-script-host checks and distribute the updated artifact.
 - [ ] Recover/link native engine startup and scripting, then open the recovered menu on Linux.
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
 - [ ] Validate original maps, vehicles, farming and persistent save/reload on Linux.

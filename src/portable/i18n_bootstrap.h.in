@@ -1,0 +1,2 @@
+#pragma once
+static constexpr char fs15_i18n_bootstrap[]=R"fs15_i18n(@FS15_I18N_SOURCE@)fs15_i18n";
