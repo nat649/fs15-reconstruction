@@ -14,6 +14,7 @@ extern "C" {
 }
 
 #include <filesystem>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -64,10 +65,16 @@ struct Fixtures {
     std::filesystem::path root;
 
     static bool ordinary_directory(const std::filesystem::path& path) {
+#ifdef _WIN32
         const DWORD attributes = GetFileAttributesW(path.c_str());
         return attributes != INVALID_FILE_ATTRIBUTES &&
                (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
                (attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0;
+#else
+        std::error_code error;
+        const auto status=std::filesystem::symlink_status(path,error);
+        return !error&&std::filesystem::is_directory(status)&&!std::filesystem::is_symlink(status);
+#endif
     }
 
     explicit Fixtures(const std::filesystem::path& build_directory) {
@@ -75,7 +82,8 @@ struct Fixtures {
         if (!parent.is_absolute()) throw std::runtime_error("Fixture parent must resolve to an absolute path");
         std::filesystem::create_directories(parent);
         if (!ordinary_directory(parent)) throw std::runtime_error("Fixture parent cannot be a reparse point");
-        root = parent / ("menu-metadata-fixture-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
+        const auto stamp=std::chrono::steady_clock::now().time_since_epoch().count();
+        root = parent / ("menu-metadata-fixture-" + std::to_string(stamp));
         if (!std::filesystem::create_directory(root)) throw std::runtime_error("Fixture directory already exists");
         if (root.parent_path() != parent || !ordinary_directory(root)) {
             throw std::runtime_error("Fixture directory is outside its verified parent");
