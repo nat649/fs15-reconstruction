@@ -1,0 +1,100 @@
+{
+  "status": "passed",
+  "date": "2026-10-18",
+  "tested_source_commit": "cf079d989f9328f195dbb52b01b89feb79cbbcc9",
+  "authored_source_sha256": {
+    "CMakeLists.txt": "540915fd7ddb88697669143185ee71b4622925baf15ff58e4a2702a372a50c43",
+    "src/portable/CMakeLists.txt": "ffd1f0ccf5ec886b41a66c6ed625af2720bce8731b0d9d30a32e8c5c354f4111",
+    "src/portable/script_main.cpp": "a0d0e6d7874a71bea73b444d8c56c4611fca7405dc441e0a4ba57c000cf49eaf",
+    "src/portable/script_runtime.cpp": "14ef8a9d1982a8e8330fa3adac9739af83c1a3422b00967043debd6432e88561",
+    "src/portable/script_runtime.h": "97d6298d6282327651874f0b9a792ed9fa62fa12b0116aee81d8b0979425230a",
+    "src/portable/i18n_bootstrap.h.in": "eb64513d3c0a940a8115e31d922d40f4d8a283347f647246cbc8e23b4ed572b1",
+    "src/menu/bootstrap_i18n.lua": "bfa3c738273ba4d62a05f785b2196f766883f4a4a2126c7872aa0311d702a732",
+    "src/menu/xml_bridge.cpp": "01cd67706313acf8b05efc53f771d1958e0f3788f190ac2b033f3ac64bce560f",
+    "src/menu/xml_bridge.h": "6db7f2d7c976416b2369492a44040e60f5b23f6250a63dad0262c5faa40ad37b",
+    "src/menu/savegames.cpp": "a40168b4aad1a8445679828d40b14df93406fc1c1f1a662869b651aa202bfc38",
+    "src/menu/savegames.h": "8c8f70a723a62981c94ddd1647dd5086d4cc00c4e1da8c9f576a262c6a8e5308",
+    "tests/menu_metadata.cpp": "fe936f383ec28cc5818f1d7e45a8318c699a5d9b1fde71dc82e35d804b5ca862",
+    "tests/check_script_host.py": "ae2c55d9799225569dcd09df38b380f7e6fda42327eda716fec8fa3575ee5e4f",
+    "tests/i18n_parity.cpp": "70de24193931158d6617b04f1bf25b0a68f67569f976cbe9ceb2ab7eed8ac57d",
+    ".github/workflows/repository-checks.yml": "c2924ac4f7fcf4b46934bb628cd2542154b6d44d170e18f5408db51ef146a464"
+  },
+  "installed_host_checks": [
+    "installed_help_from_other_working_directory",
+    "authored_source_and_xml_bootstrap_with_cleanup",
+    "source_and_resource_files_unchanged",
+    "invalid_mode_and_language_reject",
+    "bytecode_refused_in_runtime",
+    "missing_resource_fails_without_fallback"
+  ],
+  "platforms": [
+    {
+      "platform": "Windows x64",
+      "xml_backend": "Windows XmlLite",
+      "lua_runtime": "LuaJIT 2.1.1791988261",
+      "checks_passed": 6,
+      "executable_sha256": "a51d2847ff0fa183ff28112ceefa6392bd2f8f95bfb5b09519851cbdd817beea"
+    },
+    {
+      "platform": "Linux x64",
+      "xml_backend": "Expat 2.6.1",
+      "lua_runtime": "LuaJIT 2.1.1703358377",
+      "checks_passed": 6,
+      "executable_sha256": "b196254c7afaef12b5541913056e5161fa7d0c17b0d3944b8a33c84a037cde69",
+      "job_id": 117652287268
+    }
+  ],
+  "xml_and_read_only_save_suite_passed": true,
+  "portable_core_tests_passed": 23,
+  "local_original_source_parity": {
+    "platform": "Windows x64",
+    "language": "en",
+    "source_files": [
+      {
+        "virtual_path": "dataS/scripts/shared/class.lua",
+        "source_sha256": "dcf0bb21467219fc4e3c8a5d945f8777b4e156ff5d1a886d31bcb76e78dae694",
+        "reference_chunk_sha256": "05346f734a75f2db468d4fcd5aca91738db9b8f34f6be5477a584110420a2b08",
+        "recovery_classification": "syntax_only"
+      },
+      {
+        "virtual_path": "dataS/scripts/Utils.lua",
+        "source_sha256": "75f6525d023124ebbb0b2a4f9729e48030dec5a6280fe346cb355ef29e7b061b",
+        "reference_chunk_sha256": "b4958fe10ab4327d1469643e1d6a2ba68efcf56ea59623ea52881870ba9efd82",
+        "recovery_classification": "syntax_only"
+      },
+      {
+        "virtual_path": "dataS/scripts/I18N.lua",
+        "source_sha256": "10316e5854d563761bdecb68a210849e9196ba1436aa0614243fbdd5823d6b0b",
+        "reference_chunk_sha256": "32c55cb844cc65965db832a10b2ec83ea50f7d433a623776d43fe6aacdb6198f",
+        "recovery_classification": "syntax_only"
+      }
+    ],
+    "text_entries": 1425,
+    "description_entries": 165,
+    "main_menu_labels": 7,
+    "conversion_factors": 3,
+    "complete_tables_and_factors_equal": true,
+    "scope": "Compared with original local Lua bytecode; does not prove every script function or the complete native engine."
+  },
+  "original_resource_sha256": {
+    "l10n_en.xml": "6e6142ec03a2ee94d159b74759c0dcbab5831ad723b01793f124a111de918080",
+    "descriptions_en.xml": "38f163766c0494e11b6e831ccde7dc3e074d9acf4387f68415301635a06afb2e",
+    "descriptions_fr.xml": "c272572ec457d6a18fc4bc8bca20a9f3b16e168b1a228c121cc763ceda9e7e02"
+  },
+  "french_status": "Strict XML decoder rejects local descriptions_fr.xml at line 217; asset unchanged, no French runtime/parity success claimed.",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39119592405",
+  "artifact": {
+    "name": "fs15-linux-x64-portable-host",
+    "id": 12132999030,
+    "archive_sha256": "48246a4c357a9800e1e23f8413fade3f65f4380c32860687d8004398dfb3323f",
+    "elf_machine": "x86-64",
+    "executables": 2,
+    "original_payloads_included": false,
+    "retention_days": 14
+  },
+  "original_assets_executed_on_linux": false,
+  "native_engine_started": false,
+  "renderer_started": false,
+  "playable": false,
+  "scope": "Authored portable Lua/XML and read-only save services. Linux uses independent source/XML fixtures; actual recovered/original-source parity is local Windows evidence. No native GE6 tokenizer, complete startup, menu drawing or gameplay recovered by this authored host."
+}

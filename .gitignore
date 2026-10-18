@@ -73,6 +73,7 @@
 !/analysis/scene-projection-validation.json
 !/analysis/scene-view-validation.json
 !/analysis/linux-host-validation.json
+!/analysis/linux-script-host-validation.json
 /logs/
 __pycache__/
 *.pyc

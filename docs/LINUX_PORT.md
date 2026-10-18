@@ -85,12 +85,12 @@ platform transport, not recovery of the native GE6 XML tokenizer.
 
 Install LuaJIT development headers, Expat development headers and pkg-config
 through your distribution. On Ubuntu these packages are `libluajit-5.1-dev`,
-`libexpat1-dev` and `pkg-config`. Add this option to the build command above:
+`libexpat1-dev` and `pkg-config`.
 
 The prebuilt script executable needs the corresponding runtime packages
 (`libluajit-5.1-2` and `libexpat1` on the CI Ubuntu distribution); they are not
 bundled into the archive. The original CPU-only host keeps its earlier
-standard C/C++ runtime dependencies.
+standard C/C++ runtime dependencies. Add the script option when building:
 
 ```sh
 cmake -S . -B build/linux-host \
@@ -146,3 +146,9 @@ passes all six installed-host integration checks and all 23 portable core tests.
 The downloaded artifact contains an ELF64 x86-64 executable whose hash matches
 the tested binary. The Windows host passes the same six checks. See
 [aggregate evidence](https://github.com/nat649/fs15-reconstruction/blob/master/analysis/linux-host-validation.json).
+
+The [verified Lua/XML Linux run](https://github.com/nat649/fs15-reconstruction/actions/runs/39119592405)
+passes the shared XML/save suite, six installed-script-host checks, the existing
+six CPU-host checks and all 23 core tests. Both ELF executables are in its
+authored-only artifact. [Evidence and input hashes](https://github.com/nat649/fs15-reconstruction/blob/master/analysis/linux-script-host-validation.json)
+keep Linux fixture execution separate from local Windows original-source parity.
