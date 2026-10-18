@@ -237,11 +237,11 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All twenty-eight asset-free component/transport tests pass on
+  full linking. All thirty asset-free component/transport tests pass on
   Windows x64, Linux x64 and ARM64 Linux under QEMU, separately from the future
   Switch target. See
-  [current startup/3D/physics platform evidence](analysis/startup-view-wheel-validation.json),
-  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39128806155) and
+  [current physics-worker platform evidence](analysis/physics-dispatch-validation.json),
+  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39140990548) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate

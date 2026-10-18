@@ -89,3 +89,10 @@ See the [source-pinned aggregate evidence](../analysis/physics-dispatch-validati
 Graphics-driver creation, full physics scene creation, collision detection,
 constraint solving, rigid-body integration, nonempty observations, native
 post-step finalization and complete game startup remain unfinished.
+
+All **30 component/transport CTests** pass on Windows x64, Linux x64 and
+ARM64 Linux under QEMU. The installed Linux host passes six integration
+checks including the 16-step worker probe, alongside six script-host and
+ten frontend/tester checks. [CI evidence](https://github.com/nat649/fs15-reconstruction/actions/runs/39140990548).
+These fixtures contain no original resources and do not validate a full
+physics world, graphics driver or complete game startup.

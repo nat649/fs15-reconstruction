@@ -2,7 +2,7 @@
   "status": "passed",
   "platform": "linux",
   "architecture": "x86_64",
-  "executable_sha256": "eff3fc9691cb268b87fc054bd1a60b5e5343063052054748ec53e3c7ab26a35e",
+  "executable_sha256": "7c8dc6eaf4ee325bbdee76354fdf9bf3cd325ea5994ff3f641e490df4eacb8ac",
   "checks": [
     "help_from_other_working_directory",
     "recovered_core_probe_and_complete_cleanup",
@@ -20,6 +20,8 @@
     "buffers_created": 2,
     "buffers_destroyed": 2,
     "wheel_registry_force_adapter": true,
+    "physics_worker_thread": true,
+    "physics_worker_completed_steps": 16,
     "camera_constructed_and_destroyed": true,
     "view_prepared": true,
     "shader_block_floats": 49,
@@ -31,14 +33,14 @@
   },
   "scope": "Installed authored headless host, recovered CPU/lifetime chain and read-only filesystem/CLI contract; no full engine or original resources required.",
   "date": "2026-10-18",
-  "tested_source_commit": "18c1bbdf4dfb81d6ef26ed97915c1a11655d4864",
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39128806155",
-  "component_transport_tests": 28,
+  "tested_source_commit": "ecb6399eb9640df526b00095285aee0bca7421a0",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39140990548",
+  "component_transport_tests": 30,
   "host_source_sha256": {
-    "src/portable/main.cpp": "11f1254a8915f092b52bcb5c0c962c9ccce8e4650f3ba2a544ee8154d85b46b4",
-    "src/portable/CMakeLists.txt": "2cf066fba6f6ada9d0a4c656808093e429419c4101431ce4c662822dedf639e4",
-    "CMakeLists.txt": "f04e0b3eda0f4d2ee2444c8333881bd162bce3101aaf368eb48867c08306e16c",
-    "tests/check_portable_host.py": "f94e2bc1e09e4d65414df617a60f6a0970db3a520d367d698b65e5da3bae5049"
+    "src/portable/main.cpp": "75f988820bdc4d37a26a0062f026856fc599e477c904e98796b850da75ab6c8d",
+    "src/portable/CMakeLists.txt": "43d18b3323e1ee8be7a98e9c5ada305856a45a9555f5638a7b28d448a3da1006",
+    "CMakeLists.txt": "af06cf1d6f67a776735ff1d03d9669f6520229cc7722307b96181bfe926dc1ff",
+    "tests/check_portable_host.py": "8d7d4c1ed37ad624bf873d7496500d02f7110e409cf5135c7b8002a13032b20f"
   },
-  "native_component_evidence": "analysis/startup-view-wheel-validation.json"
+  "native_component_evidence": "analysis/physics-dispatch-validation.json"
 }
