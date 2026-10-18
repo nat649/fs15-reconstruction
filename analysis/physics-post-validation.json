@@ -27,5 +27,54 @@
   },
   "comparison_digest": "421e81a5c8f2e7606beedac54c917b5fa671fea9e2e604beec9943a926b9e26b",
   "maximum_scaled_platform_atan_error": 0.0,
-  "scope": "Original wheel readback, nonempty wheel registry traversal and contact enter/leave/stay logic; original full post-step control flow with empty controller/wheel registries, nonempty contact cache, pending removals, float-ABI callbacks and cancellation against an empty native registry. Successful native deletion, controller solver, full scene creation and GPU backend remain external/unported. Portable fixtures separately cover connected nonempty registries and cancellation-service routing."
+  "scope": "Original wheel readback, nonempty wheel registry traversal backend group collection and contact enter/leave/stay logic; original full post-step control flow with empty controller/wheel registries, nonempty contact cache, pending removals, float-ABI callbacks and cancellation against an empty native registry. Successful native deletion, controller solver, full scene creation and GPU backend remain external/unported. Portable fixtures separately cover connected nonempty registries and cancellation-service routing.",
+  "platform_validation": {
+    "tested_source_commit": "92284ad569d345bc9c0f38228ab8d592fa452c73",
+    "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680",
+    "windows_x64_component_transport_tests": 31,
+    "linux_x64_component_transport_tests": 31,
+    "arm64_linux_qemu_component_transport_tests": 31,
+    "linux_headless_host_checks": 6,
+    "linux_script_host_checks": 6,
+    "linux_frontend_tester_checks": 10,
+    "connected_cpu_probe": {
+      "view_constructed_and_destroyed": true,
+      "buffers_created": 2,
+      "buffers_destroyed": 2,
+      "wheel_registry_force_adapter": true,
+      "physics_worker_thread": true,
+      "physics_worker_completed_steps": 16,
+      "native_post_steps": 16,
+      "wheel_readbacks": 16,
+      "contact_events": 16,
+      "scene_view_frames": 17,
+      "camera_constructed_and_destroyed": true,
+      "view_prepared": true,
+      "shader_block_floats": 49,
+      "map_calls": 17,
+      "unmap_calls": 17,
+      "visible_objects": 1,
+      "outside_objects": 1,
+      "retained_allocations": 0
+    },
+    "linux_runtime_archive_sha256": "176272138aa238cada38fae4f235a6e8046453069a95a82f24645b6a7d6c1b16",
+    "linux_executable_sha256": {
+      "FS15MenuLinux": "13244a5f10ef23388c2dd6efbf34e9c289abb7daa7c6f0d341bceca9b216b346",
+      "FS15ScriptHost": "2dbd6a2c19ed6a21fc76c150cc2c9f099b62a6194d0965df850bdd1dfd8d54a8",
+      "FS15PortableHost": "13039143490149114f44ccf958651569215ba773179cb45d4294ce0e4854e55e"
+    },
+    "original_resources_executed_on_linux": false,
+    "full_native_engine_started_on_linux": false,
+    "gpu_driver_started_on_linux": false,
+    "physics_world_started_on_linux": false,
+    "backend_data_and_scene_binding": "authored fixtures"
+  },
+  "authored_transport_source_sha256": {
+    "src/platform/physics_worker.cpp": "ca2f33e75be659944a2b8e6371eaf19c85e0b6ef7d24395767721f01856c4e39",
+    "src/platform/physics_worker.h": "794e5299a859b9650d991f232221044f1384ff73fc156d32f2cb3210200388e8",
+    "src/portable/main.cpp": "2ccbe779454d6819f18778181eb2587984c7e436fbfbfaf6eaa0e46fef3a7c39",
+    "tests/physics_post.cpp": "7a67179a8b4dc444a0c3f1ae8911d2732439c8558698089b37f62e85b9c8c8a8",
+    "tests/physics_worker.cpp": "e9e51733ace9857ae997d5eccafdd7c1e820ce764548ecf04e877416cff5d59d",
+    "tests/check_portable_host.py": "721083f4fb18a2085e8507f6494ecbd384172285dd10a7a23b9d758857260100"
+  }
 }

@@ -52,7 +52,7 @@ desktop validation and native GE6 startup remain open.
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
 | Prototype recovery | 11,318 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
-| CPU portability | All thirty asset-free component/transport tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
+| CPU portability | All thirty-one asset-free component/transport tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 
 See the [aggregate dependency evidence](../analysis/native-portability-summary.json),
 [component ledger](../analysis/native-recompilation-summary.json),

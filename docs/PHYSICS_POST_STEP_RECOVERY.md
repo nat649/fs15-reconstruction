@@ -99,3 +99,9 @@ contact generation, body/constraint solver, controller finalizers and successful
 native deletion remain required for gameplay. Full game Lua/scene loading and
 the actual Linux graphics driver/material/draw consumers also remain unfinished.
 Connecting recovered CPU paths cannot supply those missing implementations.
+
+All **31 component/transport CTests** pass on Windows x64, Linux x64 and
+ARM64 Linux under QEMU. Six installed-host checks verify the connected probe,
+alongside six script-host and ten frontend/tester checks using authored
+resources. [CI evidence](https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680).
+Original-resource Linux desktop/gameplay validation remains pending.

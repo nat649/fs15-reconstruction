@@ -72,8 +72,8 @@ and guard bytes plus ordered scene/world/event snapshots match:
   **2,044 completed steps** before stop.
 
 The original observation collector runs only its empty-list path in these
-fixtures. Its nonempty contact processing is not covered or counted as another
-recovered function. The backend solver and OS waits/signals are explicit seams;
+fixtures. Its nonempty contact processing is covered separately by the
+[post-step/contact comparison](PHYSICS_POST_STEP_RECOVERY.md). The backend solver and OS waits/signals are explicit seams;
 original machine code, pseudocode and raw records stay local.
 
 [Portable component fixtures](../tests/physics_dispatch.cpp) check native gate,
