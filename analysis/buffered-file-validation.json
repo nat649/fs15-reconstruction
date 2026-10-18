@@ -44,5 +44,40 @@
       "sha256": "0991178b90549c7757b17f23ad9de5e51f6676859fd218eed9c3cb14ece25bb3"
     }
   ],
-  "scope": "Three bounded native buffered default-disk read/seek/status paths; complete records, guarded outputs and ordered OS event traces against original native callbacks and disk methods. Original open/close allocation, write callbacks, arbitrary derived vtables, corruption diagnostics and full VFS are outside this comparison."
+  "scope": "Three bounded native buffered default-disk read/seek/status paths; complete records, guarded outputs and ordered OS event traces against original native callbacks and disk methods. Original open/close allocation, write callbacks, arbitrary derived vtables, corruption diagnostics and full VFS are outside this comparison.",
+  "platform_validation": {
+    "tested_source_commit": "e82e4054dca2ae04c0e272d93bad5b9735b51fb3",
+    "linux_ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39122697535",
+    "windows_x64_component_and_transport_tests": 26,
+    "linux_x64_component_and_transport_tests": 26,
+    "arm64_linux_qemu_component_and_transport_tests": 26,
+    "linux_frontend_tester_checks": 10,
+    "linux_script_host_checks": 6,
+    "windows_script_host_checks": 6,
+    "windows_original_localization_parity": {
+      "texts": 1425,
+      "descriptions": 165,
+      "labels": 7,
+      "factors": 3
+    },
+    "windows_original_menu": {
+      "scripts": 36,
+      "frames": 127,
+      "input_checks_passed": true,
+      "log_sha256": "f6e615a0c0820509e2e13d28376c35efd4c2fee49355e47655d77a313c7a79db",
+      "executable_sha256": "f6d50dea7d73c3543aa97cd1d4aa6d91175364993b2548be729cd065f774889d"
+    },
+    "linux_runtime_archive_sha256": "def1cf56e49d7be9fc04bc02f6b9c83fe7f3c6b1d64cbaf7f0d9ccdc58214027",
+    "linux_executables_sha256": {
+      "FS15MenuLinux": "0aacd14f6639222f0f4396f454b8a1c549ff252c976dad5a0bd9c31dccfb1fa3",
+      "FS15ScriptHost": "41adde9dcd39cd0216e4c5e0bd394c367d7be1d6f359da144064e41438d73f8d",
+      "FS15PortableHost": "0f340c129ed8e4ed63c6e1b920b81b785aa547c5c2a3ccfd9fe4968cf8088389"
+    },
+    "linux_original_resource_desktop_validation": false,
+    "full_native_engine_started_on_linux": false
+  },
+  "platform_transport_source_sha256": {
+    "src/platform/file_transport.h": "53b94e74104f40d5e07b186683b92c0371b7c28e84ad46dcc9e35c62cd52ae77",
+    "src/platform/file_transport.cpp": "224c68990472b6d9f5820ce95b7dc75af4ead4af2bf39ff1349fdd28e7016a04"
+  }
 }

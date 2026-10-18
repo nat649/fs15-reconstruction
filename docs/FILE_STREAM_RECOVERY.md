@@ -34,7 +34,7 @@ Third-party PNG decoders and Windows XmlLite retain their separate transports.
 
 This is not a general Windows compatibility layer, Proton replacement or a
 complete native engine startup. Native stream constructors/destructors, string
-ownership, archive providers, write/append services, buffered streams, live file
+ownership, archive providers, write/append services, remaining buffered operations, live file
 mutation, Windows path/case/locking semantics and the complete VFS remain open.
 The native disk-corruption notification branch is surfaced as a callback; its
 original logger/global-queue effects have not been validated. POSIX error codes
@@ -59,6 +59,8 @@ input hashes and aggregate counts are in [validation evidence](../analysis/file-
 
 Two asset-free CTests exercise the recovered control flow and actual OS
 transport independently. The full portable suite now has twenty-five tests.
+The subsequent [buffered-reader recovery](BUFFERED_FILE_RECOVERY.md) adds a
+component test and connects native cached reads to this transport.
 Linux x64/ARM64 execution evidence is separate from the native Windows oracle;
 neither establishes complete original-resource Linux gameplay equivalence.
 All twenty-five tests and existing frontend checks pass in

@@ -9,6 +9,8 @@ The recovered [file-stream operations](FILE_STREAM_RECOVERY.md) now provide the
 control flow around read-only POSIX resource loading for scripts, DDS/font data
 and Linux XML input. This is bounded native behavior behind authored OS seams,
 not a complete Windows API compatibility layer or a linked GE6 startup.
+The [32 KiB buffered callbacks](BUFFERED_FILE_RECOVERY.md) are also recovered
+and now sit above those disk methods in the frontend resource-read helper.
 
 Linux x64 is the next platform target while the native GE6 recovery continues.
 The later Switch homebrew target remains deferred. This stage keeps recovered
