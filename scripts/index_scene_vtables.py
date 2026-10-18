@@ -14,11 +14,14 @@ def main():
     image=DEFAULT_IMAGE.read_bytes();pe=PE(image)
     discovery=ROOT/'analysis/vtable-discovery'
     expected_slots,expected_created=map(int,(discovery/'complete.txt').read_text().strip().split(','))
-    with (discovery/'slots.csv').open(newline='') as stream:rows=list(csv.DictReader(stream))
+    with (discovery/'slots.csv').open(newline='') as stream:all_rows=list(csv.DictReader(stream))
+    if len(all_rows)!=expected_slots or len({r['target'] for r in all_rows if r['status']=='created_from_explicit_vtable'})!=expected_created:
+        raise ValueError('Combined vtable discovery completion marker differs')
+    rows=[r for r in all_rows if r['table'] in TABLES]
     with (ROOT/'recovered/decompiled/game-full/decompiled-index.csv').open(newline='') as stream:
         catalogue={row['entry']:row for row in csv.DictReader(stream)}
     expected={(table,str(slot)) for table in TABLES for slot in range(0,64,8)}
-    if len(rows)!=expected_slots or len(rows)!=len(expected) or {(r['table'],r['slot']) for r in rows}!=expected:
+    if len(rows)!=len(expected) or {(r['table'],r['slot']) for r in rows}!=expected:
         raise ValueError('Incomplete or duplicate bounded vtable slots')
     for row in rows:
         pointer=struct.unpack_from('<Q',image,pe.offset(int(row['table'],16)-pe.base+int(row['slot'])))[0]
@@ -31,7 +34,6 @@ def main():
         if '&PTR_FUN_'+table not in (ROOT/'recovered/decompiled/game-full'/row['file']).read_text():
             raise ValueError('Missing observed constructor/vtable association')
     created=sorted({row['target'] for row in rows if row['status']=='created_from_explicit_vtable'})
-    if len(created)!=expected_created:raise ValueError('Discovery completion marker differs')
     report=dict(status='passed',reference_sha256=EXPECTED_IMAGE,tables=len(TABLES),observed_slots=len(rows),
         distinct_targets=len({row['target'] for row in rows}),newly_catalogued_functions=len(created),
         new_entries=['0x'+entry for entry in created],

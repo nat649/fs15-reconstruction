@@ -36,9 +36,9 @@ fs::path resolve(const fs::path& root,const std::vector<std::string>& bases,cons
     throw std::runtime_error("Missing required local source/resource: "+name);
 }
 std::string read(const fs::path& path){
-    const auto bytes=fs15platform::read_file_bounded(path,8*1024*1024);
-    if(bytes.empty())throw std::runtime_error("Empty script");
-    return std::string(bytes.begin(),bytes.end());
+    const auto body=fs15platform::read_file_string_bounded(path,8*1024*1024);
+    if(body.empty())throw std::runtime_error("Empty script");
+    return body;
 }
 void execute(lua_State* state,const std::string& body,const std::string& name,bool binary){
     if(!binary&&(static_cast<unsigned char>(body.front())==0x1b||body.find('\0')!=std::string::npos))throw std::runtime_error("Refusing bytecode or non-text source");

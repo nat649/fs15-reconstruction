@@ -134,8 +134,7 @@ static void call_checked(int arguments, int results = 0) {
 }
 
 static void execute_file(const fs::path& path, const std::string& chunk_name) {
-    const auto bytes=fs15platform::read_file_bounded(path,8*1024*1024);
-    const std::string body(bytes.begin(),bytes.end());
+    const auto body=fs15platform::read_file_string_bounded(path,8*1024*1024);
     if (body.empty() || static_cast<unsigned char>(body.front()) == 0x1b)
         throw std::runtime_error("Refusing compiled/original bytecode as recovered source: " + chunk_name);
     if (luaL_loadbufferx(vm, body.data(), body.size(), ("@" + chunk_name).c_str(), "t")) {

@@ -1,4 +1,5 @@
 #include "file_transport.h"
+#include "memory_file.h"
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -99,4 +100,10 @@ BufferedReadOnlyFile::BufferedReadOnlyFile(const std::filesystem::path& path):fi
 uint32_t BufferedReadOnlyFile::read(void* output,uint32_t count){return fs15_buffered_file_read(record_.data(),record_.size(),output,count,count,&file_.services_);}
 uint32_t BufferedReadOnlyFile::seek(uint32_t offset,int origin){return fs15_buffered_file_seek(record_.data(),record_.size(),offset,origin,&file_.services_);}
 uint32_t BufferedReadOnlyFile::status() const{return fs15_buffered_file_status(record_.data(),record_.size());}
+std::string read_file_string_bounded(const std::filesystem::path& path,uint64_t maximum){
+    const auto bytes=read_file_bounded(path,maximum);ReadOnlyMemoryFile view(bytes.data(),bytes.size());
+    std::string result(bytes.size(),'\0');
+    if(view.read(result.data(),result.size(),static_cast<uint32_t>(result.size()))!=result.size())throw std::runtime_error("Memory resource read failed");
+    return result;
+}
 }

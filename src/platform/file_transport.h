@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <vector>
+#include <string>
 #include "file_stream.h"
 #include "buffered_file.h"
 
@@ -40,4 +41,5 @@ private:
     std::array<unsigned char,FS15_BUFFERED_FILE_BYTES> record_{};
 };
 std::vector<uint8_t> read_file_bounded(const std::filesystem::path& path,uint64_t maximum);
+std::string read_file_string_bounded(const std::filesystem::path& path,uint64_t maximum);
 }

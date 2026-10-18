@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x14006bc00",
+    "0x14006bcf0",
+    "0x14006bd50",
+    "0x14005f670",
+    "0x14006bc10",
+    "0x14006bd60"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/memory_file.cpp": "7b5b2c194dd627d9eedaa816961c149b26c89db45cbbc48b5e571dd92e7fa54f",
+    "src/core/memory_file.h": "39c68a1980b96bb74e5bfdd039ad7204c4c5c82be7bb2757f0acb7fc719149d3"
+  },
+  "comparison_counts": {
+    "valid": 2030,
+    "complete_record_bytes": 427712,
+    "size": 1950,
+    "tell": 2263,
+    "eof": 2227,
+    "output_buffer_bytes": 4771561,
+    "read": 2658,
+    "seek": 2238,
+    "sequences": 238,
+    "null_data_sequences": 9
+  },
+  "comparison_digest": "35a7b53a4f200136c35f37613f0341e1622d18076bf1dd6eb6f2b329c1998368",
+  "original_resource_inputs": [
+    {
+      "path": "recovered/lua/dataS/scripts/I18N.lua",
+      "bytes": 8951,
+      "sha256": "10316e5854d563761bdecb68a210849e9196ba1436aa0614243fbdd5823d6b0b"
+    },
+    {
+      "path": "recovered/gar/dataS/l10n_en.xml",
+      "bytes": 126434,
+      "sha256": "6e6142ec03a2ee94d159b74759c0dcbab5831ad723b01793f124a111de918080"
+    },
+    {
+      "path": "recovered/gar/shared/font/defaultFont.font",
+      "bytes": 12248,
+      "sha256": "02f7366bf229890b8fe9093ce1401aa5c7ae2cc90ad2a263891da3aaf5f70401"
+    },
+    {
+      "path": "recovered/gar/dataS2/menu/main_logo_en.dds",
+      "bytes": 131200,
+      "sha256": "0991178b90549c7757b17f23ad9de5e51f6676859fd218eed9c3cb14ece25bb3"
+    }
+  ],
+  "explicit_memory_vtables": {
+    "tables": 2,
+    "slots": 24,
+    "newly_catalogued_functions": 6,
+    "new_entries": [
+      "0x14005f670",
+      "0x1400673e0",
+      "0x1400680e0",
+      "0x14006bc10",
+      "0x14006bd50",
+      "0x14006bd60"
+    ],
+    "existing_function_bodies_split": false,
+    "discovery_csv_sha256": "7ebccca5c4cb87d0a08fbf5040e2c3ade77753f1dec662b128e6f70a08ac600e"
+  },
+  "scope": "Six bounded memory-stream valid/read/seek/size/tell/EOF paths against unchanged native routines, complete records, guarded outputs and immutable borrowed sources. Native factories, ownership transfer/free, archive decryption and full loader startup remain outside this comparison. Authored capacity/state checks exclude original read overflow and invalid-span behavior."
+}

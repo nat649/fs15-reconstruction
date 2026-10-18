@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('memory_stream_valid_read_seek_size_tell_eof', ['0x14006bc00','0x14006bcf0',
+        '0x14006bd50','0x14005f670','0x14006bc10','0x14006bd60'], 'analysis/memory-file-validation.json'),
     ('buffered_default_disk_read_seek_status', ['0x1402e86b0','0x1402e8830',
         '0x1402e8930'], 'analysis/buffered-file-validation.json'),
     ('file_stream_read_seek_size_and_tell', ['0x14004f310','0x14004f410',

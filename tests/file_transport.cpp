@@ -1,4 +1,5 @@
 #include "file_transport.h"
+#include "memory_file.h"
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -30,6 +31,16 @@ int main(){
             check(file.seek(0)&&!file.eof());
         }
         check(fs15platform::read_file_bounded(path,8)==expected);
+        check(fs15platform::read_file_string_bounded(path,8)==std::string(reinterpret_cast<const char*>(expected.data()),expected.size()));
+        {
+            fs15platform::ReadOnlyMemoryFile view(expected.data(),expected.size());unsigned char data[12]{};
+            check(view.valid()&&view.size()==8&&view.tell()==0&&!view.eof());
+            check(view.read(data,sizeof(data),3)==3&&data[2]==2&&view.tell()==3);
+            check(view.seek(7)&&view.read(data,sizeof(data),12)==1&&data[0]==42&&view.eof());
+            check(view.seek(UINT32_MAX)&&view.tell()==8);
+            fs15platform::ReadOnlyMemoryFile emptyView(nullptr,0);
+            check(emptyView.valid()&&emptyView.eof()&&emptyView.read(nullptr,0,0)==0);
+        }
         {
             fs15platform::BufferedReadOnlyFile file(path);unsigned char data[12]{};
             check(file.status()==0&&file.read(data,3)==3&&data[2]==2);
@@ -44,6 +55,7 @@ int main(){
         check(bounded&&missing&&directory);
         const auto empty=root/"empty";{std::ofstream out(empty);}
         check(fs15platform::read_file_bounded(empty,0).empty());
+        check(fs15platform::read_file_string_bounded(empty,0).empty());
         check(fs15platform::read_file_bounded(path,8)==expected);
         fs::remove(path);fs::remove(empty);fs::remove(root);
         std::cout<<"Read-only Windows/POSIX file transport checks passed\n";return 0;

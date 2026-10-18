@@ -61,7 +61,10 @@ def main():
     vtable_path=ROOT/'analysis/vtable-discovery/slots.csv'
     if vtable_path.exists():
         with vtable_path.open(newline='',encoding='utf-8') as stream:
-            roots['observed_scene_vtables']={row['target'] for row in csv.DictReader(stream)}
+            slots=list(csv.DictReader(stream))
+        memory_tables={'1404bbb38','1404d9ff8'}
+        roots['observed_scene_vtables']={row['target'] for row in slots if row['table'] not in memory_tables}
+        roots['observed_memory_stream_vtables']={row['target'] for row in slots if row['table'] in memory_tables}
     audits={}
     for name, targets in roots.items():
         reached, missing=closure(graph,targets)
