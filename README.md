@@ -176,6 +176,11 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   world/map/unmap transport, including prepared-volume culling queries.
   Real GPU resources and driver integration remain open. See
   [view scope](docs/SCENE_VIEW_RECOVERY.md).
+- **Linux x64 intermediate target:** `FS15PortableHost` is an installable headless
+  executable that runs recovered Camera/view/shader, visibility and lifetime
+  paths through authored CPU transport. It can inspect local resource presence
+  without modifying the game. The complete engine, menu and renderer are still
+  separate recovery milestones. See [Linux build/run instructions](docs/LINUX_PORT.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

@@ -1,6 +1,8 @@
 # Native recompilation work and Switch target
 
 The requested future console target is **Nintendo Switch homebrew (.nro)**.
+**Linux x64** is now the intermediate native portability target; see the
+[headless host and Linux milestones](LINUX_PORT.md).
 Console work is deferred while native recovery and the Windows runtime advance.
 The current work
 recovers GE6 components from native analysis and prepares them as portable C++.

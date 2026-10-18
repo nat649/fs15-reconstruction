@@ -114,6 +114,18 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.
 
+## Linux x64 intermediate target
+
+- [x] Choose Linux x64 as the next platform target before Switch packaging.
+- [x] Add an installable headless portability host using recovered Camera/view/shader, spatial visibility and lifetime paths, with authored CPU/platform transport.
+- [x] Verify six installed-host CLI/filesystem checks on Windows; original resources are optional and read-only.
+- [ ] Verify the installed Linux x64 host and publish an authored-only CI artifact.
+- [ ] Recover/link native engine startup and scripting, then open the recovered menu on Linux.
+- [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
+- [ ] Validate original maps, vehicles, farming and persistent save/reload on Linux.
+
+See [Linux build/run instructions and current limits](docs/LINUX_PORT.md).
+
 ## Future Nintendo Switch target
 
 - [x] Confirm Nintendo Switch as the requested future target.

@@ -30,9 +30,28 @@ jobs:
           /tmp/fs15-simulation-clock
       - name: Build and test recovered portable components without Windows or original resources
         run: |
-          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
+      - name: Install and exercise the Linux x64 headless host
+        run: |
+          cmake --install build/ci-portable-core --prefix build/linux-portable-host
+          python tests/check_portable_host.py --exe build/linux-portable-host/bin/FS15PortableHost --workdir build/linux-host-integration --report build/linux-host-validation.json
+          ldd build/linux-portable-host/bin/FS15PortableHost > build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
+          tar -C build/linux-portable-host -czf build/fs15-linux-x64-portable-host.tar.gz .
+          cd build
+          sha256sum fs15-linux-x64-portable-host.tar.gz > fs15-linux-x64-portable-host.sha256
+      - name: Upload the authored Linux portability host
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fs15-linux-x64-portable-host
+          path: |
+            build/fs15-linux-x64-portable-host.tar.gz
+            build/fs15-linux-x64-portable-host.sha256
+            build/linux-host-validation.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
 
   portable-arm64-checks:
     name: Recovered core on emulated ARM64 Linux

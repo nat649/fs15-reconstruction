@@ -1,10 +1,14 @@
 # Native GE6 portability status
 
-The future target is **Nintendo Switch homebrew (.nro)**. The native Windows
+The intermediate target is **Linux x64**, followed later by **Nintendo Switch
+homebrew (.nro)**. The native Windows
 runtime still executes original x64 machine code. Its successful local launch
 does not make that executable portable. The port requires recovered compilable
 engine code, recovered game scripts and platform/middleware integration.
 ReFarm remains an authored experimental host for resources and recovered logic.
+The [Linux portability host](LINUX_PORT.md) is a separate headless executable
+for recovered CPU components, lifetime and read-only resource discovery. It
+does not replace native engine startup or rendering.
 
 ## Current measured boundary
 
