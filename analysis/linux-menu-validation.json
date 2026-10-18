@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-18",
+  "status": "passed_with_original_resource_linux_desktop_validation_pending",
+  "tested_source_commit": "a9034500cb855f54f87c98457711ee9bebec9efe",
+  "linux_ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39120660428",
+  "linux_x64_core_tests_passed": 23,
+  "arm64_linux_qemu_core_tests_passed": 23,
+  "linux_menu_checks": {
+    "platform": "linux-x64",
+    "original_resources_executed": false,
+    "fixture_origin": "authored",
+    "checks": [
+      "help_without_assets",
+      "bootstrap_source_input_callbacks_and_world_boundary",
+      "png_dimensions_overlay_tint_uv_origin_clip_and_font_pixels",
+      "unknown_screen_failure",
+      "resources_unchanged",
+      "bytecode_refused",
+      "missing_texture_failure",
+      "dummy_display_window_create_present_and_exit",
+      "installed_launcher_smoke_and_report_archive_without_resources",
+      "installed_launcher_rejects_tampered_package"
+    ],
+    "passed": true
+  },
+  "runtime_archive_sha256": "14dc22fb867307f995f1395ffbc0ff24707dcccbffb7f68348600edd3e332ad8",
+  "linux_menu_executable_sha256": "fb390e275235682fffc966cb555d416c9991db4ec120274e8995a1951e69c3ed",
+  "local_package": {
+    "archive_sha256": "01bca686b0746d57c6afca9b4ea8cb3f1f7215172332963fe9a4a43cab454be7",
+    "archive_bytes": 2348114,
+    "recovered_sources_with_manifest_matching_hashes": 36,
+    "original_menu_resources": 17,
+    "file_manifest_and_archive_contents_verified": true,
+    "linux_executable_permissions_verified": true,
+    "contains_original_executables": false,
+    "public_redistribution": false
+  },
+  "windows_original_resource_reference": {
+    "backend": "Windows GDI+/XmlLite",
+    "recovered_source_count": 36,
+    "input_checks_passed": true,
+    "rendered_frames": 127,
+    "screenshot_visually_inspected": true,
+    "runtime_log_sha256": "e72569100d4f95008fbf5166a9e32b90c9b90c71fdc4439d982cd6ec13c9e6e1",
+    "executable_sha256": "88699bb34dda27901a2d508ea38241e3c02234d9ee1e48f82ca2164a38c45e3f"
+  },
+  "provenance": {
+    "gui_logic": "caller-supplied recovered FS15 Lua, kept local",
+    "platform_transport": "authored SDL2 window/input/drawing; third-party SDL2_image PNG decoder and Expat XML parser",
+    "dds_font_layout": "shared authored Windows frontend DDS decoder, original font metrics and authored SDF rasterizer",
+    "native_recovery_entries_added": 0
+  },
+  "boundaries": {
+    "original_resources_executed_on_linux": false,
+    "interactive_linux_desktop_observed": false,
+    "full_native_ge6_startup_ported": false,
+    "native_ge6_renderer_ported": false,
+    "physics_and_audio_ported": false,
+    "playable_linux_world": false,
+    "french_tokenizer_compatibility_validated": false
+  }
+}

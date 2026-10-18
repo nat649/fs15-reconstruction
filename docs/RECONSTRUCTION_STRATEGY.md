@@ -47,6 +47,7 @@ See the [native engine entry point](NATIVE_ENGINE_RUNTIME.md).
 | Trigonometric math backend | Platform C++ math library | Recovered TRS algorithms call sin/cos/atan2/sqrt; original CRT math bodies are not recovered; Windows fixture outputs match bit for bit |
 | Field/crop data | Original I3D definitions and GRLE8/16 | Ownership, density states and original crop block rendering |
 | Windowing, XML adapters and Direct3D host | Authored code | Provides the implemented services around recovered resources/scripts |
+| Linux frontend transport | Authored SDL2/SDL2_image window/draw/input adapter plus Expat XML transport | Shared frontend host and tester package; Linux CI uses authored fixtures, original-resource desktop test pending |
 | Simulation scheduling and pause | Authored host code | Fixed 60 Hz gameplay updates, bounded stall recovery and pause/input clearing; not recovered GE6 physics timing |
 
 ## Original engine components

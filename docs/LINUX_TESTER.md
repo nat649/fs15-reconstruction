@@ -83,3 +83,15 @@ No French mode is offered until original French XML tokenizer compatibility
 is resolved. SDL source rectangles currently round subpixel texture bounds;
 filtering, rotation and clip rasterization are authored approximations, not
 validated GE6 rendering parity.
+
+## Recorded validation
+
+[Repository checks run 39120660428](https://github.com/nat649/fs15-reconstruction/actions/runs/39120660428)
+passes the twenty-three core tests on Linux x64 and emulated ARM64, the existing
+headless-host checks, and ten SDL frontend/tester checks using authored resources.
+The latter cover image pixels, UV orientation/flip, clipping, font drawing,
+dummy-display window presentation, package verification and result archives.
+Separately, the Windows frontend rendered the original English menu and passed
+its recovered input checks with 36 manifest-matching game sources. This does
+not establish that those original resources have already run on Linux.
+See the [aggregate evidence](../analysis/linux-menu-validation.json).

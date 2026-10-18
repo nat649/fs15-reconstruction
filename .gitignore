@@ -74,6 +74,7 @@
 !/analysis/scene-view-validation.json
 !/analysis/linux-host-validation.json
 !/analysis/linux-script-host-validation.json
+!/analysis/linux-menu-validation.json
 /logs/
 __pycache__/
 *.pyc
