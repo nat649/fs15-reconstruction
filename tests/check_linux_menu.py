@@ -70,10 +70,11 @@ def read_png(path):
 
 BOOTSTRAP = '''-- Authored transport fixture. No original game logic or assets.
 source('dataS/scripts/probe.lua')
-local image
+local image, checker
 function fs15_menu_selfcheck()
     assert(probeLoaded)
     image=createImageOverlay('probe.dds')
+    checker=createImageOverlay('checker.dds')
 end
 function fs15_menu_show(name) assert(name=='MainScreen') end
 function fs15_menu_update(dt) assert(dt==16) end
@@ -84,6 +85,10 @@ function fs15_menu_draw()
     setOverlayColor(image,0,0,1,1)
     renderOverlay(image,0.1,0.1,0.8,0.8)
     reset2DClipArea()
+    setOverlayUVs(checker,0,0,0,1,1,0,1,1)
+    renderOverlay(checker,0.3,0.3,0.1,0.1)
+    setOverlayUVs(checker,1,0,1,1,0,0,0,1)
+    renderOverlay(checker,0.5,0.3,0.1,0.1)
     setTextColor(0,1,0,1)
     renderText(0.8,0.8,0.05,'ABC')
 end
@@ -114,6 +119,7 @@ def main():
         (scripts/'probe.lua').write_text('probeLoaded=true\n')
         (root/'bootstrap.lua').write_text(BOOTSTRAP)
         (root/'assets/probe.dds').write_bytes(dds(2, 2, [0xFFFFFFFF]*4))
+        (root/'assets/checker.dds').write_bytes(dds(2, 2, [0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFFFFFF]))
         (font/'defaultFont.dds').write_bytes(dds(8, 8, [0xFFFFFFFF]*64))
         metrics = struct.pack('>fII', 40, 0, 95)
         for char in range(32, 127):
@@ -144,6 +150,10 @@ def main():
         for xy, rgb in [((10, 10), (0, 0, 0)), ((200, 360), (255, 0, 0)), ((640, 360), (0, 0, 255)), ((640, 600), (255, 0, 0))]:
             assert pixel(*xy) == rgb, (xy, pixel(*xy), rgb)
         assert any(pixel(x, y)[1] > 200 for y in range(130, 150) for x in range(1020, 1050))
+        # Sample well inside each quadrant; interpolation is immaterial there.
+        for xy, channel in [((390, 435), 0), ((505, 435), 1), ((390, 500), 2), ((646, 435), 1)]:
+            rgb = pixel(*xy)
+            assert rgb[channel] > 200 and sum(rgb)-rgb[channel] < 60, (xy, rgb)
         checks.append('png_dimensions_overlay_tint_uv_origin_clip_and_font_pixels')
         run('--root', root, '--output-dir', output, '--smoke', '--screen', 'UnknownScreen', expected=1)
         checks.append('unknown_screen_failure')

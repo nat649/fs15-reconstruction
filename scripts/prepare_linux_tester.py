@@ -99,7 +99,7 @@ def prepare(runtime, trace, destination, resource_root=REPO):
         shutil.copyfile(source, target)
     for name in ('bootstrap.lua', 'career.lua', 'newgame.lua'):
         shutil.copyfile(REPO/'src/menu'/name, destination/'resources'/name)
-    shutil.copyfile(REPO/'scripts/start-linux.sh', destination/'start-linux.sh')
+    (destination/'start-linux.sh').write_bytes((REPO/'scripts/start-linux.sh').read_bytes().replace(b'\r\n', b'\n'))
     script = destination/'share/fs15-reconstruction/tester/linux-tester.py'
     script.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(REPO/'scripts/linux-tester.py', script)

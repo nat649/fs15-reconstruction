@@ -26,6 +26,7 @@ def main():
               'kernel': platform.release(), 'libc': platform.libc_ver(),
               'display': {k: os.environ.get(k, '') for k in ('XDG_SESSION_TYPE', 'SDL_VIDEODRIVER')},
               'smoke_exit': None, 'interactive_exit': None, 'status': 'failed'}
+    report['resources_from_package'] = args.root is None
     code = 1
     try:
         if platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64'):
