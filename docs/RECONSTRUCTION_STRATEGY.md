@@ -5,6 +5,10 @@ decompilation, recovered scripts, original resources and native behavior.
 Prioritize existing engine components and verified interfaces when extending
 the runtime. Keep track of what was recovered, reused, reconstructed or newly
 authored. Original meshes and scene placements are the source of map objects.
+Linux x64 is the intermediate portability target before the deferred Switch
+homebrew port. The [headless Linux host](LINUX_PORT.md) exercises recovered CPU
+components through authored platform transport; full native startup, the menu
+and rendering remain separate recovery milestones.
 
 ## Components currently used
 

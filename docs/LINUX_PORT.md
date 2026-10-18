@@ -19,7 +19,7 @@ and exits nonzero on failure. This is a runnable Linux executable, but it does
 not initialize the complete original engine, open a window, draw the menu,
 load a playable map or implement GPU/physics/audio backends.
 
-Source: [host](../src/portable/main.cpp). The recovered algorithms stay in
+Source: [host](https://github.com/nat649/fs15-reconstruction/blob/master/src/portable/main.cpp). The recovered algorithms stay in
 `src/core`; no additional native entries are claimed for this authored host.
 
 ## Build and install on Linux x64
@@ -87,3 +87,11 @@ The existing 23 asset-free core tests cover bounded recovered components.
 Linux host integration checks exercise the installed executable and filesystem
 contract separately. Neither establishes complete GE6 gameplay or Switch
 hardware compatibility.
+
+## Verified first Linux build
+
+The [first Linux host run](https://github.com/nat649/fs15-reconstruction/actions/runs/39114046074)
+passes all six installed-host integration checks and all 23 portable core tests.
+The downloaded artifact contains an ELF64 x86-64 executable whose hash matches
+the tested binary. The Windows host passes the same six checks. See
+[aggregate evidence](https://github.com/nat649/fs15-reconstruction/blob/master/analysis/linux-host-validation.json).
