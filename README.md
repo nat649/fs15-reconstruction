@@ -10,6 +10,7 @@ the game-resource results requires your own FS15 1.4.2.0 installation. The
 repository does not provide a ready-to-download copy of the game.
 
 [Progress checklist](PROJECT_CHECKLIST.md) · [Build instructions](#build) ·
+[Linux tester guide](docs/LINUX_TESTER.md) ·
 [Contributing](CONTRIBUTING.md) · [Project and dependency notices](NOTICE.md)
 
 **This is not a complete game rebuild. The recovered frontend and original
@@ -21,8 +22,16 @@ Engine 6 game. Original scripts, geometry, textures, scene transforms and native
 routines are reused or examined where practical. See the
 [reconstruction strategy](docs/RECONSTRUCTION_STRATEGY.md) for component provenance.
 
+**Linux direction:** port the actual GE6/game code to run natively without
+Proton, using the original Windows version as the behavior and resource
+compatibility reference. Matching that version is the target, not a result
+already achieved. The current Linux build runs recovered components and an
+experimental frontend host; complete GE6 startup, native graphics/physics/audio,
+playable worlds and persistent simulation saves remain open. Original-resource
+menu/input validation on a Linux desktop is also pending.
+
 **Runtime target: the actual GIANTS Engine 6.** The Direct3D alpha is an
-experimental viewer/test host. The native entry point has now reached the
+experimental viewer/test host. On Windows, the native entry point has reached the
 original menu and Bjornholm, with 104 recovered-source helper comparisons
 passing inside GE6. See the [native runtime instructions](docs/NATIVE_ENGINE_RUNTIME.md).
 
@@ -57,8 +66,8 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   **11,636 eligible exports**, after five additional targets were found in
   constructor-observed scene vtables. A separate portable C++ core now builds the RLE
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
-  native affine point transform. Recovered affine/quaternion math, hierarchical
-  world-transform caching and four Lua coordinate adapters bring this to
+  native affine point transform. Together with subsequent scene, animation,
+  Camera and file-stream recovery, the ledger now records
   **209 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
@@ -189,12 +198,27 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   The optional `FS15ScriptHost` adds text-only localization loading with shared
   read-only XML/save adapters; Linux uses Expat and LuaJIT. Original-resource
   parity and asset-free Linux fixtures are reported separately.
+- **Native file reads on Linux:** four recovered read/seek/size/tell paths
+  match **2,492 operations** against original Windows routines. An authored
+  read-only Win32/POSIX adapter connects them to frontend script, DDS/font and
+  Linux XML loading. Signed 32-bit seek limits and EOF behavior are retained;
+  full Windows namespace/locking and VFS parity remain open. See
+  [file-stream recovery](docs/FILE_STREAM_RECOVERY.md).
+- **Native buffered resource reads:** three further callbacks reproduce the
+  original **32 KiB cache**, cached seeks and sticky refill-error state.
+  **2,163 operations**, complete cache records, guarded outputs and **1,680
+  ordered OS events** match the original callbacks and disk methods. The
+  frontend now reads through this buffered path. Original allocation/open/close,
+  writes and arbitrary derived streams remain separate work. See
+  [buffered-reader recovery](docs/BUFFERED_FILE_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All twenty-six asset-free component/transport tests pass on Windows x64, Linux x64
-  and ARM64 Linux under QEMU, separately from the future Switch target. See
-  [platform evidence](analysis/portable-core-platform-validation.json) and
+  full linking. All twenty-six asset-free component/transport tests pass on
+  Windows x64, Linux x64 and ARM64 Linux under QEMU, separately from the future
+  Switch target. See
+  [current platform and buffered-reader evidence](analysis/buffered-file-validation.json),
+  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39122697535) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
