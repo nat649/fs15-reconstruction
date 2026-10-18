@@ -59,6 +59,12 @@ this executable on Mesa's software renderer under Xvfb, separately from the
 asset-free core tests. This is real OpenGL API execution, not hardware GPU
 performance or original-resource desktop validation.
 
+[Linux run 39152321706](https://github.com/nat649/fs15-reconstruction/actions/runs/39152321706)
+passes all **32** component/transport tests on Linux x64 and ARM64 Linux under
+QEMU, plus the actual GL check on **llvmpipe (LLVM 20.1.2, 256 bits)**. The same
+32 component tests pass locally on Windows x64. The source-pinned report records
+the tested commit, runtime archive and four installed executable hashes.
+
 ```sh
 cmake -S . -B build/linux-gl -DFS15_PORTABLE_CORE_ONLY=ON \
   -DFS15_BUILD_GL_CHECK=ON -DCMAKE_BUILD_TYPE=Release

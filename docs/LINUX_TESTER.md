@@ -47,6 +47,23 @@ or resource directories. Nothing is sent automatically. Inspect it before
 sharing. A successful smoke check alone does not prove a visible window or
 usable mouse/keyboard on the tester's desktop.
 
+## Optional recovered OpenGL buffer check
+
+Newly prepared packages also include `bin/FS15GLDriverCheck`. From a Linux
+graphical desktop, run:
+
+```sh
+./bin/FS15GLDriverCheck > gl-buffer-check.txt 2>&1
+```
+
+It opens a hidden SDL/OpenGL context, prints the GL renderer, transfers and
+reads back test bytes through recovered GE6 buffer code, then deletes the
+buffers. Return the text file with the normal tester results. It uses authored
+data and does not draw a map or test the complete GE6 renderer/physics engine.
+The normal frontend tester does not invoke this optional check automatically.
+It requires desktop OpenGL; `--smoke` with SDL's dummy video driver cannot run
+it. See [buffer recovery and headless Mesa commands](GL_BUFFER_RECOVERY.md).
+
 ## Prepare resources locally
 
 Original game assets and recovered game scripts are excluded from public
@@ -86,9 +103,12 @@ validated GE6 rendering parity.
 
 ## Recorded validation
 
-[Repository checks run 39148462680](https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680)
-passes the thirty-one component/transport tests on Linux x64 and emulated ARM64, the existing
+[Repository checks run 39152321706](https://github.com/nat649/fs15-reconstruction/actions/runs/39152321706)
+passes the thirty-two component/transport tests on Linux x64 and emulated ARM64, the existing
 headless-host checks, and ten SDL frontend/tester checks using authored resources.
+It also passes the recovered buffer check against actual Mesa OpenGL calls.
+The local `FS15LinuxTesterGL.tar.gz` package adds that optional executable;
+its archive and all 68 manifest files were verified after preparation.
 The latter cover image pixels, UV orientation/flip, clipping, font drawing,
 dummy-display window presentation, package verification and result archives.
 Separately, the Windows frontend rendered the original English menu and passed

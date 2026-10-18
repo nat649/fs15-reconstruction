@@ -37,14 +37,15 @@
   },
   "scope": "Installed authored headless host, recovered CPU/lifetime chain and read-only filesystem/CLI contract; no full engine or original resources required.",
   "date": "2026-10-18",
-  "tested_source_commit": "92284ad569d345bc9c0f38228ab8d592fa452c73",
-  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680",
-  "component_transport_tests": 31,
+  "tested_source_commit": "8e1016b6388e3419c2f7883edee2e943a5c8d0df",
+  "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39152321706",
+  "component_transport_tests": 32,
   "host_source_sha256": {
     "src/portable/main.cpp": "2ccbe779454d6819f18778181eb2587984c7e436fbfbfaf6eaa0e46fef3a7c39",
     "src/portable/CMakeLists.txt": "43d18b3323e1ee8be7a98e9c5ada305856a45a9555f5638a7b28d448a3da1006",
-    "CMakeLists.txt": "85a8d0ee4684bac278305f1eb9db80be77b57abd3d94078107f7fa70336e1d43",
+    "CMakeLists.txt": "8f35898bf31617fb99bd4f0db2217cfbfd3092ac43ddc9e3d5349db97c4a7436",
     "tests/check_portable_host.py": "721083f4fb18a2085e8507f6494ecbd384172285dd10a7a23b9d758857260100"
   },
-  "native_component_evidence": "analysis/physics-post-validation.json"
+  "native_component_evidence": "analysis/physics-post-validation.json",
+  "separate_gl_buffer_evidence": "analysis/gl-buffers-validation.json"
 }

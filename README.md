@@ -245,17 +245,18 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
   storage, staging, direct mapping, discard, subdata upload and deletion.
   **1,024 paired lifetimes** match unchanged GE6 code through recording GL seams.
-  An optional SDL/OpenGL check exercises actual driver byte readback in Linux CI;
+  The SDL/OpenGL check passes actual driver byte readback on Mesa in Linux CI;
   shaders, materials and scene drawing remain open. See
   [scope and build commands](docs/GL_BUFFER_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All thirty-one asset-free component/transport tests pass on
+  full linking. All thirty-two asset-free component/transport tests pass on
   Windows x64, Linux x64 and ARM64 Linux under QEMU, separately from the future
   Switch target. See
   [current connected-chain platform evidence](analysis/physics-post-validation.json),
-  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680) and
+  [current OpenGL/platform evidence](analysis/gl-buffers-validation.json),
+  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39152321706) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
