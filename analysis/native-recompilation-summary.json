@@ -1,9 +1,14 @@
 {
   "catalogued": 12207,
   "eligible": 11642,
-  "pseudocode_only": 11424,
-  "validated_component_path_entries": 218,
+  "pseudocode_only": 11421,
+  "validated_component_path_entries": 221,
   "components": [
+    {
+      "name": "physics_dispatch_inline_step_and_worker_loop",
+      "entries": 3,
+      "evidence": "analysis/physics-dispatch-validation.json"
+    },
     {
       "name": "render_view_lifetime_and_wheel_force_adapter",
       "entries": 3,

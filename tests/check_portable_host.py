@@ -20,7 +20,7 @@ def main():
         assert 'headless' in run('--help').stdout;checks.append('help_from_other_working_directory')
         baseline=json.loads(run('--probe').stdout)
         assert baseline['status']=='passed' and baseline['resources'] is None and not baseline['native_engine_started'] and not baseline['renderer_started'] and not baseline['playable'] and not baseline['physics_world_started']
-        assert baseline['cpu_probe']==dict(view_constructed_and_destroyed=True,buffers_created=2,buffers_destroyed=2,wheel_registry_force_adapter=True,camera_constructed_and_destroyed=True,view_prepared=True,shader_block_floats=49,map_calls=1,unmap_calls=1,visible_objects=1,outside_objects=1,retained_allocations=0)
+        assert baseline['cpu_probe']==dict(view_constructed_and_destroyed=True,buffers_created=2,buffers_destroyed=2,wheel_registry_force_adapter=True,physics_worker_thread=True,physics_worker_completed_steps=16,camera_constructed_and_destroyed=True,view_prepared=True,shader_block_floats=49,map_calls=1,unmap_calls=1,visible_objects=1,outside_objects=1,retained_allocations=0)
         checks.append('recovered_core_probe_and_complete_cleanup')
         report=cwd/'report with spaces.json';result=json.loads(run('--probe','--game-dir',game,'--report',report).stdout)
         assert json.loads(report.read_text())==result

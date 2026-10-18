@@ -61,6 +61,14 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 
 ## Current results
 
+- **Native physics scheduling:** the recovered dispatcher, synchronous step and
+  worker loop now run over an authored real thread/auto-reset event transport.
+  Comparisons cover 3,072 dispatch states, 1,024 synchronous states and 512
+  worker lifetimes / 2,044 completed steps. The portable startup probe performs
+  16 worker-thread force queries and joins cleanly. Full physics scene creation,
+  solver, post-step finalization and GPU startup remain open. See
+  [physics dispatch scope](docs/PHYSICS_DISPATCH_RECOVERY.md).
+
 - **Native startup, 3D and physics:** recovered render-view creation/destruction
   now initializes state and requests/releases two buffers through explicit
   driver services. A recovered wheel-force adapter connects the native wheel
@@ -77,7 +85,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **218 native entries on bounded tested paths**. The affine component passes
+  **221 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.

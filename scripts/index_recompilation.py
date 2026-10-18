@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('physics_dispatch_inline_step_and_worker_loop', ['0x1400c7a60','0x1400c3c50',
+        '0x1400c3b90'], 'analysis/physics-dispatch-validation.json'),
     ('render_view_lifetime_and_wheel_force_adapter', ['0x14012ca00','0x14012cc40',
         '0x1400e76c0'], 'analysis/startup-view-wheel-validation.json'),
     ('memory_stream_valid_read_seek_size_tell_eof', ['0x14006bc00','0x14006bcf0',

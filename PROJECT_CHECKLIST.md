@@ -107,13 +107,16 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 218 bounded reconstructed native entries separately from 11,424 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 221 bounded reconstructed native entries separately from 11,421 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
 - [x] Connect native wheel registry lookup and tire math through the recovered script force adapter; compare 4,096 complete frames and execute it in the portable host.
 - [ ] Connect the recovered view's resource requests to an actual Linux graphics driver and validate drawing consumers.
-- [ ] Recover physics-manager creation, events/worker dispatch and backend world initialization.
+- [ ] Recover full physics-manager creation and backend world initialization; bounded event/worker dispatch is covered below.
+- [x] Recover native dispatch, synchronous stepping and the worker loop; compare 3,072 dispatch states, 1,024 synchronous states and 512 worker lifetimes / 2,044 completed steps.
+- [x] Connect the recovered worker to real portable threads/auto-reset events, verify 24 transport lifetimes and execute 16 force-query steps in the CPU startup probe.
+- [ ] Recover native physics post-step finalization, nonempty observation/contact handling and backend scene/solver creation.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.

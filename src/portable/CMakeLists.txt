@@ -1,5 +1,5 @@
 add_executable(FS15PortableHost main.cpp)
-target_link_libraries(FS15PortableHost PRIVATE FS15PortableCore)
+target_link_libraries(FS15PortableHost PRIVATE FS15PortableCore FS15PhysicsTransport)
 target_compile_features(FS15PortableHost PRIVATE cxx_std_17)
 if(MSVC)
   target_compile_options(FS15PortableHost PRIVATE /W4 /WX /utf-8 /fp:strict)

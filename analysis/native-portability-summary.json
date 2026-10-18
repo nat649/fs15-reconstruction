@@ -147,6 +147,18 @@
       "uncatalogued_native_target_entries": 0,
       "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
     },
+    "physics_step_dispatch_and_worker": {
+      "seed_entries": 3,
+      "known_reachable_entries": 46,
+      "eligible_reachable_entries": 43,
+      "bounded_recovered_entries": 3,
+      "remaining_entries_without_validated_components": 40,
+      "functions_with_computed_calls": 23,
+      "computed_call_sites": 76,
+      "external_targets_outside_function_catalogue": 29,
+      "uncatalogued_native_target_entries": 0,
+      "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
+    },
     "observed_scene_vtables": {
       "seed_entries": 17,
       "known_reachable_entries": 213,

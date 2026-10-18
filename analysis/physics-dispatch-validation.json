@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x1400c7a60",
+    "0x1400c3c50",
+    "0x1400c3b90"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/physics_dispatch.cpp": "69aca372df73d80ff7369f5b9f8b644260a302cbc987fc809256c3d028fb4211",
+    "src/core/physics_dispatch.h": "6f8f8ef2147fba4c6772b45ceca20743d8e0a0cef273aaa72a3f7586e9c63016"
+  },
+  "comparison_counts": {
+    "dispatch_states": 3072,
+    "dispatch_ignored": 2660,
+    "dispatch_async_signals": 287,
+    "dispatch_inline_steps": 125,
+    "inline_states": 1024,
+    "worker_lifetimes": 512,
+    "worker_completed_steps": 2044
+  },
+  "comparison_digest": "15509c7dedaeef12be41747e6550cf7bf0a6a1ee8a814f79eab40a13b72e7234",
+  "scope": "Unchanged original dispatch, inline and worker bodies; complete manager/guard bytes and ordered backend/event traces. Native observation collection runs only with an empty list. Real OS threading is validated separately through authored transport. Full manager/scene creation, nonempty contacts, post-step finalization and solver remain unported.",
+  "authored_guards": "Finite/size/callback checks and fail-stop behavior on service errors; native event return values are ignored in original code."
+}
