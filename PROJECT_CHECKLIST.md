@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 202 bounded reconstructed native entries separately from 11,434 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 206 bounded reconstructed native entries separately from 11,430 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
@@ -124,6 +124,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Add a text-only localization subset host and compare 1,425 English texts, 165 descriptions, seven labels and three factors with original Lua bytecode locally on Windows.
 - [x] Verify Linux Lua/XML/save-metadata and all six installed-script-host checks; distribute both executables in the verified Linux artifact.
 - [x] Compile the shared recovered-frontend host on Linux with authored SDL2 window/render/input transport and package a local tester with hash checks and result archives.
+- [x] Recover four native file read/seek/size/tell paths; compare 2,492 operations with original routines and connect a read-only Windows/POSIX transport to frontend resource loading.
 - [ ] Validate the recovered menu with original local resources and interactive input on a Linux tester's desktop.
 - [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
@@ -137,7 +138,7 @@ See [Linux build/run instructions and current limits](docs/LINUX_PORT.md).
 - [x] Isolate Windows symbol exports and add a portable-only build path.
 - [x] Make RLE16 output endianness and 32-bit shift wrapping explicit.
 - [x] Choose Switch homebrew `.nro` as the future packaging route; console work is deferred.
-- [x] Cross-compile the recovered core for ARM64 Linux and pass all twenty-three asset-free tests under QEMU in CI; this is separate from Switch hardware validation.
+- [x] Cross-compile the recovered core for ARM64 Linux and pass all twenty-five asset-free component/transport tests under QEMU in CI; this is separate from Switch hardware validation.
 - [ ] Configure the console toolchain and packaging target.
 - [ ] Cross-compile and run the recovered core on the Switch; host builds do not validate this.
 - [ ] Recover/link the complete native engine and its platform/middleware interfaces.

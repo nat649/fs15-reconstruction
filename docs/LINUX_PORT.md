@@ -5,6 +5,10 @@ Use the [Linux tester guide](LINUX_TESTER.md) to prepare a local package and
 collect a friend's results. Public artifacts include only authored host code
 and adapters; original menu resources/recovered game scripts stay local.
 Linux CI uses authored fixtures. Original-resource desktop validation is pending.
+The recovered [file-stream operations](FILE_STREAM_RECOVERY.md) now provide the
+control flow around read-only POSIX resource loading for scripts, DDS/font data
+and Linux XML input. This is bounded native behavior behind authored OS seams,
+not a complete Windows API compatibility layer or a linked GE6 startup.
 
 Linux x64 is the next platform target while the native GE6 recovery continues.
 The later Switch homebrew target remains deferred. This stage keeps recovered

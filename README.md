@@ -59,7 +59,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Recovered affine/quaternion math, hierarchical
   world-transform caching and four Lua coordinate adapters bring this to
-  **202 native entries on bounded tested paths**. The affine component passes
+  **206 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -192,7 +192,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All twenty-three asset-free core tests pass on Windows x64, Linux x64
+  full linking. All twenty-five asset-free component/transport tests pass on Windows x64, Linux x64
   and ARM64 Linux under QEMU, separately from the future Switch target. See
   [platform evidence](analysis/portable-core-platform-validation.json) and
   [porting blockers](docs/PORTABILITY_STATUS.md).

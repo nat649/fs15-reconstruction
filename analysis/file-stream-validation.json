@@ -44,5 +44,36 @@
       "sha256": "0991178b90549c7757b17f23ad9de5e51f6676859fd218eed9c3cb14ece25bb3"
     }
   ],
-  "scope": "Four bounded file read/seek/size/tell paths, complete records and output guards against unchanged native routines using actual Windows kernel I/O for successful operations and explicit injected ordinary-I/O failure seams. Constructors/destructors, corruption logger/global queue, full VFS and cross-process sharing semantics are outside this comparison."
+  "scope": "Four bounded file read/seek/size/tell paths, complete records and output guards against unchanged native routines using actual Windows kernel I/O for successful operations and explicit injected ordinary-I/O failure seams. Constructors/destructors, corruption logger/global queue, full VFS and cross-process sharing semantics are outside this comparison.",
+  "platform_validation": {
+    "tested_source_commit": "b9b538e",
+    "linux_ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39122034884",
+    "windows_x64_component_and_os_transport_tests": 25,
+    "linux_x64_component_and_os_transport_tests": 25,
+    "arm64_linux_qemu_component_and_os_transport_tests": 25,
+    "linux_menu_tester_checks": 10,
+    "linux_script_host_checks": 6,
+    "windows_script_host_checks": 6,
+    "windows_original_english_localization_parity": {
+      "texts": 1425,
+      "descriptions": 165,
+      "labels": 7,
+      "conversion_factors": 3
+    },
+    "windows_original_menu": {
+      "input_checks_passed": true,
+      "scripts": 36,
+      "frames": 127,
+      "runtime_log_sha256": "f6e615a0c0820509e2e13d28376c35efd4c2fee49355e47655d77a313c7a79db",
+      "executable_sha256": "b27dd78ffd5fdbf92f1b80847c5de46b9c735bf400f17509d219fb161c6d1c8f"
+    },
+    "linux_original_resource_desktop_validation": false,
+    "linux_runtime_archive_sha256": "4efe0f04b646456794aa7142757d082246c2c78297dc1af9c1b594f47a3a60ff",
+    "linux_executables_sha256": {
+      "FS15MenuLinux": "a2ba4f8b06ed7a05d5100986f5ebd839e1b112f2a384fccf428237d22fb4991b",
+      "FS15ScriptHost": "5ede4944eb0fcd4382d3cc4d5038c0df818ee0700fe1446f8867b98186945923",
+      "FS15PortableHost": "0f340c129ed8e4ed63c6e1b920b81b785aa547c5c2a3ccfd9fe4968cf8088389"
+    },
+    "full_native_engine_started_on_linux": false
+  }
 }

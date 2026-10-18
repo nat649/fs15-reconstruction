@@ -16,6 +16,7 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 
 | Component | Native coverage | Validation |
 |---|---|---|
+| File read/seek/size/tell | Four entries; explicit OS service seams | 2,492 operation comparisons in 37 sequences, complete records and guarded buffers; [scope and limits](FILE_STREAM_RECOVERY.md) |
 | RLE8 decoder | `0x14028f430` | 266 comparisons / 853,086 values |
 | RLE16 decoder | `0x14028f770` | 107 comparisons / 35,133,356 values |
 | Tire-force math | `0x1400c24c0` | 3,300 comparisons / 13,200 float results |
@@ -48,8 +49,8 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 | Camera projection matrices, full projective product and basis conditioning | Four entries | 8,000 projection matrices, 5,000 products, 5,000 basis records and 18 original-I3D-parameter projection/view chains |
 | Camera view/stereo assembly and shader-block packing | Two entries | 3,000 exact upload records, 2,418 view/cache chains, 5,418 complete map/unmap trace pairs and prepared-volume culling queries; explicit tangent/platform and GPU transport boundaries |
 
-Those are **202 native entries with bounded reconstructed paths**. They are not
-202 completely proven engine functions or a percentage of GE6 completion.
+Those are **206 native entries with bounded reconstructed paths**. They are not
+206 completely proven engine functions or a percentage of GE6 completion.
 Unknown record bytes remain explicit in the recovered structures. Rendering,
 suspension, contacts and a complete rigid-body solver are not supplied by this
 library. The wheel/tire helpers are not yet connected to playable vehicle physics.
