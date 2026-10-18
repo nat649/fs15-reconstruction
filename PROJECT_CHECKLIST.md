@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 248 bounded reconstructed native entries separately from 11,419 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 253 bounded reconstructed native entries separately from 11,414 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
@@ -122,7 +122,8 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Identify embedded Bullet classes through GE6 RTTI/factory analysis; pin a compatible upstream 2014 candidate and compare nine Windows structure sizes.
 - [x] Compile recovered GE6 world/dispatcher/solver hooks over reused Bullet; compare 64 native lifetimes / 15,360 trajectory frames including generated rigid-body contacts.
 - [x] Compare 96 nonempty native vehicle callback fixtures / 26,984 events and preserve native equal-key island sort order in 1,024 fixtures.
-- [ ] Complete the native custom broadphase concurrency, GIANTS heightfield collision algorithms and actual `Bt2RaycastVehicle` wheel solver; link them to full scene loading and startup.
+- [x] Recover five GE6 wheel frame/filter/closest-hit/raycast/finish paths; compare 6,656 original-code fixtures and exercise actual middleware rays against rigid bodies, triggers, ignored pairs and suspension limits.
+- [ ] Complete the native custom broadphase concurrency, GIANTS heightfield collision algorithms and actual `Bt2RaycastVehicle` constraint setup/velocity/penetration solver; link them to full scene loading and startup.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.

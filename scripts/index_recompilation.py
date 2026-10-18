@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('ge6_vehicle_suspension_ray_filter_and_solved_wheel_readback',
+        ['0x140150a10','0x140151930','0x1400ba820','0x140153330','0x140155140'],
+        'analysis/ge6-vehicle-wheel-validation.json'),
     ('ge6_bullet_world_solver_and_vehicle_callback_routing',
         ['0x14027f620','0x14027f590','0x14027f380','0x14027f3d0',
          '0x14027e570','0x14027e6e0','0x14027e7e0','0x14027e890',

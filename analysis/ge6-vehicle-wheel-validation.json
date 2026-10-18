@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "states": {
+    "ray_frame": 768,
+    "wheel_ray": 768,
+    "collision_filter": 4096,
+    "finish": 1024
+  },
+  "maximum_scaled_error": 0.0,
+  "comparison_digest": "22008d00d6bf32a0049c144b45c05781a6760a182e3527f24a9f815fcdd99c1e",
+  "rebuilt_source_sha256": {
+    "src/ge6/vehicle_wheel.h": "3369eba319e265009996e3472920bc635a692d2bea46108e2bbff5b963df3e07",
+    "src/ge6/vehicle_wheel.cpp": "ddf0ceb1e7766135f5446203a985b98f400c35ffedc4db962c2beb21915b89dc"
+  },
+  "scope": "Five bounded GE6 suspension frame/filter/closest-hit/raycast/finish bodies. Typed Bullet transport is authored. Controlled ray service tests unchanged original callback and wheel arithmetic; a separate portable integration test uses actual Bullet ray queries. Vehicle constraint setup, friction/velocity and penetration solver, original heightfield collision and playable engine startup remain open."
+}

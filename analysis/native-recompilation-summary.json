@@ -1,9 +1,14 @@
 {
   "catalogued": 12233,
   "eligible": 11667,
-  "pseudocode_only": 11419,
-  "validated_component_path_entries": 248,
+  "pseudocode_only": 11414,
+  "validated_component_path_entries": 253,
   "components": [
+    {
+      "name": "ge6_vehicle_suspension_ray_filter_and_solved_wheel_readback",
+      "entries": 5,
+      "evidence": "analysis/ge6-vehicle-wheel-validation.json"
+    },
     {
       "name": "ge6_bullet_world_solver_and_vehicle_callback_routing",
       "entries": 12,

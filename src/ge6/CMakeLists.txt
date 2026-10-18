@@ -1,5 +1,5 @@
 include("${CMAKE_SOURCE_DIR}/cmake/ge6-bullet.cmake")
-add_library(FS15GE6Physics STATIC physics_world.cpp)
+add_library(FS15GE6Physics STATIC physics_world.cpp vehicle_wheel.cpp)
 set_target_properties(FS15GE6Physics PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(FS15GE6Physics PUBLIC cxx_std_17)
 target_include_directories(FS15GE6Physics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${ge6bullet_SOURCE_DIR}/src")

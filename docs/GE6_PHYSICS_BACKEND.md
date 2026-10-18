@@ -83,6 +83,37 @@ objects do not implement the actual `Bt2RaycastVehicle` contact/wheel solver.
 The portable CTest additionally requires accumulated gravity, collision response,
 stable resting height and connected vehicle hook phases.
 
+## Recovered wheel ray and finish paths
+
+[`vehicle_wheel.cpp`](../src/ge6/vehicle_wheel.cpp) ports five further bounded
+bodies: `0x140150a10` suspension frame, `0x140151930` wheel ray filter,
+`0x1400ba820` closest-hit callback, `0x140153330` suspension ray and
+`0x140155140` solved-wheel finish/readback. The public typed structures are
+authored transport, not Windows Bullet object layouts.
+
+The GE6 filter uses an OR of corresponding group/mask bits, rejects the owning
+body, triggers and objects without the rigid-body internal type, and honors
+the owner's ignored pairs. Replacing this with stock Bullet's cross-field AND
+changes observed behavior. Suspension distances retain native compression and
+droop clamps. Wheel finish preserves the native single angle wrap (not modulo),
+sleep/inactive guards, solved normal-impulse force and slip/motor readback.
+
+The [local comparison](../scripts/check_ge6_vehicle_wheel.py) and
+[source-pinned result](../analysis/ge6-vehicle-wheel-validation.json) cover
+768 frames, 768 miss/world-normal/local-normal ray fixtures, 4,096 filters and
+1,024 finish states: **6,656 fixtures with zero observed numeric difference**.
+The ray fixtures supply controlled results through an authored world callback;
+unchanged original GE6 ray/callback bodies execute. A separate portable CTest
+uses actual Bullet world ray queries to validate ground hits, owner/trigger/
+non-rigid rejection, ignored pairs, compression limits and missing contacts.
+These functions are not registered as a complete vehicle solver: constraint
+setup, friction/velocity and penetration phases still need recovery.
+
+The world/solver checkpoint passes all 34 CTests on Windows x64, Linux x64 and
+ARM64 Linux under QEMU ([CI](https://github.com/nat649/fs15-reconstruction/actions/runs/39155932339)).
+The wheel extensions additionally pass locally; their Linux/ARM validation is
+tracked by subsequent CI runs.
+
 ## Build
 
 ```sh
@@ -99,8 +130,9 @@ script also needs the original pinned analysis image and the separately built
 
 ## Remaining path to a playable GE6 Linux runtime
 
-The next native class is **`Bt2RaycastVehicle`**: ray contacts, wheel constraints,
-motor/brake/steering inputs and solved wheel state. Original GE6 terrain shapes
+The next steps in **`Bt2RaycastVehicle`** are wheel constraint setup and the
+velocity/penetration phases, motor/brake/steering inputs and integration of the
+recovered ray/finish methods into that complete solver. Original GE6 terrain shapes
 and convex/heightfield algorithms, body/joint/scene loading, the remaining script
 services, graphics shaders/materials/draw submission and the full startup loop
 remain to be linked and tested. A working physics component is not a playable

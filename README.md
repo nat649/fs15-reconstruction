@@ -94,7 +94,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **248 native entries on bounded tested paths**. The affine component passes
+  **253 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -248,7 +248,10 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   and solver hooks. **15,360 simulated frames** match original GE6 trajectories
   and contacts; **26,984 nonempty vehicle callback events** and 1,024 native
   sort fixtures match. This is actual rigid-body simulation, separate from
-  ReFarm. GIANTS terrain collision, the actual raycast vehicle class and full
+  ReFarm. Five wheel frame/filter/raycast/finish paths additionally match
+  **6,656 native fixtures** with no observed arithmetic difference; actual
+  middleware rays test owner/trigger exclusion and suspension limits. GIANTS
+  terrain collision, the complete raycast vehicle constraint solver and full
   startup remain open. See [provenance and evidence](docs/GE6_PHYSICS_BACKEND.md).
 - **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
   storage, staging, direct mapping, discard, subdata upload and deletion.
@@ -259,12 +262,12 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 - **Portability audit:** the current static catalogue has 31,396 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
-  full linking. All thirty-two asset-free component/transport tests pass on
+  full linking. All thirty-four asset-free component/transport tests pass on
   Windows x64, Linux x64 and ARM64 Linux under QEMU, separately from the future
   Switch target. See
   [current connected-chain platform evidence](analysis/physics-post-validation.json),
   [current OpenGL/platform evidence](analysis/gl-buffers-validation.json),
-  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39152321706) and
+  [Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39155932339) and
   [porting blockers](docs/PORTABILITY_STATUS.md).
 - **Actual GE6 execution:** the installed original engine initializes its OpenGL
   renderer and physics 5.9.4, opens its frontend and loads Bjornholm in a separate
