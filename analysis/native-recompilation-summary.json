@@ -1,9 +1,14 @@
 {
   "catalogued": 12201,
   "eligible": 11636,
-  "pseudocode_only": 11434,
-  "validated_component_path_entries": 202,
+  "pseudocode_only": 11430,
+  "validated_component_path_entries": 206,
   "components": [
+    {
+      "name": "file_stream_read_seek_size_and_tell",
+      "entries": 4,
+      "evidence": "analysis/file-stream-validation.json"
+    },
     {
       "name": "scene_camera_view_stereo_and_shader_block",
       "entries": 2,

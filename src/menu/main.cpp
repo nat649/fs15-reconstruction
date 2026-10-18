@@ -28,6 +28,7 @@ extern "C" {
 #include "xml_bridge.h"
 #include "render.h"
 #include "savegames.h"
+#include "file_transport.h"
 
 namespace fs = std::filesystem;
 static constexpr int screen_width = 1280, screen_height = 720;
@@ -133,9 +134,8 @@ static void call_checked(int arguments, int results = 0) {
 }
 
 static void execute_file(const fs::path& path, const std::string& chunk_name) {
-    std::ifstream input(path, std::ios::binary);
-    if (!input) throw std::runtime_error("Cannot read " + chunk_name);
-    const std::string body((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    const auto bytes=fs15platform::read_file_bounded(path,8*1024*1024);
+    const std::string body(bytes.begin(),bytes.end());
     if (body.empty() || static_cast<unsigned char>(body.front()) == 0x1b)
         throw std::runtime_error("Refusing compiled/original bytecode as recovered source: " + chunk_name);
     if (luaL_loadbufferx(vm, body.data(), body.size(), ("@" + chunk_name).c_str(), "t")) {

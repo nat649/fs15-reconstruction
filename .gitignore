@@ -75,6 +75,7 @@
 !/analysis/linux-host-validation.json
 !/analysis/linux-script-host-validation.json
 !/analysis/linux-menu-validation.json
+!/analysis/file-stream-validation.json
 /logs/
 __pycache__/
 *.pyc

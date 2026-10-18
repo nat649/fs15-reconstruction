@@ -1,6 +1,7 @@
 #include "script_runtime.h"
 #include "xml_bridge.h"
 #include "i18n_bootstrap.h"
+#include "file_transport.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <objbase.h>
@@ -35,9 +36,9 @@ fs::path resolve(const fs::path& root,const std::vector<std::string>& bases,cons
     throw std::runtime_error("Missing required local source/resource: "+name);
 }
 std::string read(const fs::path& path){
-    std::ifstream in(path,std::ios::binary|std::ios::ate);if(!in)throw std::runtime_error("Cannot open script");
-    const auto end=in.tellg();if(end<=0||static_cast<uint64_t>(end)>8*1024*1024)throw std::runtime_error("Empty or oversized script");
-    std::string data(static_cast<size_t>(end),'\0');in.seekg(0);if(!in.read(data.data(),static_cast<std::streamsize>(data.size())))throw std::runtime_error("Cannot read script");return data;
+    const auto bytes=fs15platform::read_file_bounded(path,8*1024*1024);
+    if(bytes.empty())throw std::runtime_error("Empty script");
+    return std::string(bytes.begin(),bytes.end());
 }
 void execute(lua_State* state,const std::string& body,const std::string& name,bool binary){
     if(!binary&&(static_cast<unsigned char>(body.front())==0x1b||body.find('\0')!=std::string::npos))throw std::runtime_error("Refusing bytecode or non-text source");

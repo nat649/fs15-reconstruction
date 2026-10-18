@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x14004f310",
+    "0x14004f410",
+    "0x14004f460",
+    "0x14004f4b0"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/file_stream.cpp": "fdc31740033bdb15de51ccbfa11bb6d1034eec2bfc45619827cf744caa737abc",
+    "src/core/file_stream.h": "6359858491929e0638ef7cd719461ece5bbc9e6e21196e5996ce18beaf4c3a1c"
+  },
+  "comparison_counts": {
+    "size": 620,
+    "complete_record_bytes": 139552,
+    "tell": 626,
+    "compared_output_buffer_bytes": 845650,
+    "read": 692,
+    "seek": 554,
+    "sequences": 37,
+    "injected_failure_sequences": 11
+  },
+  "comparison_digest": "647a16d2668361952713ec77305fa5a5b889e80fa0ddf7647c6aa9115987ffac",
+  "original_resource_inputs": [
+    {
+      "path": "recovered/lua/dataS/scripts/I18N.lua",
+      "bytes": 8951,
+      "sha256": "10316e5854d563761bdecb68a210849e9196ba1436aa0614243fbdd5823d6b0b"
+    },
+    {
+      "path": "recovered/gar/dataS/l10n_en.xml",
+      "bytes": 126434,
+      "sha256": "6e6142ec03a2ee94d159b74759c0dcbab5831ad723b01793f124a111de918080"
+    },
+    {
+      "path": "recovered/gar/shared/font/defaultFont.font",
+      "bytes": 12248,
+      "sha256": "02f7366bf229890b8fe9093ce1401aa5c7ae2cc90ad2a263891da3aaf5f70401"
+    },
+    {
+      "path": "recovered/gar/dataS2/menu/main_logo_en.dds",
+      "bytes": 131200,
+      "sha256": "0991178b90549c7757b17f23ad9de5e51f6676859fd218eed9c3cb14ece25bb3"
+    }
+  ],
+  "scope": "Four bounded file read/seek/size/tell paths, complete records and output guards against unchanged native routines using actual Windows kernel I/O for successful operations and explicit injected ordinary-I/O failure seams. Constructors/destructors, corruption logger/global queue, full VFS and cross-process sharing semantics are outside this comparison."
+}

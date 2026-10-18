@@ -1,4 +1,5 @@
 #include "render.h"
+#include "file_transport.h"
 #ifdef _WIN32
 #include <objidl.h>
 #include <gdiplus.h>
@@ -32,15 +33,7 @@ using namespace Gdiplus;
 #endif
 using Bytes = std::vector<std::uint8_t>;
 Bytes read_bytes(const std::filesystem::path& path) {
-    std::ifstream stream(path, std::ios::binary | std::ios::ate);
-    if (!stream) throw std::runtime_error("Cannot open image/font: " + path.u8string());
-    const auto length = stream.tellg();
-    if (length < 0 || length > 512 * 1024 * 1024) throw std::runtime_error("Invalid image/font size");
-    Bytes bytes(static_cast<std::size_t>(length));
-    stream.seekg(0);
-    if (!bytes.empty() && !stream.read(reinterpret_cast<char*>(bytes.data()), bytes.size()))
-        throw std::runtime_error("Cannot read image/font: " + path.u8string());
-    return bytes;
+    return fs15platform::read_file_bounded(path,512*1024*1024);
 }
 std::uint32_t little32(const Bytes& b, std::size_t p) {
     if (p + 4 > b.size()) throw std::runtime_error("Truncated DDS header");

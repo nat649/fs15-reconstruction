@@ -9,6 +9,7 @@
 #include <wrl/client.h>
 #else
 #include <expat.h>
+#include "file_transport.h"
 #include <exception>
 #include <fstream>
 #endif
@@ -227,10 +228,9 @@ std::unique_ptr<Node> parse_xml_memory(std::string_view xml){
     return std::move(p.root);
 }
 std::unique_ptr<Node> parse_xml(const std::filesystem::path& path){
-    std::ifstream in(path,std::ios::binary|std::ios::ate);if(!in)throw std::runtime_error("Cannot open XML file "+path.u8string());
-    const auto end=in.tellg();if(end<0||static_cast<uint64_t>(end)>max_xml_bytes)throw std::runtime_error("XML exceeds the 8 MiB limit");
-    std::string data(static_cast<size_t>(end),'\0');in.seekg(0);if(!data.empty()&&!in.read(data.data(),static_cast<std::streamsize>(data.size())))throw std::runtime_error("Cannot read XML file");
-    return parse_xml_memory(data);
+    const auto bytes=fs15platform::read_file_bounded(path,max_xml_bytes);
+    if(bytes.empty())throw std::runtime_error("XML memory input is empty");
+    return parse_xml_memory(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
 }
 #endif
 
