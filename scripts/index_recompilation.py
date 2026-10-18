@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('physics_wheel_readback_contact_collection_notifications_and_post_step',
+        ['0x1400ca150','0x1400ca080','0x140144ce0','0x140145190','0x140144ef0','0x1400c7b20'],
+        'analysis/physics-post-validation.json'),
     ('physics_dispatch_inline_step_and_worker_loop', ['0x1400c7a60','0x1400c3c50',
         '0x1400c3b90'], 'analysis/physics-dispatch-validation.json'),
     ('render_view_lifetime_and_wheel_force_adapter', ['0x14012ca00','0x14012cc40',

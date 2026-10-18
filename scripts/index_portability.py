@@ -62,6 +62,7 @@ def main():
     roots['wheel_force_adapter']={'1400e76c0'}
     roots['physics_manager_startup']={'1400c29d0'}
     roots['physics_step_dispatch_and_worker']={'1400c7a60','1400c3c50','1400c3b90'}
+    roots['physics_post_step_contact_and_wheel_readback']={'1400ca150','1400ca080','140144ce0','140145190','140144ef0','1400c7b20'}
     vtable_path=ROOT/'analysis/vtable-discovery/slots.csv'
     if vtable_path.exists():
         with vtable_path.open(newline='',encoding='utf-8') as stream:

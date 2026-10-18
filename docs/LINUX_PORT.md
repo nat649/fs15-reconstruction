@@ -32,8 +32,10 @@ follow the recovered driver allocation/destruction requests. See
 [startup, 3D and physics scope](STARTUP_3D_PHYSICS.md).
 The [recovered physics dispatcher/worker](PHYSICS_DISPATCH_RECOVERY.md) also now
 executes 16 force-query steps on a real worker thread through authored portable
-auto-reset events. Full scene/solver creation and native post-step processing
-remain separate recovery tasks.
+auto-reset events. [Native post-step and contact processing](PHYSICS_POST_STEP_RECOVERY.md)
+now connect those steps through wheel readback to recovered scene TRS,
+Camera/view, visibility and shader packing. Backend coordinates/contact groups
+are fixture inputs. Full scene/solver creation and actual GPU drawing remain open.
 
 The process checks balanced map/unmap, one visible and one outside object,
 and zero retained allocations/registry entries after cleanup. It emits JSON

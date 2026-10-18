@@ -1,9 +1,14 @@
 {
   "catalogued": 12207,
   "eligible": 11642,
-  "pseudocode_only": 11421,
-  "validated_component_path_entries": 221,
+  "pseudocode_only": 11415,
+  "validated_component_path_entries": 227,
   "components": [
+    {
+      "name": "physics_wheel_readback_contact_collection_notifications_and_post_step",
+      "entries": 6,
+      "evidence": "analysis/physics-post-validation.json"
+    },
     {
       "name": "physics_dispatch_inline_step_and_worker_loop",
       "entries": 3,

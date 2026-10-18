@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 221 bounded reconstructed native entries separately from 11,421 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 227 bounded reconstructed native entries separately from 11,415 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
@@ -116,7 +116,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover full physics-manager creation and backend world initialization; bounded event/worker dispatch is covered below.
 - [x] Recover native dispatch, synchronous stepping and the worker loop; compare 3,072 dispatch states, 1,024 synchronous states and 512 worker lifetimes / 2,044 completed steps.
 - [x] Connect the recovered worker to real portable threads/auto-reset events, verify 24 transport lifetimes and execute 16 force-query steps in the CPU startup probe.
-- [ ] Recover native physics post-step finalization, nonempty observation/contact handling and backend scene/solver creation.
+- [x] Recover native post-step ordering, wheel readback, nonempty contact collection, notification and history processing; compare six native entries.
+- [x] Connect worker completion through native finalization to wheel readback, scene TRS, Camera/view, visibility and shader packing in the CPU probe (16 finalized steps / 17 view frames).
+- [ ] Recover full controller finalizers, successful native deletion, backend scene/solver creation and physical contact generation.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.

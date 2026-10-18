@@ -80,6 +80,7 @@
 !/analysis/memory-file-validation.json
 !/analysis/startup-view-wheel-validation.json
 !/analysis/physics-dispatch-validation.json
+!/analysis/physics-post-validation.json
 /logs/
 __pycache__/
 *.pyc

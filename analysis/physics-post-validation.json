@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "input_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "native_entries": [
+    "0x1400ca150",
+    "0x1400ca080",
+    "0x140144ce0",
+    "0x140145190",
+    "0x140144ef0",
+    "0x1400c7b20"
+  ],
+  "rebuilt_source_sha256": {
+    "src/core/physics_post.cpp": "6533924c278c52e368c3144e571d3fe48973674b57ae76c1886eef37d16f46b4",
+    "src/core/physics_post.h": "53a1d34d3810071fd6bff9b85d922e601010264291cc8afa22a5fbd467e80541"
+  },
+  "comparison_counts": {
+    "notify_states": 1536,
+    "notify_callback_calls": 2674,
+    "contact_cache_callback_calls": 26178,
+    "contact_lifetimes": 768,
+    "contact_collection_states": 512,
+    "nonempty_contact_collection_states": 455,
+    "contact_collection_backend_calls": 3577,
+    "wheel_states": 1536,
+    "nonempty_wheel_registry_states": 128,
+    "post_step_states": 256
+  },
+  "comparison_digest": "421e81a5c8f2e7606beedac54c917b5fa671fea9e2e604beec9943a926b9e26b",
+  "maximum_scaled_platform_atan_error": 0.0,
+  "scope": "Original wheel readback, nonempty wheel registry traversal and contact enter/leave/stay logic; original full post-step control flow with empty controller/wheel registries, nonempty contact cache, pending removals, float-ABI callbacks and cancellation against an empty native registry. Successful native deletion, controller solver, full scene creation and GPU backend remain external/unported. Portable fixtures separately cover connected nonempty registries and cancellation-service routing."
+}

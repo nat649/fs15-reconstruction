@@ -46,11 +46,10 @@ The idle request wait remains unbounded. A submitting caller has an authored
 10-second completion watchdog; no original watchdog behavior is claimed.
 
 The transport accepts caller-provided simulation/world/collection callbacks.
-It does not create a native physics scene. After completion it acknowledges
-the busy flag itself. This is explicitly authored: the native post-step
-finalizer `0x1400c7b20`, including queued objects, contacts and observer updates,
-has not been recovered. The full manager constructor and its backend dispatcher
-also remain open.
+It does not create a native physics scene. Completion now runs the recovered
+[post-step/contact/wheel paths](PHYSICS_POST_STEP_RECOVERY.md), which replace
+the earlier authored busy-flag acknowledgement. Full manager/scene creation,
+controller movement, successful native deletion and the solver remain open.
 
 `FS15PortableHost --probe` now runs **16 dispatched steps** on a distinct worker
 thread. Its backend evaluates the recovered wheel-registry/tire-force adapter
@@ -87,8 +86,8 @@ after shutdown, and backend failure without false completion success.
 See the [source-pinned aggregate evidence](../analysis/physics-dispatch-validation.json).
 
 Graphics-driver creation, full physics scene creation, collision detection,
-constraint solving, rigid-body integration, nonempty observations, native
-post-step finalization and complete game startup remain unfinished.
+constraint solving, rigid-body integration, controller/deletion services
+and complete game startup remain unfinished.
 
 All **30 component/transport CTests** pass on Windows x64, Linux x64 and
 ARM64 Linux under QEMU. The installed Linux host passes six integration
