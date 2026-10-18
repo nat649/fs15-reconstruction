@@ -8,9 +8,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import struct
 import subprocess
 import tempfile
+import tarfile
 import zlib
 
 
@@ -158,6 +160,42 @@ def main():
         run('--root', root, '--output-dir', output, '--smoke', expected=1)
         assert 'Missing recovered asset' in (output/'menu-runtime.log').read_text()
         checks.append('missing_texture_failure')
+        (root/'assets/probe.dds').write_bytes(dds(2, 2, [0xFFFFFFFF]*4))
+        # Exercise SDL window creation/presentation as well as the offscreen
+        # renderer. The dummy display is explicit: this is not desktop evidence.
+        (root/'bootstrap.lua').write_text(BOOTSTRAP+'''\nlocal frames=0
+function fs15_menu_update(dt)
+    assert(dt==16)
+    frames=frames+1
+    if frames==3 then doExit() end
+end
+''')
+        run('--root', root, '--output-dir', output, '--screenshot', image)
+        assert 'WINDOW_OPEN linux' in (output/'menu-runtime.log').read_text()
+        checks.append('dummy_display_window_create_present_and_exit')
+        package = tmp/'tester package'
+        shutil.copytree(exe.parent.parent, package)
+        shutil.copytree(root, package/'resources')
+        files = [{'path': p.relative_to(package).as_posix(),
+                  'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
+                 for p in package.rglob('*') if p.is_file()]
+        (package/'TESTER-MANIFEST.json').write_text(json.dumps({'files': files}))
+        proc = subprocess.run(['sh', str(package/'start-linux.sh'), '--smoke'],
+                              cwd=tmp, capture_output=True, text=True, timeout=180)
+        assert proc.returncode == 0, (proc.stdout, proc.stderr)
+        archives = list((package/'test-results').glob('*.tar.gz'))
+        assert len(archives) == 1
+        with tarfile.open(archives[0]) as tar:
+            names = tar.getnames()
+            assert not any('/assets/' in name or '/lua/' in name for name in names)
+            name = next(n for n in names if n.endswith('/report.json'))
+            assert json.load(tar.extractfile(name))['status'] == 'passed'
+        checks.append('installed_launcher_smoke_and_report_archive_without_resources')
+        (package/'resources/bootstrap.lua').write_text('tampered=true')
+        proc = subprocess.run(['sh', str(package/'start-linux.sh'), '--smoke'],
+                              cwd=tmp, capture_output=True, text=True, timeout=30)
+        assert proc.returncode == 1 and 'Package verification failed' in proc.stderr
+        checks.append('installed_launcher_rejects_tampered_package')
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps({'platform': 'linux-x64', 'original_resources_executed': False,
                                      'fixture_origin': 'authored', 'checks': checks, 'passed': True}, indent=2)+'\n')

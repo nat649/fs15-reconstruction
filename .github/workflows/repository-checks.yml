@@ -10,7 +10,7 @@ permissions:
 jobs:
   authored-checks:
     name: Publication guards and synthetic fixtures
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,7 +37,7 @@ jobs:
           cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
-      - name: Install and exercise the Linux x64 headless host
+      - name: Install and exercise Linux x64 hosts and SDL frontend transport
         run: |
           cmake --install build/ci-portable-core --prefix build/linux-portable-host
           python tests/check_portable_host.py --exe build/linux-portable-host/bin/FS15PortableHost --workdir build/linux-host-integration --report build/linux-host-validation.json

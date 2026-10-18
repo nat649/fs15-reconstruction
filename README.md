@@ -181,6 +181,11 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   paths through authored CPU transport. It can inspect local resource presence
   without modifying the game. The complete engine, menu and renderer are still
   separate recovery milestones. See [Linux build/run instructions](docs/LINUX_PORT.md).
+- **Linux frontend test:** `FS15MenuLinux` shares the existing recovered-menu
+  host through authored SDL2 transport. A local package launcher checks hashes,
+  exercises menu callbacks and collects screenshots/logs for a friend to return.
+  Original-resource Linux desktop validation remains pending; world simulation
+  is unavailable. See [tester instructions](docs/LINUX_TESTER.md).
   The optional `FS15ScriptHost` adds text-only localization loading with shared
   read-only XML/save adapters; Linux uses Expat and LuaJIT. Original-resource
   parity and asset-free Linux fixtures are reported separately.

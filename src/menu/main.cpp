@@ -637,6 +637,14 @@ int main(int argc,char** argv) {
                 while(SDL_PollEvent(&event)){
                     switch(event.type){
                     case SDL_QUIT:exit_requested=true;break;
+                    case SDL_WINDOWEVENT:
+                        if(event.window.event==SDL_WINDOWEVENT_FOCUS_LOST){
+                            for(int key:{13,27,37,38,39,40}){
+                                lua_getglobal(vm,"fs15_menu_key");lua_pushinteger(vm,key);lua_pushboolean(vm,0);call_checked(2);
+                            }
+                            SDL_CaptureMouse(SDL_FALSE);
+                        }
+                        break;
                     case SDL_MOUSEMOTION:mouse(event.motion.x,event.motion.y,false,false);break;
                     case SDL_MOUSEBUTTONDOWN:case SDL_MOUSEBUTTONUP:
                         if(event.button.button==SDL_BUTTON_LEFT){SDL_CaptureMouse(event.type==SDL_MOUSEBUTTONDOWN?SDL_TRUE:SDL_FALSE);mouse(event.button.x,event.button.y,event.type==SDL_MOUSEBUTTONDOWN,event.type==SDL_MOUSEBUTTONUP);}break;

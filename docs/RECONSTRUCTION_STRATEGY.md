@@ -7,8 +7,10 @@ the runtime. Keep track of what was recovered, reused, reconstructed or newly
 authored. Original meshes and scene placements are the source of map objects.
 Linux x64 is the intermediate portability target before the deferred Switch
 homebrew port. The [headless Linux host](LINUX_PORT.md) exercises recovered CPU
-components through authored platform transport; full native startup, the menu
-and rendering remain separate recovery milestones.
+components through authored platform transport. The shared recovered-frontend
+host also builds with authored SDL2 transport and a local tester package;
+original-resource Linux desktop validation and full native startup/rendering
+remain separate milestones. See the [tester guide](LINUX_TESTER.md).
 
 ## Components currently used
 

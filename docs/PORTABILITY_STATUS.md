@@ -9,6 +9,10 @@ ReFarm remains an authored experimental host for resources and recovered logic.
 The [Linux portability host](LINUX_PORT.md) is a separate headless executable
 for recovered CPU components, lifetime and read-only resource discovery. It
 does not replace native engine startup or rendering.
+The shared frontend host also compiles as `FS15MenuLinux` with authored SDL2
+transport; its [local tester package](LINUX_TESTER.md) collects menu checks and
+screenshots. Linux CI fixtures contain no original resources. Original-resource
+desktop validation and native GE6 startup remain open.
 
 ## Current measured boundary
 

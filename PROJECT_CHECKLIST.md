@@ -123,7 +123,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Port shared read-only XML/property and save-metadata adapters to Linux through Expat; retain XmlLite on Windows.
 - [x] Add a text-only localization subset host and compare 1,425 English texts, 165 descriptions, seven labels and three factors with original Lua bytecode locally on Windows.
 - [x] Verify Linux Lua/XML/save-metadata and all six installed-script-host checks; distribute both executables in the verified Linux artifact.
-- [ ] Recover/link native engine startup and scripting, then open the recovered menu on Linux.
+- [x] Compile the shared recovered-frontend host on Linux with authored SDL2 window/render/input transport and package a local tester with hash checks and result archives.
+- [ ] Validate the recovered menu with original local resources and interactive input on a Linux tester's desktop.
+- [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
 - [ ] Validate original maps, vehicles, farming and persistent save/reload on Linux.
 

@@ -46,6 +46,7 @@ def main():
         deps = subprocess.run(['ldd', str(exe)], capture_output=True, text=True, timeout=15)
         missing = [line.split('=>')[0].strip() for line in deps.stdout.splitlines() if 'not found' in line]
         report['missing_libraries'] = missing
+        report['loader_errors'] = deps.stderr.strip()
         if deps.returncode or missing:
             raise RuntimeError('Runtime libraries missing or incompatible: '+', '.join(missing)+
                                '. See README-LINUX.txt for dependency packages; nothing was installed automatically.')

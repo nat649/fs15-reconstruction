@@ -1,5 +1,11 @@
 # Linux x64 intermediate target
 
+An experimental graphical frontend is now also buildable as `FS15MenuLinux`.
+Use the [Linux tester guide](LINUX_TESTER.md) to prepare a local package and
+collect a friend's results. Public artifacts include only authored host code
+and adapters; original menu resources/recovered game scripts stay local.
+Linux CI uses authored fixtures. Original-resource desktop validation is pending.
+
 Linux x64 is the next platform target while the native GE6 recovery continues.
 The later Switch homebrew target remains deferred. This stage keeps recovered
 native behavior and original-resource compatibility as its direction; it does
@@ -36,6 +42,14 @@ ctest --test-dir build/linux-host --output-on-failure
 cmake --install build/linux-host --prefix "$PWD/build/linux-install"
 ./build/linux-install/bin/FS15PortableHost --probe
 ```
+
+To include the graphical frontend, install `libsdl2-dev`, `libsdl2-image-dev`,
+`libluajit-5.1-dev`, `libexpat1-dev` and `pkg-config`, then enable both
+`-DFS15_BUILD_PORTABLE_SCRIPTS=ON` and `-DFS15_BUILD_LINUX_MENU=ON` in the same
+configure command. `FS15MenuLinux` reuses `src/menu/main.cpp`, `render.cpp`,
+XML/save adapters and the authored bootstrap; caller-supplied recovered Lua
+still provides GUI behavior. SDL2/SDL2_image provide the Linux drawing, image
+decode and window/input transport. This does not recover a native GE6 renderer.
 
 The host uses no Windows APIs, Direct3D, original executables, game archives,
 LuaJIT or GPU driver. It also builds on Windows for local verification. The
