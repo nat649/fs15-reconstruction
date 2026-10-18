@@ -87,13 +87,14 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 
 - **Native recompilation:** 30 uncovered binding targets
   were identified as functions and decompiled. The enlarged catalogue has
-  **11,642 eligible exports**, after five scene-vtable targets and six
-  memory-stream targets were found through explicit table audits. A separate
+  **11,667 eligible exports**, after five scene-vtable targets and six
+  memory-stream targets and 25 additional eligible physics-table targets were
+  found through explicit table audits. A separate
   portable C++ core now builds the RLE
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **236 native entries on bounded tested paths**. The affine component passes
+  **248 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -242,13 +243,20 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   stream → Lua. Two memory vtables exposed six previously uncatalogued small
   functions; original allocation/free and archive decryption remain open. See
   [memory-stream recovery](docs/MEMORY_FILE_RECOVERY.md).
+- **GE6 physics backend:** native RTTI and factory analysis identify Bullet.
+  A pinned 2014 upstream revision now supports recovered GIANTS world, dispatcher
+  and solver hooks. **15,360 simulated frames** match original GE6 trajectories
+  and contacts; **26,984 nonempty vehicle callback events** and 1,024 native
+  sort fixtures match. This is actual rigid-body simulation, separate from
+  ReFarm. GIANTS terrain collision, the actual raycast vehicle class and full
+  startup remain open. See [provenance and evidence](docs/GE6_PHYSICS_BACKEND.md).
 - **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
   storage, staging, direct mapping, discard, subdata upload and deletion.
   **1,024 paired lifetimes** match unchanged GE6 code through recording GL seams.
   The SDL/OpenGL check passes actual driver byte readback on Mesa in Linux CI;
   shaders, materials and scene drawing remain open. See
   [scope and build commands](docs/GL_BUFFER_RECOVERY.md).
-- **Portability audit:** the current static catalogue has 31,393 known call
+- **Portability audit:** the current static catalogue has 31,396 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before
   full linking. All thirty-two asset-free component/transport tests pass on
@@ -268,7 +276,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   launcher retains normal Steam startup and an explicit direct mode.
   See the [bounded log evidence](analysis/native-engine-validation.json).
 - **Native decompilation coverage:** a full pass through the existing Ghidra
-  catalogue exported **11,642 / 11,642 eligible functions** as local pseudocode,
+  catalogue exported **11,667 / 11,667 eligible functions** as local pseudocode,
   with no remaining export failures. The last two exports were unblocked with
   larger response capacity and C-only output; 565 thunks or external entries
   are excluded. **498 explicit native scripting API

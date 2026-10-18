@@ -1,9 +1,14 @@
 {
-  "catalogued": 12207,
-  "eligible": 11642,
-  "pseudocode_only": 11406,
-  "validated_component_path_entries": 236,
+  "catalogued": 12233,
+  "eligible": 11667,
+  "pseudocode_only": 11419,
+  "validated_component_path_entries": 248,
   "components": [
+    {
+      "name": "ge6_bullet_world_solver_and_vehicle_callback_routing",
+      "entries": 12,
+      "evidence": "analysis/ge6-physics-world-validation.json"
+    },
     {
       "name": "opengl_vertex_index_buffer_lifetime_mapping_and_staged_upload",
       "entries": 9,

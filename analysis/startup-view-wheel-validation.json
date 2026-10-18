@@ -44,5 +44,11 @@
     "gpu_driver_started_on_linux": false,
     "physics_world_started_on_linux": false
   },
-  "portable_fixture_sha256": "0d537c4ca5e47ab7d2b8b2019e4ed4156beaacd98b6ed6486f8fda238a76a9dd"
+  "portable_fixture_sha256": "0d537c4ca5e47ab7d2b8b2019e4ed4156beaacd98b6ed6486f8fda238a76a9dd",
+  "native_reference_revalidation": {
+    "status": "passed",
+    "date": "2026-10-18",
+    "native_gar_source_sha256": "361a2a7a2358cf893208370f8277b05b869b13ddca5d8ac942509d8e66454277",
+    "auxiliary_math_code_and_constant_sections_mapped": true
+  }
 }

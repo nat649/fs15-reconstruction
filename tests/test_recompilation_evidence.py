@@ -34,6 +34,15 @@ class RecompilationEvidence(unittest.TestCase):
         self.report['rebuilt_source_sha256']={'outside.cpp':'unused'}
         self.assertFalse(source_pinned(self.root,self.report))
 
+    def test_ge6_component_pins_are_supported_and_still_checked(self):
+        source=self.root/'src/ge6/fixture.cpp'
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b'// authored GE6 fixture\n')
+        self.report['rebuilt_source_sha256']={'src/ge6/fixture.cpp':hashlib.sha256(source.read_bytes()).hexdigest()}
+        self.assertTrue(source_pinned(self.root,self.report))
+        source.write_bytes(b'// changed\n')
+        self.assertFalse(source_pinned(self.root,self.report))
+
 
 if __name__=='__main__':
     unittest.main()

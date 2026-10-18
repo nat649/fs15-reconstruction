@@ -40,6 +40,10 @@ Nine [recovered OpenGL buffer paths](GL_BUFFER_RECOVERY.md) now also build in
 the core. The optional `FS15GLDriverCheck` uses an SDL context and actual GL
 upload/map/readback/delete operations; it is separate from this headless host
 and does not yet submit the original scene's draw calls.
+The optional [GE6 physics backend](GE6_PHYSICS_BACKEND.md) now also builds
+recovered GIANTS world/dispatcher/solver hooks over pinned upstream Bullet.
+Its actual rigid-body/contact checks are separate from the older CPU fixture
+probe. This introduces no ReFarm dependency and does not yet start the game.
 
 The process checks balanced map/unmap, one visible and one outside object,
 and zero retained allocations/registry entries after cleanup. It emits JSON

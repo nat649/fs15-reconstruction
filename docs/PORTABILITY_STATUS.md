@@ -18,14 +18,15 @@ desktop validation and native GE6 startup remain open.
 
 | Evidence | Observed result | What remains open |
 |---|---|---|
-| Existing native catalogue | 12,207 entries, 11,642 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 236 native entries with validated bounded paths | Remaining 11,406 eligible entries only have pseudocode in this ledger |
+| GE6 world/solver | Bullet RTTI/factory identified, nine matching Windows layouts, 64 native sphere lifetimes / 15,360 trajectory frames, 26,984 vehicle callback events and 1,024 native sorts; recovered hooks compile with pinned upstream middleware | Actual `Bt2RaycastVehicle`, GIANTS terrain algorithms, broadphase concurrency, complete loading/startup and playable sessions; [scope](GE6_PHYSICS_BACKEND.md) |
+| Existing native catalogue | 12,233 entries, 11,667 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
+| Recovered portable C++17 core | 248 native entries with validated bounded paths | Remaining 11,419 eligible entries only have pseudocode in this ledger |
 | OpenGL buffers | Nine recovered vertex/index creation, mapping, staged upload and deletion paths; 1,024 paired lifetimes match unchanged GE6 through recording GL services; actual GL byte readback passes on Linux x64 Mesa llvmpipe | Hardware GPU, shader/material/texture state, scene draw submission and complete renderer remain open; [actual-driver check and scope](GL_BUFFER_RECOVERY.md) |
 | File-stream platform boundary | Four native read/seek/size/tell paths, 2,492 matching original-operation results and complete state/output checks; read-only POSIX transport connected to Linux frontend loading | Constructors/destructors, buffered/archive/write services, Windows path/locking and full VFS semantics remain open; [details](FILE_STREAM_RECOVERY.md) |
 | Memory-stream operations | Six native valid/read/seek/size/tell/EOF paths; 13,366 matching operations and immutable borrowed storage, connected to staged script loading | Ownership/factories, archive decryption and full loader remain open; [details](MEMORY_FILE_RECOVERY.md) |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |
 | Scene state/vtables | 40 explicit slots audited; five state paths match 12,000 node arenas and 7,200 notification traces | Allocation/destruction, remaining derived classes and callback side effects; state component is not yet connected to a complete engine lifecycle |
-| Known static dependency graph | 31,393 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
+| Known static dependency graph | 31,396 distinct catalogue call edges | Computed/virtual calls, dynamic loads and callback targets are not closed |
 | TRS updates | Eleven entries, 18,000 math results and 7,200 complete scene arenas; integrated TRS/affine composition in ReFarm | Platform libm, logger/observer callback effects and full object lifecycle remain separate boundaries |
 | Hierarchy membership | Three entries; 19,200 successive complete arenas/child buffers and notification traces match native link/reparent/unlink behavior | Separate owned allocation is now supported for known records; arbitrary derived callbacks and complete loader/resource ownership remain open |
 | Object lifecycle | Thirteen supported constructor/name/destructor paths; 250 recursive forests / 2,470 deleting destructions match original code | Authored allocator/registry/dispatch services; shared resources, triggers, derived types and singleton/concurrent behavior |
@@ -51,7 +52,7 @@ desktop validation and native GE6 startup remain open.
 | Physics dispatch and worker | Three paths; 3,072 dispatcher states, 1,024 synchronous states and 512 worker lifetimes / 2,044 completed steps; real event/thread transport and 16-step CPU probe | Full manager/scene creation, solver and controller/deletion services remain open; post-step/contact paths are covered separately; see [scope](PHYSICS_DISPATCH_RECOVERY.md) |
 | Physics results/finalization | Six paths; wheel readback/registry, nonempty contact collection, notifications/history and post-step order; connected 16-step physics/scene/view CPU probe | Full solver, actual scene creation, controller movement, successful deletion and GPU backend remain open; see [scope](PHYSICS_POST_STEP_RECOVERY.md) |
 | Native CRT startup root | 1,488 eligible reachable functions in the known static graph | Static initialization/dynamic dispatch prevent treating this as full engine startup coverage |
-| Prototype recovery | 11,318 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
+| Prototype recovery | 11,343 eligible prototypes still contain Ghidra `undefined` types | Accurate argument/return types, structures, globals, ABI and ownership |
 | Original PE import boundary | 424 named/ordinal imports across 20 libraries | Platform replacements and statically linked middleware are not covered by this count |
 | CPU portability | All thirty-two asset-free component/transport tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU | ARM64 Linux tests are not libnx, `.nro` packaging or hardware execution |
 

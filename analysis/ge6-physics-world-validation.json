@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "upstream_revision": "0e1a77047cfaa9bf94f7318686ba4179f40c8c1b",
+  "upstream_archive_sha256": "46f19770d23a3b05fb40e181214b977a1451b04324bdb3ba081b82149c41684f",
+  "windows_layout_bytes": [
+    464,
+    336,
+    288,
+    10496,
+    184,
+    736,
+    896,
+    192,
+    64
+  ],
+  "sphere_drop_lifetimes": 64,
+  "trajectory_frames": 15360,
+  "contact_frames": 6963,
+  "maximum_scaled_error": 1.4156103134155273e-06,
+  "comparison_digest": "66a05e179cc553e5f94056f77bcd7ccc36db91c3af6484d8dad5153e9a7a2350",
+  "nonempty_vehicle_hook_states": 96,
+  "vehicle_callback_calls": 26984,
+  "vehicle_sort_states": 1024,
+  "rebuilt_source_sha256": {
+    "src/ge6/physics_world.cpp": "e4ddfc4f076128450557a33e6eaaa1bc5164d1fe34e9e3d8a649b63dc1b3bf70",
+    "src/ge6/physics_world.h": "be5e99b02bb80bf50b5326edf5e1eb55839bde528c0ee61232e98c3c7ae27c11",
+    "src/core/physics_vehicle_sort.cpp": "a5c3377aa3e35bf6b933a4b181d831d065a3b68a44cbf5acfe4976e9374542c1",
+    "src/core/physics_vehicle_sort.h": "def7bdf7bbd6b19f93a24dcb3e564c59fb2d743ab7095076bbe98a8bcfb8fd1f"
+  },
+  "scope": "GE6 world/solver routing over reused upstream Bullet 2014. Actual unchanged native factory, composed original collision-object/body initialization, original sphere shapes, 20-iteration native stepping, generated contacts and teardown compared. Nonempty borrowed vehicle callback routing and native equal-key sort order compared separately. Owner/allocator/timer transport authored, including explicit cleanup of the native factory external pair cache; original powf auxiliary constants mapped. Ordinary sphere scenes only; native heightfield algorithms, broadphase concurrency, Bt2RaycastVehicle implementation and full engine startup remain open.",
+  "exact_ge6_middleware_fork_identified": false,
+  "full_native_engine_started": false,
+  "playable": false,
+  "native_reference_harness_sha256": {
+    "scripts/native_physics_world.py": "4d141d7da07c3cad7a4c8b7ab7cbed9fe85a5126cef1ba451769d919c1acdc0d",
+    "scripts/native_gar.py": "361a2a7a2358cf893208370f8277b05b869b13ddca5d8ac942509d8e66454277",
+    "scripts/check_ge6_physics_world.py": "64d11dc99a5f588ca1c10c4877db2b41c52bfc77286bad71eea4d017684ed0cf"
+  }
+}

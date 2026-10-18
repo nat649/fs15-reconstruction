@@ -11,6 +11,11 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('ge6_bullet_world_solver_and_vehicle_callback_routing',
+        ['0x14027f620','0x14027f590','0x14027f380','0x14027f3d0',
+         '0x14027e570','0x14027e6e0','0x14027e7e0','0x14027e890',
+         '0x14027ea00','0x14027eb00','0x14027ed40','0x14027fe40'],
+        'analysis/ge6-physics-world-validation.json'),
     ('opengl_vertex_index_buffer_lifetime_mapping_and_staged_upload',
         ['0x140065c60','0x140074850','0x140074920','0x140074990','0x140074a10',
          '0x140074a40','0x140074ab0','0x140074b70','0x140074bd0'],
@@ -108,7 +113,7 @@ def source_pinned(root, report):
         return False
     for path, digest in pins.items():
         target=(root/path).resolve()
-        if not target.is_relative_to((root/'src/core').resolve()) or not target.is_file():
+        if not any(target.is_relative_to((root/p).resolve()) for p in ('src/core','src/ge6')) or not target.is_file():
             return False
         if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
             return False

@@ -25,9 +25,9 @@
     "nonempty_wheel_registry_states": 128,
     "post_step_states": 256
   },
-  "comparison_digest": "421e81a5c8f2e7606beedac54c917b5fa671fea9e2e604beec9943a926b9e26b",
+  "comparison_digest": "a42d891092e47c8ae1c5b444ec889d79bfb2ca9f7f8661689181dbf702c0ab43",
   "maximum_scaled_platform_atan_error": 0.0,
-  "scope": "Original wheel readback, nonempty wheel registry traversal backend group collection and contact enter/leave/stay logic; original full post-step control flow with empty controller/wheel registries, nonempty contact cache, pending removals, float-ABI callbacks and cancellation against an empty native registry. Successful native deletion, controller solver, full scene creation and GPU backend remain external/unported. Portable fixtures separately cover connected nonempty registries and cancellation-service routing.",
+  "scope": "Original wheel readback, nonempty wheel registry traversal and contact enter/leave/stay logic; original full post-step control flow with empty controller/wheel registries, nonempty contact cache, pending removals, float-ABI callbacks and cancellation against an empty native registry. Successful native deletion, controller solver, full scene creation and GPU backend remain external/unported. Portable fixtures separately cover connected nonempty registries and cancellation-service routing.",
   "platform_validation": {
     "tested_source_commit": "92284ad569d345bc9c0f38228ab8d592fa452c73",
     "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39148462680",
@@ -76,5 +76,11 @@
     "tests/physics_post.cpp": "7a67179a8b4dc444a0c3f1ae8911d2732439c8558698089b37f62e85b9c8c8a8",
     "tests/physics_worker.cpp": "e9e51733ace9857ae997d5eccafdd7c1e820ce764548ecf04e877416cff5d59d",
     "tests/check_portable_host.py": "721083f4fb18a2085e8507f6494ecbd384172285dd10a7a23b9d758857260100"
+  },
+  "native_reference_revalidation": {
+    "status": "passed",
+    "date": "2026-10-18",
+    "native_gar_source_sha256": "361a2a7a2358cf893208370f8277b05b869b13ddca5d8ac942509d8e66454277",
+    "auxiliary_math_code_and_constant_sections_mapped": true
   }
 }

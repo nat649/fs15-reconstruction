@@ -110,3 +110,4 @@ __pycache__/
 *.key
 *.pem
 !/analysis/gl-buffers-validation.json
+!/analysis/ge6-physics-world-validation.json

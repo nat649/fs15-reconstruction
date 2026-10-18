@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth
       - name: Build and test recovered portable components without Windows or original resources
         run: |
-          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DFS15_BUILD_GE6_PHYSICS=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
       - name: Check recovered buffers on actual Linux OpenGL (Mesa software rasterizer)
@@ -82,6 +82,6 @@ jobs:
           sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu qemu-user
       - name: Cross-compile and execute asset-free recovered-core checks
         run: |
-          cmake -S . -B build/ci-arm64-core -DFS15_PORTABLE_CORE_ONLY=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-linux-gnu.cmake
+          cmake -S . -B build/ci-arm64-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_GE6_PHYSICS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-linux-gnu.cmake
           cmake --build build/ci-arm64-core --parallel 2
           ctest --test-dir build/ci-arm64-core --output-on-failure
