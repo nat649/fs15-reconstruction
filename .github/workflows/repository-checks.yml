@@ -31,12 +31,16 @@ jobs:
       - name: Install Linux script/XML development dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev
+          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth
       - name: Build and test recovered portable components without Windows or original resources
         run: |
-          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
+      - name: Check recovered buffers on actual Linux OpenGL (Mesa software rasterizer)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a build/ci-portable-core/src/core/FS15GLDriverCheck
       - name: Install and exercise Linux x64 hosts and SDL frontend transport
         run: |
           cmake --install build/ci-portable-core --prefix build/linux-portable-host

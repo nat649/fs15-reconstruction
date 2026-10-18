@@ -93,7 +93,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **227 native entries on bounded tested paths**. The affine component passes
+  **236 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -242,6 +242,12 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   stream → Lua. Two memory vtables exposed six previously uncatalogued small
   functions; original allocation/free and archive decryption remain open. See
   [memory-stream recovery](docs/MEMORY_FILE_RECOVERY.md).
+- **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
+  storage, staging, direct mapping, discard, subdata upload and deletion.
+  **1,024 paired lifetimes** match unchanged GE6 code through recording GL seams.
+  An optional SDL/OpenGL check exercises actual driver byte readback in Linux CI;
+  shaders, materials and scene drawing remain open. See
+  [scope and build commands](docs/GL_BUFFER_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,393 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

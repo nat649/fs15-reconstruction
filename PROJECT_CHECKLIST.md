@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 227 bounded reconstructed native entries separately from 11,415 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 236 bounded reconstructed native entries separately from 11,406 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
@@ -138,6 +138,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Audit two memory-stream vtables, recover six read/seek/query paths, compare 13,366 operations and connect them to staged script loading.
 - [ ] Validate the recovered menu with original local resources and interactive input on a Linux tester's desktop.
 - [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
+- [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
 - [ ] Validate original maps, vehicles, farming and persistent save/reload on Linux.
 

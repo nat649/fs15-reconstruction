@@ -19,7 +19,8 @@ desktop validation and native GE6 startup remain open.
 | Evidence | Observed result | What remains open |
 |---|---|---|
 | Existing native catalogue | 12,207 entries, 11,642 eligible pseudocode exports | Wider discovery and a complete typed compilable engine |
-| Recovered portable C++17 core | 227 native entries with validated bounded paths | Remaining 11,415 eligible entries only have pseudocode in this ledger |
+| Recovered portable C++17 core | 236 native entries with validated bounded paths | Remaining 11,406 eligible entries only have pseudocode in this ledger |
+| OpenGL buffers | Nine recovered vertex/index creation, mapping, staged upload and deletion paths; 1,024 paired lifetimes match unchanged GE6 through recording GL services | Shader/material/texture state, scene draw submission and complete renderer remain open; [actual-driver check and scope](GL_BUFFER_RECOVERY.md) |
 | File-stream platform boundary | Four native read/seek/size/tell paths, 2,492 matching original-operation results and complete state/output checks; read-only POSIX transport connected to Linux frontend loading | Constructors/destructors, buffered/archive/write services, Windows path/locking and full VFS semantics remain open; [details](FILE_STREAM_RECOVERY.md) |
 | Memory-stream operations | Six native valid/read/seek/size/tell/EOF paths; 13,366 matching operations and immutable borrowed storage, connected to staged script loading | Ownership/factories, archive decryption and full loader remain open; [details](MEMORY_FILE_RECOVERY.md) |
 | Scene recovery added in this milestone | 36,000 complete math results, 5,999 complete node arenas and 4,799 complete Lua frames match original code bit for bit | Object allocation, ownership, dirty propagation, resource/renderer lifecycle |

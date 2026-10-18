@@ -109,3 +109,4 @@ __pycache__/
 *.rar
 *.key
 *.pem
+!/analysis/gl-buffers-validation.json

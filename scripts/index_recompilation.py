@@ -11,6 +11,10 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('opengl_vertex_index_buffer_lifetime_mapping_and_staged_upload',
+        ['0x140065c60','0x140074850','0x140074920','0x140074990','0x140074a10',
+         '0x140074a40','0x140074ab0','0x140074b70','0x140074bd0'],
+        'analysis/gl-buffers-validation.json'),
     ('physics_wheel_readback_contact_collection_notifications_and_post_step',
         ['0x1400ca150','0x1400ca080','0x140144ce0','0x140145190','0x140144ef0','0x1400c7b20'],
         'analysis/physics-post-validation.json'),

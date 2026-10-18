@@ -36,6 +36,10 @@ auto-reset events. [Native post-step and contact processing](PHYSICS_POST_STEP_R
 now connect those steps through wheel readback to recovered scene TRS,
 Camera/view, visibility and shader packing. Backend coordinates/contact groups
 are fixture inputs. Full scene/solver creation and actual GPU drawing remain open.
+Nine [recovered OpenGL buffer paths](GL_BUFFER_RECOVERY.md) now also build in
+the core. The optional `FS15GLDriverCheck` uses an SDL context and actual GL
+upload/map/readback/delete operations; it is separate from this headless host
+and does not yet submit the original scene's draw calls.
 
 The process checks balanced map/unmap, one visible and one outside object,
 and zero retained allocations/registry entries after cleanup. It emits JSON

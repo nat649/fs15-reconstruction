@@ -16,6 +16,7 @@ Direct3D, LuaJIT, original executable bytes or original game resources:
 
 | Component | Native coverage | Validation |
 |---|---|---|
+| OpenGL vertex/index buffers | Nine entries for creation, map/unmap, staged upload and destruction | 1,024 paired native lifetimes through recording GL seams; [actual-driver check and scope](GL_BUFFER_RECOVERY.md) |
 | Memory-stream operations | Six entries for validity, read, clamped seek, size, position and EOF | 13,366 comparisons in 238 sequences; [scope and ownership limits](MEMORY_FILE_RECOVERY.md) |
 | Buffered default-disk read/seek/status | Three native entries over the recovered disk methods | 2,163 matching operations across 35 sequences; [scope and limits](BUFFERED_FILE_RECOVERY.md) |
 | File read/seek/size/tell | Four entries; explicit OS service seams | 2,492 operation comparisons in 37 sequences, complete records and guarded buffers; [scope and limits](FILE_STREAM_RECOVERY.md) |

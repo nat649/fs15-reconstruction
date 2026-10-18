@@ -123,6 +123,18 @@
       "uncatalogued_native_target_entries": 0,
       "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
     },
+    "opengl_vertex_index_buffers": {
+      "seed_entries": 9,
+      "known_reachable_entries": 67,
+      "eligible_reachable_entries": 63,
+      "bounded_recovered_entries": 9,
+      "remaining_entries_without_validated_components": 54,
+      "functions_with_computed_calls": 32,
+      "computed_call_sites": 95,
+      "external_targets_outside_function_catalogue": 30,
+      "uncatalogued_native_target_entries": 0,
+      "scope": "Known static Ghidra edges, including known thunk targets. Computed calls are counted, not closed."
+    },
     "wheel_force_adapter": {
       "seed_entries": 1,
       "known_reachable_entries": 156,

@@ -10,6 +10,7 @@ import tarfile
 
 REPO = Path(__file__).resolve().parents[1]
 BINARIES = {'FS15PortableHost', 'FS15ScriptHost', 'FS15MenuLinux'}
+OPTIONAL_BINARIES = {'FS15GLDriverCheck'}
 
 
 def relative(name):
@@ -34,7 +35,7 @@ def extract_runtime(archive, target):
             if not item.isfile() or item.size > 100*1024*1024:
                 raise ValueError('Unexpected runtime archive entry: '+name)
             if not (path.parts[0] == 'share' or name in ('start-linux.sh', 'README-LINUX.txt') or
-                    len(path.parts) == 2 and path.parts[0] == 'bin' and path.name in BINARIES):
+                    len(path.parts) == 2 and path.parts[0] == 'bin' and path.name in BINARIES | OPTIONAL_BINARIES):
                 raise ValueError('Unexpected runtime archive location: '+name)
             if name in [entry[0] for entry in entries]:
                 raise ValueError('Duplicate archive entry: '+name)
@@ -42,7 +43,8 @@ def extract_runtime(archive, target):
             if total > 200*1024*1024:
                 raise ValueError('Runtime archive is too large')
             entries.append((name, tar.extractfile(item).read()))
-    for binary in BINARIES:
+    present_optional = {PurePosixPath(name).name for name, _ in entries if name.startswith('bin/')} & OPTIONAL_BINARIES
+    for binary in BINARIES | present_optional:
         matches = [data for name, data in entries if name == 'bin/'+binary]
         if len(matches) != 1 or len(matches[0]) < 64 or matches[0][:6] != b'\x7fELF\x02\x01' or struct.unpack_from('<H', matches[0], 18)[0] != 62:
             raise ValueError('Missing Linux x86_64 executable: '+binary)

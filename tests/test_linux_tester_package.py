@@ -20,13 +20,13 @@ def fixture_directory():
 
 
 class LinuxTesterPackage(unittest.TestCase):
-    def make_archive(self, root, extra=None, machine=62):
+    def make_archive(self, root, extra=None, machine=62, optional=False):
         archive = root/'runtime.tar.gz'
         elf = bytearray(64)
         elf[:6] = b'\x7fELF\x02\x01'
         struct.pack_into('<H', elf, 18, machine)
         with tarfile.open(archive, 'w:gz') as tar:
-            for binary in PACKAGE.BINARIES:
+            for binary in PACKAGE.BINARIES | (PACKAGE.OPTIONAL_BINARIES if optional else set()):
                 item = tarfile.TarInfo('bin/'+binary)
                 item.size = len(elf)
                 tar.addfile(item, io.BytesIO(elf))
@@ -50,6 +50,21 @@ class LinuxTesterPackage(unittest.TestCase):
                 PACKAGE.extract_runtime(self.make_archive(root, item), root/'result')
             self.assertFalse((root/'result').exists())
             self.assertFalse((root/'escape').exists())
+
+    def test_optional_gl_check_is_validated_and_preserved(self):
+        with fixture_directory() as tmp:
+            root = Path(tmp)
+            PACKAGE.extract_runtime(self.make_archive(root, optional=True), root/'result')
+            self.assertTrue((root/'result/bin/FS15GLDriverCheck').is_file())
+
+    def test_invalid_optional_gl_check_is_rejected_before_writes(self):
+        with fixture_directory() as tmp:
+            root = Path(tmp)
+            item = tarfile.TarInfo('bin/FS15GLDriverCheck')
+            item.size = 1
+            with self.assertRaisesRegex(ValueError, 'FS15GLDriverCheck'):
+                PACKAGE.extract_runtime(self.make_archive(root, item), root/'result')
+            self.assertFalse((root/'result').exists())
 
     def test_links_are_rejected_before_writes(self):
         with fixture_directory() as tmp:

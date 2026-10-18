@@ -1,9 +1,14 @@
 {
   "catalogued": 12207,
   "eligible": 11642,
-  "pseudocode_only": 11415,
-  "validated_component_path_entries": 227,
+  "pseudocode_only": 11406,
+  "validated_component_path_entries": 236,
   "components": [
+    {
+      "name": "opengl_vertex_index_buffer_lifetime_mapping_and_staged_upload",
+      "entries": 9,
+      "evidence": "analysis/gl-buffers-validation.json"
+    },
     {
       "name": "physics_wheel_readback_contact_collection_notifications_and_post_step",
       "entries": 6,

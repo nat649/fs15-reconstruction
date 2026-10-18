@@ -59,6 +59,7 @@ def main():
     seeds={row['implementation'].removeprefix('0x') for row in bindings}
     roots={'script_descriptors':seeds,'native_crt_startup':{'1403fc96c'}}
     roots['render_view_lifetime']={'14012ca00','14012cc40'}
+    roots['opengl_vertex_index_buffers']={'140065c60','140074850','140074920','140074990','140074a10','140074a40','140074ab0','140074b70','140074bd0'}
     roots['wheel_force_adapter']={'1400e76c0'}
     roots['physics_manager_startup']={'1400c29d0'}
     roots['physics_step_dispatch_and_worker']={'1400c7a60','1400c3c50','1400c3b90'}
