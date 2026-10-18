@@ -81,3 +81,10 @@ coverage**, with **124 computed call sites** in that static closure. Its
 Win32 events/thread creation and backend scene/dispatcher setup are concrete
 next boundaries. Computed targets are not closed by these counts. A functioning
 full native startup and real rendering/physics services remain unvalidated.
+
+All **28 component/transport CTests** pass on Windows x64, Linux x64 and
+ARM64 Linux under QEMU. The Linux runs also pass six installed headless-host
+checks, six script-host checks and ten SDL frontend/tester checks, using
+authored fixtures. Five nonzero/stationary force reference pairs are included
+in the portable fixtures. [CI evidence](https://github.com/nat649/fs15-reconstruction/actions/runs/39128806155).
+Original-resource Linux desktop validation remains separate and pending.

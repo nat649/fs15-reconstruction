@@ -23,5 +23,26 @@
     "original_math_boundary": 2048,
     "platform_math": 2048
   },
-  "scope": "Unchanged original view constructor/destructor with synthetic driver/buffer slots, complete records and ordered callback snapshots; unchanged wheel adapter with original lookup/tire math and authored registry fixtures. No actual GPU, world solver or full startup executed."
+  "scope": "Unchanged original view constructor/destructor with synthetic driver/buffer slots, complete records and ordered callback snapshots; unchanged wheel adapter with original lookup/tire math and authored registry fixtures. No actual GPU, world solver or full startup executed.",
+  "platform_validation": {
+    "tested_source_commit": "18c1bbdf4dfb81d6ef26ed97915c1a11655d4864",
+    "github_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39128806155",
+    "windows_x64_component_transport_tests": 28,
+    "linux_x64_component_transport_tests": 28,
+    "arm64_linux_qemu_component_transport_tests": 28,
+    "linux_headless_host_checks": 6,
+    "linux_script_host_checks": 6,
+    "linux_frontend_tester_checks": 10,
+    "linux_runtime_archive_sha256": "7113ed818071c5dafcb6439943d3e036cd5441498e030c4ae3a49ee267672245",
+    "linux_executable_sha256": {
+      "FS15MenuLinux": "13244a5f10ef23388c2dd6efbf34e9c289abb7daa7c6f0d341bceca9b216b346",
+      "FS15ScriptHost": "2dbd6a2c19ed6a21fc76c150cc2c9f099b62a6194d0965df850bdd1dfd8d54a8",
+      "FS15PortableHost": "eff3fc9691cb268b87fc054bd1a60b5e5343063052054748ec53e3c7ab26a35e"
+    },
+    "original_resources_executed_on_linux": false,
+    "full_native_engine_started_on_linux": false,
+    "gpu_driver_started_on_linux": false,
+    "physics_world_started_on_linux": false
+  },
+  "portable_fixture_sha256": "0d537c4ca5e47ab7d2b8b2019e4ed4156beaacd98b6ed6486f8fda238a76a9dd"
 }
