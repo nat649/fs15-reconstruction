@@ -125,7 +125,8 @@ std::shared_ptr<Texture> decode_dds(const std::filesystem::path& path) {
         const unsigned pitch=(little32(b,8)&8)?little32(b,20):packedPitch;
         if(pitch<packedPitch || 128ull+std::uint64_t(pitch)*height>b.size()) throw std::runtime_error("Truncated DDS pixels");
         auto channel=[](unsigned value,unsigned mask,unsigned absent) {
-            if(!mask) return absent; unsigned shift=0;while((mask&1)==0){mask>>=1;++shift;}
+            if(!mask) return absent;
+            unsigned shift=0;while((mask&1)==0){mask>>=1;++shift;}
             return unsigned((std::uint64_t((value>>shift)&mask)*255+mask/2)/mask);
         };
         for(unsigned y=0;y<height;++y) for(unsigned x=0;x<width;++x) {
@@ -289,7 +290,8 @@ struct Renderer::Impl {
     }
     const Glyph& glyph(std::uint32_t c)const {
         auto found=glyphs.find(c);if(found==glyphs.end())found=glyphs.find('?');
-        if(found==glyphs.end())throw std::runtime_error("Font missing fallback glyph");return found->second[bold?1:0];
+        if(found==glyphs.end())throw std::runtime_error("Font missing fallback glyph");
+        return found->second[bold?1:0];
     }
     std::vector<Line> layout(float pixelSize,const std::string& text)const {
         auto chars=codepoints(text);std::vector<Line> lines(1);const float scale=pixelSize/nominalFontSize,maxWidth=wrapWidth*width;
@@ -470,7 +472,8 @@ struct Renderer::Impl {
         if(lua_gettop(L)==0||lua_isnil(L,1))return reset_clip(L);
         const float x=float(luaL_checknumber(L,1)),y=float(luaL_checknumber(L,2)),w=float(luaL_checknumber(L,3)),h=float(luaL_checknumber(L,4));
         const SDL_Rect clip{int(std::floor(x*width)),int(std::floor((1-y-h)*height)),std::max(0,int(std::ceil(w*width))),std::max(0,int(std::ceil(h*height)))};
-        if(SDL_RenderSetClipRect(graphics,&clip)!=0)throw std::runtime_error(SDL_GetError());return 0;
+        if(SDL_RenderSetClipRect(graphics,&clip)!=0)throw std::runtime_error(SDL_GetError());
+        return 0;
     }
 #endif
     void bind(lua_State* L,const char* name,lua_CFunction fn){lua_pushlightuserdata(L,this);lua_pushcclosure(L,fn,1);lua_setglobal(L,name);}
