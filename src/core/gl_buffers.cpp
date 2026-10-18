@@ -1,7 +1,7 @@
 #include "gl_buffers.h"
 #include <cstring>
 namespace {
-constexpr uint32_t vertex=0x8892,index=0x8893;
+constexpr uint32_t vertex_target=0x8892,index_target=0x8893;
 uint32_t usage(uint32_t flags){return (flags&4)?0x88e8:(((~flags&8)|0x111c0)>>1);}
 bool create_ok(const FS15GLBufferServices* s){return s&&s->gen&&s->bind&&s->data;}
 bool map_ok(const FS15GLBufferServices* s){return s&&s->bind&&s->data&&s->map;}
@@ -15,9 +15,9 @@ extern "C" FS15GLVertexBuffer* fs15_gl_vertex_create(void* driver,size_t n,const
     put<uint32_t>(driver,8,0);
     auto* b=static_cast<FS15GLVertexBuffer*>(s->allocate(s->user,sizeof(FS15GLVertexBuffer)));
     if(b){
-        b->vtable=0x1404bd480;s->gen(s->user,1,&b->name);s->bind(s->user,vertex,b->name);
+        b->vtable=0x1404bd480;s->gen(s->user,1,&b->name);s->bind(s->user,vertex_target,b->name);
         b->bytes=d->bytes;b->usage=usage(d->flags);b->flags=d->flags;
-        s->data(s->user,vertex,b->bytes,d->data,b->usage);b->mapped=0;b->staged=0;s->vertex_bytes+=b->bytes;
+        s->data(s->user,vertex_target,b->bytes,d->data,b->usage);b->mapped=0;b->staged=0;s->vertex_bytes+=b->bytes;
     }
     for(uint32_t i=0;i<count;++i)if(get<uintptr_t>(driver,0x140+i*8)==reinterpret_cast<uintptr_t>(b)){
         put<uint32_t>(driver,0x138,0);put<uintptr_t>(driver,0x188,0);break;
@@ -26,9 +26,9 @@ extern "C" FS15GLVertexBuffer* fs15_gl_vertex_create(void* driver,size_t n,const
 }
 extern "C" int fs15_gl_index_construct(FS15GLIndexBuffer* b,const FS15GLBufferDesc* d,FS15GLBufferServices* s){
     if(!b||!d||!create_ok(s))return 0;
-    b->vtable=0x1404bd458;s->gen(s->user,1,&b->name);s->bind(s->user,index,b->name);
+    b->vtable=0x1404bd458;s->gen(s->user,1,&b->name);s->bind(s->user,index_target,b->name);
     b->bytes=d->bytes;b->usage=usage(d->flags);b->flags=d->flags;
-    s->data(s->user,index,b->bytes,d->data,b->usage);b->mapped=0;b->type=d->format?0x1405:0x1403;
+    s->data(s->user,index_target,b->bytes,d->data,b->usage);b->mapped=0;b->type=d->format?0x1405:0x1403;
     s->index_bytes+=b->bytes;return 1;
 }
 extern "C" int fs15_gl_vertex_destroy(FS15GLVertexBuffer* b,uint32_t flags,FS15GLBufferServices* s){
@@ -45,9 +45,9 @@ extern "C" int fs15_gl_index_destroy(FS15GLIndexBuffer* b,uint32_t flags,FS15GLB
 }
 extern "C" uintptr_t fs15_gl_index_map(FS15GLIndexBuffer* b,uint32_t offset,int mode,FS15GLBufferServices* s){
     if(!b||!map_ok(s))return 0;
-    s->bind(s->user,index,b->name);
-    if(mode==1)s->data(s->user,index,b->bytes,0,b->usage);
-    auto p=s->map(s->user,index,mode==2?0x88b8:0x88b9);b->mapped=1;return p+offset;
+    s->bind(s->user,index_target,b->name);
+    if(mode==1)s->data(s->user,index_target,b->bytes,0,b->usage);
+    auto p=s->map(s->user,index_target,mode==2?0x88b8:0x88b9);b->mapped=1;return p+offset;
 }
 extern "C" uintptr_t fs15_gl_vertex_map(FS15GLVertexBuffer* b,uint32_t offset,uint32_t length,int mode,FS15GLBufferServices* s){
     if(!b||!map_ok(s))return 0;
@@ -55,15 +55,15 @@ extern "C" uintptr_t fs15_gl_vertex_map(FS15GLVertexBuffer* b,uint32_t offset,ui
     if(staged&&(!s->scratch||s->scratch_bytes<length))return 0;
     b->mapped=1;
     if(staged){s->scratch_busy=1;b->staged=1;b->offset=offset;b->length=length;b->discard=mode==1;return s->scratch;}
-    s->bind(s->user,vertex,b->name);
-    if(mode==1)s->data(s->user,vertex,b->bytes,0,b->usage);
-    return s->map(s->user,vertex,mode==2?0x88b8:0x88b9)+offset;
+    s->bind(s->user,vertex_target,b->name);
+    if(mode==1)s->data(s->user,vertex_target,b->bytes,0,b->usage);
+    return s->map(s->user,vertex_target,mode==2?0x88b8:0x88b9)+offset;
 }
 extern "C" int fs15_gl_vertex_upload(FS15GLVertexBuffer* b,uint32_t offset,uint32_t length,uint8_t discard,FS15GLBufferServices* s){
     if(!b||!s||!s->bind||!s->data||!s->subdata||!s->scratch||s->scratch_bytes<length)return 0;
     const auto source=s->scratch;
-    s->bind(s->user,vertex,b->name);if(discard)s->data(s->user,vertex,b->bytes,0,b->usage);
-    s->subdata(s->user,vertex,offset,length,source);return 1;
+    s->bind(s->user,vertex_target,b->name);if(discard)s->data(s->user,vertex_target,b->bytes,0,b->usage);
+    s->subdata(s->user,vertex_target,offset,length,source);return 1;
 }
 extern "C" int fs15_gl_vertex_unmap(FS15GLVertexBuffer* b,FS15GLBufferServices* s){
     if(!b||!s||!s->bind||!s->unmap)return 0;
@@ -71,10 +71,10 @@ extern "C" int fs15_gl_vertex_unmap(FS15GLVertexBuffer* b,FS15GLBufferServices* 
         if(!s->data||!s->subdata||!s->scratch||s->scratch_bytes<b->length)return 0;
         b->staged=0;s->scratch_busy=0;
         if(!fs15_gl_vertex_upload(b,b->offset,b->length,b->discard,s))return 0;
-    }else{s->bind(s->user,vertex,b->name);s->unmap(s->user,vertex);}
+    }else{s->bind(s->user,vertex_target,b->name);s->unmap(s->user,vertex_target);}
     b->mapped=0;return 1;
 }
 extern "C" int fs15_gl_index_unmap(FS15GLIndexBuffer* b,FS15GLBufferServices* s){
     if(!b||!s||!s->bind||!s->unmap)return 0;
-    s->bind(s->user,index,b->name);s->unmap(s->user,index);b->mapped=0;return 1;
+    s->bind(s->user,index_target,b->name);s->unmap(s->user,index_target);b->mapped=0;return 1;
 }

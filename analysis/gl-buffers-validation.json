@@ -5,7 +5,7 @@
   "compared_native_entries": 9,
   "comparison_digest": "54d27e7d475f2487282cd3ac5981b1d046b961f4c01c6596b7c92a97cc793d54",
   "rebuilt_source_sha256": {
-    "src/core/gl_buffers.cpp": "1bf0a588dedb15b6753d43cd26639670b7fb11641ae5b31dd52817e99ae682cc",
+    "src/core/gl_buffers.cpp": "61901ce1d52cdbd3c3fceef67ddcff1c97f82ef77e314317625d2a1bb5d04ad6",
     "src/core/gl_buffers.h": "b2bd1e8c4c44009e443c125d94803a5b532f2e3d78406fda5f1f13503b8e38b6"
   },
   "scope": "Nine bounded OpenGL vertex/index buffer paths. Unchanged original machine code with owned recording GL callbacks and isolated CRT heap. Includes staging size boundary, occupied scratch, read/write/discard, null map plus offset, usage flags, counter wrap and nondeleting lifetime. Constructor allocator spare bytes excluded. Native CRT allocation failure/throws, deleting free flag, live driver, shaders, materials, draw submission and engine startup are separate; no full renderer claim."
