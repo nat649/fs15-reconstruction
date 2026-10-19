@@ -107,7 +107,7 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover render-view allocation/initialization, other view variants, real GPU buffer/backend operations and render consumption.
 - [ ] Recover other derived I3D node callbacks, shape-end finalization, live body/joint backends, property observer effects and trigger teardown.
 - [ ] Recover the original XML tokenizer/complete dispatch, file/archive/scene-loader integration, update scheduling, skin/skeleton binding and renderer consumption.
-- [x] Track 257 bounded reconstructed native entries separately from 11,410 pseudocode-only entries, with source-pinned evidence.
+- [x] Track 259 bounded reconstructed native entries separately from 11,408 pseudocode-only entries, with source-pinned evidence.
 - [ ] Recover native scene object allocation/destruction, ownership, remaining derived vtables, callback side effects and complete resource lifecycle.
 - [x] Use recovered RLE8/RLE16 in host field-grid loading and reject incomplete run terminators, sample-count mismatches and nonfinite collision radii.
 - [x] Recover render-view creation and teardown, compare 1,024 native lifetimes including partial buffer failures, and link them into the portable host.
@@ -125,7 +125,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Recover five GE6 wheel frame/filter/closest-hit/raycast/finish paths; compare 6,656 original-code fixtures and exercise actual middleware rays against rigid bodies, triggers, ignored pairs and suspension limits.
 - [x] Recover the GE6 wheel Jacobian, suspension spring setup and split-penetration phase; compare 2,048 Jacobians, 2,048 spring states and 6,640 correction iterations. Connect these paths to actual rays and chassis transform writeback in an isolated component integration test.
 - [x] Recover the GE6 wheel velocity/friction/braking phase with an empty differential network; compare 1,024 states / 6,640 successive iterations and 18,448 gravity queries. Connect suspension support, transfer of initial wheel spin to chassis motion and braking in an isolated component test.
-- [ ] Complete native custom broadphase concurrency, GIANTS heightfield collision algorithms and remaining `Bt2RaycastVehicle` setup/steering/drivetrain orchestration; register the complete vehicle and link full scene loading and startup.
+- [x] Recover motor/clutch/differential preparation and updates; compare 1,536 networks / 13,056 successive updates with original code.
+- [x] Connect an experimental typed four-wheel raycast vehicle to the GE6 world/solver; demonstrate acceleration from rest, reverse, steering and braking in component tests. Its whole-class native comparison still records differences and is not a parity pass.
+- [ ] Resolve whole-vehicle native parity differences, load original vehicle XML/joints/script control, complete GIANTS terrain algorithms/broadphase concurrency, rendering, scene loading and startup for an actual playable session.
 - [ ] Integrate validated tire-force math with recovered wheel slip, contact, load and rigid-body services.
 - [ ] Complete the remaining GRLE variants and native density-service parity.
 - [ ] Reconstruct the native GAR cipher independently.

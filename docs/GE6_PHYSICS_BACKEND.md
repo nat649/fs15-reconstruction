@@ -203,9 +203,34 @@ script also needs the original pinned analysis image and the separately built
 
 ## Remaining path to a playable GE6 Linux runtime
 
-The next steps in **`Bt2RaycastVehicle`** are full setup/steering orchestration,
-motor/differential recovery and integration of the recovered ray/setup/
-penetration/velocity/finish methods into that complete class. Original GE6 terrain shapes
+The motor/differential milestone adds recovered `0x140155940` weight preparation
+and `0x140155d50` motor/clutch/network solving in
+[`vehicle_drive.cpp`](../src/ge6/vehicle_drive.cpp). The
+[native comparison](../analysis/ge6-vehicle-drive-validation.json) passes 1,536
+networks with 0..20 differential nodes and 13,056 successive updates, including
+backward references, shared children, reverse ratios, coasting and clutch/
+torque clamps. Maximum scaled error is `0.000001847` in that domain.
+
+[`RaycastVehicle`](../src/ge6/raycast_vehicle.cpp) connects recovered ray,
+spring/Jacobian, penetration, velocity/friction, drivetrain and finish paths
+through the GE6 world callbacks. Its typed storage, ownership/configuration
+validation and input adapter are authored. A 37th component test starts four
+wheels at rest, accelerates with the motor, reverses, steers and brakes. The
+straight/reverse scenarios travel about 11.1 m and reach about 7.46 m/s before
+braking below 0.002 m/s. These use sphere fixture bodies and explicit input
+commands, not original vehicle resources or a rendered game.
+
+The [whole-class diagnostic](../analysis/ge6-raycast-vehicle-validation.json)
+compares six original GE6 vehicle lifetimes / 720 frames. It deliberately
+reports `observed_differences`, **not a parity pass**: maximum position error
+is about 0.0203 m, linear-velocity error 0.135 m/s and wheel readback differences
+are larger, including slip sign/rotation-wrap differences. The cause is not
+yet established. Do not count this class's setup/steering/orchestration as
+additional native-validated ledger entries or claim Windows 1:1 equivalence.
+Only the separately compared motor/differential bodies add two validated entries.
+
+Next steps include resolving whole-vehicle parity differences, feeding original
+XML/body/joint/script data and connecting the scene/render loop. Original GE6 terrain shapes
 and convex/heightfield algorithms, body/joint/scene loading, the remaining script
 services, graphics shaders/materials/draw submission and the full startup loop
 remain to be linked and tested. A working physics component is not a playable

@@ -5,6 +5,8 @@
 #include "vehicle_wheel.h"
 #include "vehicle_constraint.h"
 #include "vehicle_velocity.h"
+#include "vehicle_drive.h"
+#include "raycast_vehicle.h"
 #include <vector>
 #include <memory>
 #include <cstring>
@@ -86,6 +88,31 @@ extern "C" PROBE_API void fs15_ge6_constraint_velocity(void* sar,void* sbr,void*
     for(size_t i=0;i<count;++i){const auto& w=states[i];probe_store(records,i*0x1a0+0x7c,w.suspension.impulse);probe_store(records,i*0x1a0+0x94,w.correction_impulse);probe_store(records,i*0x1a0+0x10c,w.lateral.impulse);probe_store(records,i*0x1a0+0x17c,w.longitudinal.impulse);probe_store(wheels,i*0x160+0x108,w.speed);probe_store(wheels,i*0x160+0x158,w.brake_impulse);}
     for(int k=0;k<3;++k){probe_store(sar,0x40+k*4,sa.m_deltaLinearVelocity[k]);probe_store(sar,0x50+k*4,sa.m_deltaAngularVelocity[k]);if(!alias){probe_store(sbr,0x40+k*4,sb.m_deltaLinearVelocity[k]);probe_store(sbr,0x50+k*4,sb.m_deltaAngularVelocity[k]);}}
     counters[0]=context.drive_calls;counters[1]=context.gravity_calls;
+}
+extern "C" PROBE_API void fs15_ge6_drivetrain(void* actor,void* raw_wheels,const void* raw_nodes,size_t count,float dt,int prepare){
+    fs15::ge6::DriveWheel wheels[20];std::vector<fs15::ge6::Differential> nodes(count);
+    for(size_t i=0;i<20;++i){auto& w=wheels[i];w.radius=probe_float(raw_wheels,i*0x160+0xdc);w.speed=probe_float(raw_wheels,i*0x160+0x108);w.inverse_inertia=probe_float(raw_wheels,i*0x160+0x124);w.weight=probe_float(raw_wheels,i*0x160+0x144);}
+    for(size_t i=0;i<count;++i){auto& n=nodes[i];n.ratio=probe_float(raw_nodes,i*12);n.bias=probe_float(raw_nodes,i*12+4);std::memcpy(&n.a,static_cast<const char*>(raw_nodes)+i*12+8,2);std::memcpy(&n.b,static_cast<const char*>(raw_nodes)+i*12+10,2);}
+    fs15::ge6::VehicleMotor m;m.inverse_inertia=probe_float(actor,0x98);m.speed=probe_float(actor,0x9c);m.target_speed=probe_float(actor,0xa0);m.damping=probe_float(actor,0xa4);m.torque=probe_float(actor,0xa8);m.ratio=probe_float(actor,0xac);m.clutch_torque=probe_float(actor,0xb0);m.driven_speed=probe_float(actor,0xb4);m.torque_impulse=probe_float(actor,0xb8);m.clutch_impulse=probe_float(actor,0xbc);
+    if(prepare)fs15::ge6::prepare_differentials(wheels,nodes.data(),count,m);else fs15::ge6::solve_drivetrain(wheels,nodes.data(),count,m,dt);
+    for(size_t i=0;i<20;++i)probe_store(raw_wheels,i*0x160+(prepare?0x144:0x108),prepare?wheels[i].weight:wheels[i].speed);
+    if(!prepare){probe_store(actor,0x9c,m.speed);probe_store(actor,0xb4,m.driven_speed);probe_store(actor,0xb8,m.torque_impulse);probe_store(actor,0xbc,m.clutch_impulse);}
+}
+extern "C" PROBE_API int fs15_ge6_vehicle_course(int steps,const float* commands,float* output,size_t capacity){
+    if(steps<1||steps>1200||!commands||!output||capacity<size_t(steps)*40)return 0;
+    try{
+        fs15::ge6::PhysicsWorld physics(btVector3(0,-9.81f,0));auto& world=physics.world();world.getSolverInfo().m_numIterations=20;world.getSolverInfo().m_solverMode|=0x70;
+        btSphereShape ground_shape(1000),body_shape(.5f);btRigidBody ground(0,nullptr,&ground_shape),body(1000,nullptr,&body_shape,btVector3(100,100,100));
+        ground.setWorldTransform(btTransform(btQuaternion::getIdentity(),btVector3(0,-1000,0)));body.setWorldTransform(btTransform(btQuaternion::getIdentity(),btVector3(0,1.8f,0)));body.setActivationState(DISABLE_DEACTIVATION);
+        world.addRigidBody(&ground);world.addRigidBody(&body);fs15::ge6::RaycastVehicle vehicle(world,{&body});
+        for(int i=0;i<4;++i){fs15::ge6::RaycastWheelConfig c;c.suspension.attachment=btVector3(i%2?1.f:-1.f,0,i<2?1.5f:-1.5f);c.suspension.rest=1;c.suspension.compression=.2f;c.suspension.droop=.5f;c.suspension.radius=.5f;c.spring.rest=1;c.spring.compression=.2f;c.spring.stiffness=30000;c.spring.positive_velocity_damping=5000;c.spring.nonpositive_velocity_damping=5000;c.tire={.5f,5,1,5,1};c.force_lever=btVector3(c.suspension.attachment.x(),-1,c.suspension.attachment.z());c.damping=.1f;vehicle.add_wheel(c);}
+        vehicle.set_differentials({{.5f,2,0,1},{.5f,2,2,3},{.5f,2,20,21}});vehicle.motor().inverse_inertia=1;vehicle.motor().clutch_torque=2000;world.add_vehicle_solver(vehicle);
+        for(int step=0;step<steps;++step){const float* command=commands+step*5;vehicle.motor().torque=command[0];vehicle.motor().target_speed=command[1];vehicle.motor().ratio=command[2];for(unsigned i=0;i<4;++i){vehicle.wheel_config(i).steering=i<2?command[3]:0;vehicle.wheel_config(i).brake=command[4];}
+            world.stepSimulation(1.f/60,20,1.f/60);float* out=output+step*40;const auto& p=body.getWorldTransform().getOrigin();const auto& v=body.getLinearVelocity();const auto& a=body.getAngularVelocity();for(int i=0;i<3;++i){out[i]=p[i];out[3+i]=v[i];out[6+i]=a[i];}out[9]=vehicle.motor().speed;out[10]=vehicle.motor().driven_speed;out[11]=vehicle.motor_output();
+            for(unsigned i=0;i<4;++i){const auto& w=vehicle.wheel_state(i);const auto& f=vehicle.readback(i);const auto& c=vehicle.contact(i);float* r=out+12+i*7;r[0]=w.speed;r[1]=f.angle;r[2]=f.force;r[3]=f.slip[0];r[4]=f.slip[1];r[5]=c.length;r[6]=c.body?1.f:0.f;}
+        }
+        world.remove_vehicle_solver(vehicle);world.removeRigidBody(&body);world.removeRigidBody(&ground);return 1;
+    }catch(...){return 0;}
 }
 extern "C" PROBE_API void fs15_ge6_wheel_frame(const float* v,float* out){
     btVector3 p,d;fs15::ge6::wheel_ray_frame(probe_wheel(v),probe_transform(v),p,d);

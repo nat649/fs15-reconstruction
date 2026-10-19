@@ -1,0 +1,63 @@
+{
+  "status": "observed_differences",
+  "comparison_is_parity_pass": false,
+  "error_groups": {
+    "position": {
+      "maximum_absolute_error": 0.020246505737304688,
+      "maximum_scaled_error": 0.004198383197291281
+    },
+    "linear_velocity": {
+      "maximum_absolute_error": 0.13437271118164062,
+      "maximum_scaled_error": 0.02977614740397536
+    },
+    "angular_velocity": {
+      "maximum_absolute_error": 0.061676084995269775,
+      "maximum_scaled_error": 0.061676084995269775
+    },
+    "motor": {
+      "maximum_absolute_error": 8.343162536621094,
+      "maximum_scaled_error": 0.17887392502801086
+    },
+    "wheel_speed": {
+      "maximum_absolute_error": 34.4401969909668,
+      "maximum_scaled_error": 1.0
+    },
+    "wheel_angle": {
+      "maximum_absolute_error": 6.266639471054077,
+      "maximum_scaled_error": 0.9992533609253248
+    },
+    "wheel_force": {
+      "maximum_absolute_error": 499.2293701171875,
+      "maximum_scaled_error": 0.20368318256968043
+    },
+    "lateral_slip": {
+      "maximum_absolute_error": 0.719784677028656,
+      "maximum_scaled_error": 0.719784677028656
+    },
+    "longitudinal_slip": {
+      "maximum_absolute_error": 0.8965747554320842,
+      "maximum_scaled_error": 0.8965747554320842
+    },
+    "suspension_length": {
+      "maximum_absolute_error": 0.005915999412536621,
+      "maximum_scaled_error": 0.005915999412536621
+    },
+    "contact": {
+      "maximum_absolute_error": 0,
+      "maximum_scaled_error": 0
+    }
+  },
+  "maximum_motion_absolute_error": 0.13437271118164062,
+  "maximum_readback_scaled_error": 1.0,
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "vehicle_lifetimes": 6,
+  "trajectory_frames": 720,
+  "wheels_per_vehicle": 4,
+  "maximum_scaled_error": 1.0,
+  "comparison_digest": "7f769b1762b0058ef14b78d92dedb1b34158f103b5b710b17bead75e749e2641",
+  "rebuilt_source_sha256": {
+    "src/ge6/raycast_vehicle.h": "e3fc3cf9832f8b682c4b56901c250aa35d936168d55c04541cfd8226b23090b7",
+    "src/ge6/raycast_vehicle.cpp": "9cfe28355e3c9c6ac25e668903c200fc491e6004fb761a4c7a93851b09c60e72"
+  },
+  "scope": "Diagnostic, not a parity pass: complete native Bt2RaycastVehicle callback loop in original GE6 world versus experimental typed class over compatible upstream Bullet. Four wheels, nested motor/differentials, acceleration from rest, forward/reverse ratios, steering and brakes; scenario sphere bodies/commands authored. Whole-loop motion/readback differences remain unresolved; do not count the class setup/steering paths as native-validated entries. Original vehicle XML/joints/script control, terrain/renderer/startup and playable game remain open."
+}

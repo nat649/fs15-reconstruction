@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "network_states": 1536,
+  "successive_drive_iterations": 13056,
+  "maximum_scaled_error": 1.8468687264177949e-06,
+  "comparison_digest": "40b28a6a0fa0b3fe5e880335c0cd96437fb88324443686b2719d3f2a56a12b30",
+  "digest_excludes_native_pointers": true,
+  "rebuilt_source_sha256": {
+    "src/ge6/vehicle_drive.h": "86a630435dc0a85d6cb75ecb110ae6950f4854ee488d7dfd7277fef24db1e9b8",
+    "src/ge6/vehicle_drive.cpp": "220a7edc60ce2e1b1e9a2ad1d53cfdfbcc8de445a08d517af26c795fdf105cf1"
+  },
+  "scope": "Original 0x140155940 differential weight preparation and 0x140155d50 motor/clutch/differential update. Native bodies execute unchanged with 0..20 nodes, backward nested references and shared wheel children, both speed/ratio signs, clutch/torque clamps and successive updates. Typed transport authored. Full vehicle creation, original XML/script control and gameplay remain separate."
+}

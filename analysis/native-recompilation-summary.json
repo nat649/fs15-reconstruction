@@ -1,9 +1,14 @@
 {
   "catalogued": 12233,
   "eligible": 11667,
-  "pseudocode_only": 11410,
-  "validated_component_path_entries": 257,
+  "pseudocode_only": 11408,
+  "validated_component_path_entries": 259,
   "components": [
+    {
+      "name": "ge6_motor_clutch_and_differential_network",
+      "entries": 2,
+      "evidence": "analysis/ge6-vehicle-drive-validation.json"
+    },
     {
       "name": "ge6_vehicle_wheel_velocity_friction_and_braking_empty_drivetrain",
       "entries": 1,

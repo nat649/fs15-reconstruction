@@ -94,7 +94,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **257 native entries on bounded tested paths**. The affine component passes
+  **259 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -266,7 +266,15 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   A one-wheel integration fixture supports a chassis under gravity, transfers
   initial wheel spin into chassis motion, then brakes it to rest. Its fixed
   slip inputs and orchestration are authored test data; motor/differential
-  recovery and a complete original vehicle remain open.
+  original-vehicle loading remain open. Motor/differential recovery follows below.
+- **GE6 motor and vehicle assembly:** differential weight preparation and the
+  complete motor/clutch/network update match **1,536 networks / 13,056 successive
+  updates**. An experimental typed raycast-vehicle class connects all wheel
+  phases and this drivetrain; four wheels accelerate from rest, reverse, steer
+  and brake in component scenarios. The whole-class native comparison records
+  unresolved motion/readback differences and is **not a parity pass**. Original
+  vehicle XML/joints/script control, terrain/rendering and a playable Linux
+  game remain open. See [measured limits](docs/GE6_PHYSICS_BACKEND.md).
 - **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
   storage, staging, direct mapping, discard, subdata upload and deletion.
   **1,024 paired lifetimes** match unchanged GE6 code through recording GL seams.

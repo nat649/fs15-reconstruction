@@ -11,6 +11,9 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('ge6_motor_clutch_and_differential_network',
+        ['0x140155940','0x140155d50'],
+        'analysis/ge6-vehicle-drive-validation.json'),
     ('ge6_vehicle_wheel_velocity_friction_and_braking_empty_drivetrain',
         ['0x1401540b0'],
         'analysis/ge6-vehicle-velocity-validation.json'),
