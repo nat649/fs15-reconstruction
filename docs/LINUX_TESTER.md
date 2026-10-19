@@ -1,5 +1,10 @@
 # Linux frontend tester package
 
+For the separate original-object OpenGL preview, see
+[GE6 object rendering](GE6_OBJECT_RENDERING.md). Its new executable is included
+in current workflow runtime artifacts, but needs one's own staged scene assets.
+The frontend tester described below remains a menu test.
+
 The tester runs the recovered FS15 English frontend through the authored SDL2
 renderer/input transport, shared DDS/font code, LuaJIT and Expat XML transport.
 This is a **frontend test**, not a playable Linux game or complete GE6 rebuild.

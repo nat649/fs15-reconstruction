@@ -149,7 +149,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [x] Recover GE6 array/index/range draw dispatch and point-size cache; compare 4,096 driver states and 3,853 ordered calls with original code. Add actual-driver primitive framebuffer readback to the optional GL check.
-- [x] Pass actual OpenGL buffer upload/map/readback/deletion on Linux x64 with Mesa llvmpipe under Xvfb; full scene rendering and hardware GPU validation remain open.
+- [x] Pass actual OpenGL buffer upload/map/readback/deletion on Linux x64 with Mesa llvmpipe under Xvfb.
+- [x] Connect recovered GE6 TRS, projection/frustum, buffers and indexed draw to original object meshes, hierarchy and diffuse textures in an SDL/OpenGL integration target independent of ReFarm; capture Bjornholm on Windows/NVIDIA. See [evidence and temporary material/LOD limits](docs/GE6_OBJECT_RENDERING.md).
+- [x] Display the full-resolution original Bjornholm DEM beside the objects, with a temporary uniform terrain material.
+- [ ] Validate original-map object rendering and interactive camera on a Linux desktop; asset-free framebuffer integration checks are separate.
+- [ ] Connect native GE6 shaders/material dispatch, terrain layers, dynamic LOD, vegetation effects, fleet rendering and mission/physics state to this draw path.
 - [ ] Recover and connect Linux graphics/input/audio/filesystem/threading backends and complete original-resource loading.
 - [ ] Validate original maps, vehicles, farming and persistent save/reload on Linux.
 

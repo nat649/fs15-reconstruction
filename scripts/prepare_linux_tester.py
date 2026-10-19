@@ -10,7 +10,7 @@ import tarfile
 
 REPO = Path(__file__).resolve().parents[1]
 BINARIES = {'FS15PortableHost', 'FS15ScriptHost', 'FS15MenuLinux'}
-OPTIONAL_BINARIES = {'FS15GLDriverCheck'}
+OPTIONAL_BINARIES = {'FS15GLDriverCheck', 'FS15GE6Objects'}
 
 
 def relative(name):

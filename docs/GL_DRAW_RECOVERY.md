@@ -38,6 +38,8 @@ cmake --build build/gl-check --parallel 2
 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a build/gl-check/src/core/FS15GLDriverCheck
 ```
 
-This adds a real primitive drawing path. Full scene geometry submission,
-original shader/material/texture state, terrain rendering, desktop gameplay
-and native engine startup remain open. It is not a playable game milestone.
+The [object integration target](GE6_OBJECT_RENDERING.md) now connects this draw
+path to original map geometry, hierarchy, diffuse textures and DEM geometry,
+with a Windows/NVIDIA framebuffer capture. Original GE6 shader/material state,
+terrain layer rendering, desktop gameplay and native engine startup remain
+open. Neither target establishes a playable game milestone.

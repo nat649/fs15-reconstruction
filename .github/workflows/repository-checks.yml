@@ -34,13 +34,17 @@ jobs:
           sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth
       - name: Build and test recovered portable components without Windows or original resources
         run: |
-          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DFS15_BUILD_GE6_PHYSICS=ON -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DFS15_BUILD_GE6_PHYSICS=ON -DFS15_BUILD_GE6_OBJECTS=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
       - name: Check recovered buffers on actual Linux OpenGL (Mesa software rasterizer)
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: xvfb-run -a build/ci-portable-core/src/core/FS15GLDriverCheck
+      - name: Check original-object draw transport with authored scene fixtures
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a python tests/check_ge6_objects.py --exe build/ci-portable-core/src/ge6_objects/FS15GE6Objects --workdir build/ge6-object-fixtures
       - name: Install and exercise Linux x64 hosts and SDL frontend transport
         run: |
           cmake --install build/ci-portable-core --prefix build/linux-portable-host
@@ -51,6 +55,7 @@ jobs:
           ldd build/linux-portable-host/bin/FS15PortableHost > build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
           ldd build/linux-portable-host/bin/FS15ScriptHost >> build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
           ldd build/linux-portable-host/bin/FS15MenuLinux >> build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
+          ldd build/linux-portable-host/bin/FS15GE6Objects >> build/linux-portable-host/share/fs15-reconstruction/runtime-dependencies.txt
           tar -C build/linux-portable-host -czf build/fs15-linux-x64-portable-host.tar.gz .
           cd build
           sha256sum fs15-linux-x64-portable-host.tar.gz > fs15-linux-x64-portable-host.sha256

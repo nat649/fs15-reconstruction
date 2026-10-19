@@ -61,6 +61,14 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
 
 ## Current results
 
+- **Original objects through recovered GE6 drawing:** a separate SDL/OpenGL
+  integration target now displays original buildings, trees, roads and props
+  using recovered GE6 transforms, projection/frustum, buffers and indexed draw.
+  Bjornholm was captured on Windows/NVIDIA with original textures and DEM geometry.
+  Materials, lighting, terrain color and LOD policy are temporary; gameplay is
+  not connected. Double-click `Launch GE6 Objects.cmd` after building.
+  See [capture, build/run instructions and limits](docs/GE6_OBJECT_RENDERING.md).
+
 - **Connected physics results and scene/view preparation:** worker completion
   now runs recovered contact collection, native post-step order, wheel readback
   and enter/leave/stay events. The CPU probe connects 16 finalized steps to
