@@ -96,6 +96,26 @@ def check(exe, workdir):
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x140001' in result.stderr, result
     result = run(fixture(), '--image')
     assert result.returncode == 1 and 'hash differs' in result.stderr, result
+    local = fixture()
+    local[0x640:0x640 + 15] = b'fs15_local.dll\0'
+    names = (b'SteamAPI_Init', b'SteamApps', b'SteamUtils', b'SteamUser', b'SteamUserStats')
+    for i, name in enumerate(names):
+        start = 0x802 + i * 64
+        local[start:start + 64] = bytes(64)
+        local[start:start + len(name)] = name
+    code = bytearray(b'\x48\x83\xec\x28')
+    def call(iat):
+        code.extend(b'\xff\x15' + struct.pack('<i', iat - (0x1000 + len(code) + 6)))
+    for i in (0, 1, 3, 4):
+        call(0x2100 + i * 8)
+        code += b'\x48\x85\xc0\x74\x02\x0f\x0b'
+    call(0x2110)
+    code += b'\x48\x89\xc1\x48\x8b\x00\xff\x50\x48'
+    code += b'\x3d' + struct.pack('<I', 313160) + b'\x74\x02\x0f\x0b\x48\x83\xc4\x28\xc3'
+    local[0x400:0x600] = code.ljust(0x200, b'\x00')
+    result = run(local)
+    assert result.returncode == 0 and 'INIT_UNAVAILABLE' in result.stdout and 'UTIL_APP_ID' in result.stdout, result
+    assert 'APPS_UNAVAILABLE' in result.stdout and 'USER_UNAVAILABLE' in result.stdout, result
     broken = fixture()
     struct.pack_into('<I', broken, 0x98 + 240 + 12, 0x2000)
     result = run(broken)

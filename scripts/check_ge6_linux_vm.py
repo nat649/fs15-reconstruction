@@ -9,7 +9,8 @@ import gzip
 import hashlib
 from pathlib import Path
 import subprocess
-from native_gar import DEFAULT_IMAGE, EXPECTED_IMAGE
+from native_gar import DEFAULT_IMAGE
+from ge6_linux_images import image_kind
 
 
 def archive_entries(raw):
@@ -28,8 +29,7 @@ def archive_entries(raw):
 
 def build_initramfs(alpine, executable, image):
     original = image.read_bytes()
-    if hashlib.sha256(original).hexdigest() != EXPECTED_IMAGE:
-        raise ValueError('Original GE6 reference hash differs')
+    kind = image_kind(original)
     source = dict(archive_entries(alpine.read_bytes()))
     busybox = source['usr/bin/busybox']
     libc = source['usr/lib/ld-musl-x86_64.so.1']
@@ -65,6 +65,7 @@ result=$?
 echo GE6_LINUX_VM_RESULT=$result
 /usr/bin/busybox poweroff -f
 '''
+    init = init.replace(b'echo GE6_LINUX_VM_STARTED', b'echo GE6_LINUX_VM_STARTED\necho GE6_VM_IMAGE_KIND=' + kind.encode())
     add('init', init, 0o100755)
     add('TRAILER!!!')
     return gzip.compress(out, mtime=0)

@@ -3,6 +3,7 @@
 // Unimplemented imports terminate with their name and original return address.
 #include <openssl/sha.h>
 #include "ansi_reference.h"
+#include "local_platform.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -38,6 +39,8 @@
 namespace {
 constexpr uintptr_t base=0x140000000;
 constexpr char expected[]="6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f";
+constexpr char local_expected[]="e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955";
+std::string image_kind="fixture";
 void require(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
 template<class T>T read(const std::vector<uint8_t>& bytes,size_t offset){require(offset<=bytes.size()&&sizeof(T)<=bytes.size()-offset,"Truncated PE field");T out;std::memcpy(&out,bytes.data()+offset,sizeof(T));return out;}
 std::vector<std::string> imports;
@@ -166,6 +169,7 @@ MS int close_handle(uintptr_t handle){trace("CloseHandle");auto found=singleton_
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 
 uintptr_t resolve(const std::string& library,const std::string& name){
+    if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
     if(library!="KERNEL32.dll")return 0;
 #define BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     BIND("GetSystemTimeAsFileTime",file_time);BIND("GetCurrentProcessId",process_id);BIND("GetCurrentThreadId",thread_id);
@@ -253,7 +257,8 @@ int main(int argc,char** argv){
         }
         require(argc>=3,"Usage: FS15GE6LinuxBoot --image private-runtime.bin [--command-line string] | --fixture authored-test.exe");bool fixture=std::string(argv[1])=="--fixture";require(fixture||std::string(argv[1])=="--image","Expected --image or --fixture");
         char* absolute=realpath(argv[2],nullptr);require(absolute!=nullptr,"Cannot resolve private image path");image_path=absolute;std::free(absolute);std::ifstream file(argv[2],std::ios::binary|std::ios::ate);require(bool(file),"Cannot open private GE6 image");auto size=file.tellg();require(size>0&&size<=0x4000000,"Invalid image file size");std::vector<uint8_t> raw(static_cast<size_t>(size));file.seekg(0);file.read(reinterpret_cast<char*>(raw.data()),size);require(bool(file),"Truncated image file");
-        if(!fixture){std::array<unsigned char,SHA256_DIGEST_LENGTH> hash{};SHA256(raw.data(),raw.size(),hash.data());std::ostringstream text;for(auto b:hash)text<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(b);require(text.str()==expected,"GE6 image hash differs from pinned private reference");}
+        if(!fixture){std::array<unsigned char,SHA256_DIGEST_LENGTH> hash{};SHA256(raw.data(),raw.size(),hash.data());std::ostringstream text;for(auto b:hash)text<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(b);require(text.str()==expected||text.str()==local_expected,"GE6 image hash differs from pinned private reference/local platform");image_kind=text.str()==expected?"reference":"local-platform";}
+        std::cout<<"GE6_IMAGE_KIND="<<image_kind<<'\n';
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
         Image image;image.load(raw,fixture);image.run();return 0;
