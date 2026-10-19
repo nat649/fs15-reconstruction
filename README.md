@@ -18,6 +18,12 @@ repository does not provide a ready-to-download copy of the game.
 x64 engine code and works on missing OS dependencies. ReFarm and the object
 preview remain fixtures. Complete original-engine Linux boot is not yet validated.
 
+The private original image now executes its CRT/global initialization and
+reaches its original application entry inside a local Linux VM, without
+Wine/Proton or instruction patches. It stops at the unbound Steam restart API
+before core renderer/window initialization; this is not a playable Linux game.
+See [the exact evidence and current boundary](docs/GE6_LINUX_NATIVE_BOOT.md#observed-original-code-linux-result-2026-10-19).
+
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;
 the full engine and farming simulation remain incomplete.**

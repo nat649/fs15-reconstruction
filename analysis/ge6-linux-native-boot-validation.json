@@ -1,0 +1,38 @@
+{
+  "scope": "Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port",
+  "source_commit": "bc5973d9be0e5e859cd175a3768b6075253e1abc",
+  "committed_source_sha256": {
+    "src/ge6_linux/main.cpp": "d8fadf9c3e25d073dda53c1d00d9c08cf9b7ba046e533c963fd761bb0910650c",
+    "src/ge6_linux/ansi_reference.h": "8490e210cf1d5be613bded042b455f21968357c77f3950b74eedc9427b02bdde",
+    "src/ge6_linux/CMakeLists.txt": "98a6617bb3b50380abdc065383e2bdd6bd52f78a92ea73785373f602f30d9928",
+    "tests/check_ge6_linux_boot.py": "8e7889b4b406b6751e97ee3aa0f9456e55e5b309132992c9dc2395c20989bf77",
+    "scripts/check_ge6_linux_vm.py": "8a425ebd435bf8d1f4332dc63c7eb0849e050a752d820b750c73816f07eebc0e"
+  },
+  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39233789342",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "linux_elf_sha256": "99883db3bd93bd0251947e50c9fbf4266ae06c945494c761b13513f4a19a0418",
+  "private_serial_log_sha256": "8ac189d641c0c33d15ff05c7320ba4c441de0f10a2db2c0a58ae07b1717386dd",
+  "kernel": "Linux (none) 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 x86_64 Linux",
+  "original_crt_entered": true,
+  "original_application_entry_reached": true,
+  "original_main_caller": "0x14000c9f5",
+  "native_instruction_patches": false,
+  "import_addresses_rebound": true,
+  "windows_os": false,
+  "wine_or_proton_used": false,
+  "imported_names": 424,
+  "bound_import_names": 54,
+  "stop_trampoline_names": 370,
+  "stopped_at": {
+    "library": "steam_api64.dll",
+    "symbol": "SteamAPI_RestartAppIfNecessary",
+    "caller": "0x14000c8b4",
+    "traced_os_calls": 126
+  },
+  "full_engine_initialization_verified": false,
+  "original_renderer_initialized": false,
+  "menu_verified": false,
+  "playable_linux_game_verified": false,
+  "recompiled_engine": false,
+  "limits": "CRT/main entry evidence only. Import totals include unexecuted optional paths, not an engine completion percentage. Original binary, private initramfs and serial log stay local."
+}

@@ -9,6 +9,7 @@
 /src/unified_launcher/bin/
 /src/unified_launcher/obj/
 /analysis/*
+!/analysis/ge6-linux-native-boot-validation.json
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json
 !/analysis/rle8-reference.json

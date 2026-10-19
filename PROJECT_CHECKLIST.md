@@ -152,6 +152,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Audit two memory-stream vtables, recover six read/seek/query paths, compare 13,366 operations and connect them to staged script loading.
 - [ ] Validate the recovered menu with original local resources and interactive input on a Linux tester's desktop.
 - [ ] Recover/link full native GE6 startup and scripting on Linux; the SDL frontend host does not establish this.
+- [x] Execute the private original GE6 x64 instructions under a real Linux kernel in a local QEMU VM, without Wine/Proton or authored replacement engine; original CRT/global initialization reaches application entry `0x14000c9a0`.
+- [x] Supply the native stack-probe NT_TIB prefix, bounded CRT clocks/heap/locks/text services, and original singleton/debugger calls through Linux OS transport; verify authored PE ABI/stack-argument and cross-process fixtures in dedicated Linux CI.
+- [ ] Resolve the original application platform boundary: the current unmodified-instruction run stops at `SteamAPI_RestartAppIfNecessary`; no Steam service is synthesized. See [evidence and remaining startup dependencies](docs/GE6_LINUX_NATIVE_BOOT.md).
+- [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [x] Recover GE6 array/index/range draw dispatch and point-size cache; compare 4,096 driver states and 3,853 ordered calls with original code. Add actual-driver primitive framebuffer readback to the optional GL check.
 - [x] Pass actual OpenGL buffer upload/map/readback/deletion on Linux x64 with Mesa llvmpipe under Xvfb.
