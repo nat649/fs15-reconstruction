@@ -2,6 +2,7 @@
 // No recovered C++ renderer/physics/game implementation is linked here.
 // Unimplemented imports terminate with their name and original return address.
 #include <openssl/sha.h>
+#include "ansi_reference.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -96,15 +97,35 @@ MS uint16_t* environment_w(){
     out.push_back(0);auto* result=static_cast<uint16_t*>(std::malloc(out.size()*2));if(result)std::memcpy(result,out.data(),out.size()*2);return result;
 }
 MS int free_environment_w(void* p){trace("FreeEnvironmentStringsW");std::free(p);return 1;}
+int byte_index(uint16_t unit){auto found=std::find(ge6_ansi::unicode.begin(),ge6_ansi::unicode.end(),unit);return found==ge6_ansi::unicode.end()?-1:int(found-ge6_ansi::unicode.begin());}
+int wide_count(const uint16_t* source,int count){if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}require(count>0&&count<=1048576,"Invalid text count");return count;}
+MS int widen(uint32_t page,uint32_t flags,const unsigned char* source,int count,uint16_t* out,int capacity){
+    trace("MultiByteToWideChar");require((page==0||page==1252)&&(flags==0||flags==1||flags==9),"Unimplemented multibyte page/flags");
+    if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}require(count>0&&count<=1048576&&capacity>=0,"Invalid multibyte conversion bounds");
+    if(capacity==0)return count;
+    if(!out||capacity<count){last_error=122;return 0;}
+    for(int i=0;i<count;++i)out[i]=ge6_ansi::unicode[source[i]];
+    return count;
+}
+MS int string_type(uint32_t kind,const uint16_t* source,int count,uint16_t* out){
+    trace("GetStringTypeW");require(kind==1,"Unimplemented string classification kind");count=wide_count(source,count);
+    for(int i=0;i<count;++i){int index=byte_index(source[i]);require(index>=0,"Unimplemented character outside CP1252");out[i]=ge6_ansi::ctype1[size_t(index)];}return 1;
+}
+MS int map_string(uint32_t locale,uint32_t flags,const uint16_t* source,int count,uint16_t* out,int capacity){
+    trace("LCMapStringW");require((locale==0||locale==ge6_ansi::reference_lcid)&&(flags==0x100||flags==0x200),"Unimplemented case-map locale/flags");count=wide_count(source,count);require(capacity>=0,"Invalid case-map capacity");
+    if(capacity==0)return count;
+    if(!out||capacity<count){last_error=122;return 0;}
+    const auto& table=flags==0x100?ge6_ansi::lower:ge6_ansi::upper;
+    for(int i=0;i<count;++i){int index=byte_index(source[i]);require(index>=0,"Unimplemented case-map character outside CP1252");out[i]=table[size_t(index)];}return count;
+}
 MS int narrow(uint32_t page,uint32_t flags,const uint16_t* source,int count,char* out,int capacity,const char* fallback,int* used){
-    trace("WideCharToMultiByte");require((page==0||page==65001)&&flags==0&&!fallback,"Unimplemented codepage/conversion flags");
-    if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}
-    require(count>0&&count<=1048576&&capacity>=0,"Invalid wide conversion bounds");
-    for(int i=0;i<count;++i)if(source[i]>127){last_error=1113;return 0;}// Bounded ASCII startup path; no silent non-ASCII truncation.
+    trace("WideCharToMultiByte");require((page==0||page==1252||page==65001)&&flags==0&&!fallback,"Unimplemented codepage/conversion flags");
+    count=wide_count(source,count);require(capacity>=0,"Invalid wide conversion capacity");std::vector<char> bytes;bytes.reserve(size_t(count));
+    for(int i=0;i<count;++i){int value=page==65001?(source[i]<128?int(source[i]):-1):byte_index(source[i]);if(value<0){last_error=1113;return 0;}bytes.push_back(char(value));}// Explicitly bounded encodings; no silent truncation/substitution.
     if(used)*used=0;
     if(capacity==0)return count;
     if(!out||capacity<count){last_error=122;return 0;}
-    for(int i=0;i<count;++i)out[i]=char(source[i]);
+    std::memcpy(out,bytes.data(),bytes.size());
     return count;
 }
 MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
@@ -129,6 +150,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetModuleHandleW",get_module_w);BIND("GetProcAddress",get_proc);BIND("GetCommandLineA",get_command);BIND("GetStdHandle",standard_handle);BIND("GetFileType",file_type);BIND("GetStartupInfoA",startup_info);BIND("GetStartupInfoW",startup_info);BIND("Sleep",sleep_ms);BIND("ExitProcess",terminate);
     BIND("SetHandleCount",handle_count);BIND("GetEnvironmentStringsW",environment_w);BIND("FreeEnvironmentStringsW",free_environment_w);BIND("WideCharToMultiByte",narrow);BIND("GetModuleFileNameA",module_filename);
     BIND("GetACP",ansi_page);BIND("IsValidCodePage",valid_page);BIND("GetCPInfo",page_info);
+    BIND("MultiByteToWideChar",widen);BIND("GetStringTypeW",string_type);BIND("LCMapStringW",map_string);
 #undef BIND
     return 0;
 }
