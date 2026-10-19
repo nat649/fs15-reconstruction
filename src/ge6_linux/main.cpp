@@ -38,6 +38,8 @@ void require(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
 template<class T>T read(const std::vector<uint8_t>& bytes,size_t offset){require(offset<=bytes.size()&&sizeof(T)<=bytes.size()-offset,"Truncated PE field");T out;std::memcpy(&out,bytes.data()+offset,sizeof(T));return out;}
 std::vector<std::string> imports;
 uint64_t calls=0;
+uintptr_t registered_filter=0;
+bool main_reached=false;
 thread_local uint32_t last_error=0;
 std::vector<void*> slots;
 std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
@@ -62,7 +64,7 @@ MS void file_time(uint64_t* out){trace("GetSystemTimeAsFileTime");timespec t{};c
 MS uint32_t process_id(){trace("GetCurrentProcessId");return uint32_t(getpid());}
 MS uint32_t thread_id(){trace("GetCurrentThreadId");return uint32_t(syscall(SYS_gettid));}
 MS uint32_t ticks(){trace("GetTickCount");timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);return uint32_t(uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000);}
-MS int counter(int64_t* out){trace("QueryPerformanceCounter");timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);*out=int64_t(t.tv_sec)*1000000000+t.tv_nsec;return 1;}
+MS int counter(int64_t* out){trace("QueryPerformanceCounter");auto caller=reinterpret_cast<uintptr_t>(__builtin_return_address(0));if(!main_reached&&caller>=base+0xc9a0&&caller<base+0xc9a0+4364){main_reached=true;std::cout<<"GE6_ORIGINAL_MAIN_REACHED caller=0x"<<std::hex<<caller<<std::dec<<'\n';}timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);*out=int64_t(t.tv_sec)*1000000000+t.tv_nsec;return 1;}
 MS int frequency(int64_t* out){trace("QueryPerformanceFrequency");*out=1000000000;return 1;}
 MS uint32_t get_error(){return last_error;}
 MS void set_error(uint32_t value){last_error=value;}
@@ -144,6 +146,7 @@ MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
 MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast<uint8_t*>(raw);std::memset(out,0,104);uint32_t size=104;std::memcpy(out,&size,4);}
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
 MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::exit(int(code));}
+MS uintptr_t set_exception_filter(uintptr_t callback){trace("SetUnhandledExceptionFilter");auto previous=registered_filter;registered_filter=callback;return previous;}// Registration only; original Windows exception dispatch remains unimplemented.
 
 uintptr_t resolve(const std::string& library,const std::string& name){
     if(library!="KERNEL32.dll")return 0;
@@ -159,6 +162,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("SetHandleCount",handle_count);BIND("GetEnvironmentStringsW",environment_w);BIND("FreeEnvironmentStringsW",free_environment_w);BIND("WideCharToMultiByte",narrow);BIND("GetModuleFileNameA",module_filename);
     BIND("GetACP",ansi_page);BIND("IsValidCodePage",valid_page);BIND("GetCPInfo",page_info);
     BIND("MultiByteToWideChar",widen);BIND("GetStringTypeW",string_type);BIND("LCMapStringW",map_string);
+    BIND("SetUnhandledExceptionFilter",set_exception_filter);
 #undef BIND
     return 0;
 }

@@ -31,7 +31,7 @@ def fixture(blocked=False):
         put(at + 36, 'I', flags)
     put(0x600, '5I', 0x2080, 0, 0, 0x2040, 0x2100)
     data[0x640:0x64d] = b'KERNEL32.dll\0'
-    names = [b'SetHandleCount', b'QueryPerformanceFrequency', b'MultiByteToWideChar', b'WideCharToMultiByte']
+    names = [b'SetHandleCount', b'QueryPerformanceFrequency', b'MultiByteToWideChar', b'WideCharToMultiByte', b'SetUnhandledExceptionFilter']
     if blocked:
         names.append(b'UnsupportedFixtureAPI')
     for index, name in enumerate(names):
@@ -68,8 +68,13 @@ def fixture(blocked=False):
     call(0x2118)
     code += b'\x83\xf8\x03\x74\x02\x0f\x0b'
     code += b'\x48\xb8' + struct.pack('<Q', 0x140003840) + b'\x81\x38' + struct.pack('<I', 0x80e9) + b'\x74\x02\x0f\x0b'
+    code += b'\xb9\x34\x12\x00\x00'
+    call(0x2120)
+    code += b'\x48\x85\xc0\x74\x02\x0f\x0b\x31\xc9'
+    call(0x2120)
+    code += b'\x48\x3d\x34\x12\x00\x00\x74\x02\x0f\x0b'
     if blocked:
-        call(0x2120)
+        call(0x2128)
     code += b'\x48\x83\xc4\x48\xc3'
     assert len(code) <= 0x200
     data[0x400:0x400 + len(code)] = code
@@ -83,8 +88,9 @@ def check(exe, workdir):
         path.write_bytes(data)
         return subprocess.run([str(exe.resolve()), mode, str(path)], capture_output=True, text=True, timeout=15)
     result = run(fixture())
-    assert result.returncode == 0 and 'GE6_AUTHORED_FIXTURE_RETURN os_calls=4' in result.stdout, result
-    assert 'supported_imports=4 blocked_imports=0' in result.stdout, result
+    assert result.returncode == 0 and 'GE6_AUTHORED_FIXTURE_RETURN os_calls=6' in result.stdout, result
+    assert 'supported_imports=5 blocked_imports=0' in result.stdout, result
+    assert 'GE6_ORIGINAL_MAIN_REACHED' not in result.stdout, result
     result = run(fixture(True))
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x140001' in result.stderr, result
     result = run(fixture(), '--image')
