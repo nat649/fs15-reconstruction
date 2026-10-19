@@ -47,6 +47,7 @@ target_sources(FS15Core PRIVATE src/core/scene_view_lifecycle.cpp src/core/wheel
 target_sources(FS15Core PRIVATE src/core/physics_dispatch.cpp)
 target_sources(FS15Core PRIVATE src/core/physics_post.cpp)
 target_sources(FS15Core PRIVATE src/core/gl_buffers.cpp)
+target_sources(FS15Core PRIVATE src/core/gl_draw.cpp)
 target_sources(FS15Core PRIVATE src/core/physics_vehicle_sort.cpp)
 add_subdirectory(src/platform)
 add_executable(FS15EngineRebuilt WIN32 src/engine/main.cpp src/engine/resources.cpp src/engine/scene_render.cpp src/engine/terrain_material.cpp src/engine/environment.cpp src/engine/shadows.cpp src/engine/mission.cpp src/engine/hud.cpp src/engine/density.cpp src/engine/foliage.cpp src/engine/collision.cpp src/menu/xml_bridge.cpp src/core/transform.cpp src/core/rle8.cpp src/core/scene_math.cpp src/core/scene_graph.cpp src/core/scene_trs.cpp)

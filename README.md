@@ -94,7 +94,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **259 native entries on bounded tested paths**. The affine component passes
+  **260 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -257,16 +257,16 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   spring setup and split-penetration phase. **2,048 Jacobian states, 2,048 spring
   states and 6,640 repeated correction iterations** match unchanged original
   code. An isolated integration fixture connects real world rays, recovered
-  setup, solver iterations and actual chassis transform writeback. Velocity,
-  friction and drivetrain integration remain incomplete; this is not a drivable vehicle.
+  setup, solver iterations and actual chassis transform writeback. This
+  isolates suspension correction; the assembled vehicle milestone follows below.
 - **GE6 wheel velocity/friction:** the native `0x1401540b0` phase now applies
   suspension velocity impulses, tire-force limits and coupled wheel braking.
   **1,024 states / 6,640 successive iterations**, including 18,448 gravity
   queries, match unchanged original code with an empty differential network.
   A one-wheel integration fixture supports a chassis under gravity, transfers
   initial wheel spin into chassis motion, then brakes it to rest. Its fixed
-  slip inputs and orchestration are authored test data; motor/differential
-  original-vehicle loading remain open. Motor/differential recovery follows below.
+  slip inputs and orchestration are authored test data. Original-vehicle loading
+  remains open; motor/differential recovery follows below.
 - **GE6 motor and vehicle assembly:** differential weight preparation and the
   complete motor/clutch/network update match **1,536 networks / 13,056 successive
   updates**. An experimental typed raycast-vehicle class connects all wheel
@@ -281,6 +281,11 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   The SDL/OpenGL check passes actual driver byte readback on Mesa in Linux CI;
   shaders, materials and scene drawing remain open. See
   [scope and build commands](docs/GL_BUFFER_RECOVERY.md).
+- **GE6 OpenGL draw dispatch:** native array/index/range dispatch and point-size
+  caching match **4,096 states / 3,853 ordered GL calls**, including original
+  32-bit index-byte/range wrapping. The actual-driver check now adds primitive
+  framebuffer readback; scene shaders, materials and complete draw submission
+  remain open. See [scope](docs/GL_DRAW_RECOVERY.md).
 - **Portability audit:** the current static catalogue has 31,396 known call
   edges. Its scripting roots reach 2,878 eligible functions, including 939 with
   computed calls. Those targets and concrete types still need recovery before

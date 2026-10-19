@@ -1,9 +1,14 @@
 {
   "catalogued": 12233,
   "eligible": 11667,
-  "pseudocode_only": 11408,
-  "validated_component_path_entries": 259,
+  "pseudocode_only": 11407,
+  "validated_component_path_entries": 260,
   "components": [
+    {
+      "name": "opengl_array_index_range_draw_dispatch",
+      "entries": 1,
+      "evidence": "analysis/gl-draw-validation.json"
+    },
     {
       "name": "ge6_motor_clutch_and_differential_network",
       "entries": 2,

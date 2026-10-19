@@ -7,6 +7,7 @@
 #include "vehicle_velocity.h"
 #include "vehicle_drive.h"
 #include "raycast_vehicle.h"
+#include "gl_draw.h"
 #include <vector>
 #include <memory>
 #include <cstring>
@@ -18,6 +19,7 @@
 #else
 #define PROBE_API __attribute__((visibility("default")))
 #endif
+extern "C" PROBE_API int fs15_ge6_gl_draw(FS15GLDrawState* state,int32_t count,int32_t first,uint32_t primitive,uint32_t minimum,uint32_t range_count,FS15GLDrawServices* s){return fs15_gl_draw(state,count,first,primitive,minimum,range_count,s);}
 namespace {
 float probe_float(const void* p,size_t offset){float f;std::memcpy(&f,static_cast<const char*>(p)+offset,4);return f;}
 void probe_store(void* p,size_t offset,float f){std::memcpy(static_cast<char*>(p)+offset,&f,4);}

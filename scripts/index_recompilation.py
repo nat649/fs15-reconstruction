@@ -11,6 +11,8 @@ from pathlib import Path
 from inventory import ROOT, write_json
 
 COMPONENTS = [
+    ('opengl_array_index_range_draw_dispatch', ['0x140065540'],
+        'analysis/gl-draw-validation.json'),
     ('ge6_motor_clutch_and_differential_network',
         ['0x140155940','0x140155d50'],
         'analysis/ge6-vehicle-drive-validation.json'),

@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "driver_states": 4096,
+  "ordered_gl_calls": 3853,
+  "comparison_digest": "66f07f3e5587f37132e533b41c273e7af62560a82861649e60efc98981771c87",
+  "rebuilt_source_sha256": {
+    "src/core/gl_draw.h": "0697970d761e3aa59920280482265cbde573df3c4beea062606691842784bbca",
+    "src/core/gl_draw.cpp": "ba642cc6ca1d26648a3f6adc9725a72f2fedd1865f9172e5a36c2066b3e42580"
+  },
+  "scope": "Native 0x140065540 array/index/range draw dispatch, point-size cache and 32-bit byte-offset/range wrapping. Ordered recording driver calls and complete state compared; original GL imports rebound only in local isolated image. Bound layout, context, program, vertex attributes and scene submission remain caller services, not a recovered complete renderer."
+}

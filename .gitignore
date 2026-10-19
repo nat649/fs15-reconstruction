@@ -116,3 +116,4 @@ __pycache__/
 !/analysis/ge6-vehicle-velocity-validation.json
 !/analysis/ge6-vehicle-drive-validation.json
 !/analysis/ge6-raycast-vehicle-validation.json
+!/analysis/gl-draw-validation.json
