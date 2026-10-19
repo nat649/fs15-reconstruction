@@ -4,6 +4,7 @@ No geometry replacements: mesh bytes come from the existing pinned decoder cache
 This is authored staging, not the recovered GE6 resource loader or shader system.
 """
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -95,6 +96,10 @@ def stage(scene, output):
     terrain_samples = 0
     if terrain is not None:
         import numpy as np
+        if (vector(terrain, 'translation', '0 0 0') != (0., 0., 0.) or
+                vector(terrain, 'rotation', '0 0 0') != (0., 0., 0.) or
+                vector(terrain, 'scale', '1 1 1') != (1., 1., 1.)):
+            raise ValueError('Only the untransformed base-map terrain is supported')
         # Full DEM resolution and original spacing/height scale; no invented relief.
         with Image.open(resource(files[terrain.get('heightMapId')])) as image:
             pixels = np.asarray(image)
@@ -107,6 +112,8 @@ def stage(scene, output):
             heights = pixels.astype(np.float32) * (float(terrain.get('heightScale', '255')) / 65535.)
         nz, nx = heights.shape
         spacing = float(terrain.get('unitsPerPixel', '1'))
+        if min(nx, nz) < 3 or max(nx, nz) > 4097 or not math.isfinite(spacing) or spacing <= 0 or not np.isfinite(heights).all():
+            raise ValueError('Invalid terrain dimensions, spacing or heights')
         dz, dx = np.gradient(heights, spacing)
         length = np.sqrt(dx * dx + dz * dz + 1.)
         vertices = np.zeros((nz, nx, 8), dtype='<f4')
@@ -146,6 +153,8 @@ def stage(scene, output):
     report = dict(scope='Original object geometry and hierarchy; authored local adapter; fixed LOD0 and temporary fixed-function materials',
                   nodes=len(nodes), materials=len(materials), textures=len(textures), missingTextures=sorted(missing),
                   meshBytes=mesh_source.stat().st_size, camera=camera, terrainSamples=terrain_samples,
+                  sourceSceneSha256=hashlib.sha256(scene.read_bytes()).hexdigest(),
+                  sourceMeshCacheSha256=hashlib.sha256(mesh_source.read_bytes()).hexdigest(),
                   terrainMaterial='Temporary constant color; original terrain layer shaders are not connected')
     (output / 'staging-report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))

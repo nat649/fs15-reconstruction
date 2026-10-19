@@ -74,6 +74,16 @@ to verify actual framebuffer colors, inherited placement, shared geometry and
 invalid-index rejection. This passes on the Windows NVIDIA context. CI also runs
 it with Mesa/Xvfb on Linux; original-map Linux desktop validation is separate.
 
+[CI run 39229336102](https://github.com/nat649/fs15-reconstruction/actions/runs/39229336102)
+passes the Linux x64 Mesa/llvmpipe object framebuffer test for source `9d9bc9a`,
+as well as all 38 component tests on Linux x64 and ARM64 Linux under QEMU. The
+Linux render fixture contains authored triangles, not original map assets.
+
+Westbridge Hills also passes local Windows load/draw/capture: 833 original object
+meshes, 107,698 eligible instances, 202 textures and a full-resolution DEM. Its
+initial view submits 6,996 objects plus terrain / 2,568,149 triangles. Neither
+map's static render check establishes gameplay or interactive Linux validation.
+
 ## Remaining gaps
 
 - Fixed-function lighting, no normal/specular maps, shadows, sky dome or GE6
@@ -81,7 +91,9 @@ it with Mesa/Xvfb on Linux; original-map Linux desktop validation is separate.
 - Temporary foliage alpha cutoff and a fixed LOD0 name policy. Full native
   LOD/visibility/material dispatch and animated vegetation remain unconnected.
 - Original DEM geometry has a temporary uniform material. Terrain layer
-  blending, crops and water need their GE6 render paths.
+  blending, crops and water need their GE6 render paths. DEM triangulation and
+  normal generation are authored staging; the native terrain tessellator is not
+  recovered by this adapter.
 - Static scene objects only; fleet creation, animation, vehicle physics and
   recovered Lua mission execution are not connected to this window.
 - Authored local resource staging is not the native GE6 I3D/shapes loader.

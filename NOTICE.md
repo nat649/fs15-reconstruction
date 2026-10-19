@@ -26,6 +26,8 @@ to their respective material and are preserved separately.
 | [LJD fork](https://github.com/Dr-MTN/luajit-decompiler) | Local script recovery tool, invoked by the project adapter | Upstream `LICENSE` (GPL-3.0) and `LICENSE-upstream` (MIT), retained in its local checkout |
 | [I3DShapesTool](https://github.com/Donkie/I3DShapesTool) | Local mesh decoder build with an authored stream adapter | MIT; notice retained in [licenses/I3DShapesTool-LICENSE.txt](licenses/I3DShapesTool-LICENSE.txt) |
 | [Ghidra](https://github.com/NationalSecurityAgency/ghidra) | Local native analysis/export tool | Upstream Apache-2.0 license and bundled third-party notices |
+| [SDL2](https://github.com/libsdl-org/SDL/tree/release-2.30.0) | Window/context/input transport for the GE6 object preview; Linux frontend transport | zlib; official VC archive `COPYING.txt` is copied beside the locally built Windows object executable |
+| [Pillow](https://github.com/python-pillow/Pillow) / [NumPy](https://github.com/numpy/numpy) | Local DDS/DEM object-preview staging tools | Upstream HPND/Pillow notices and BSD-3-Clause, respectively; installed separately, not vendored |
 
 The setup scripts pin dependency revisions; see
 [analysis/lua-toolchain.json](analysis/lua-toolchain.json) and

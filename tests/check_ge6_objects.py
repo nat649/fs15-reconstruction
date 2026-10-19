@@ -42,7 +42,7 @@ def check(exe, workdir):
     (workdir / 'scene.meshes').write_bytes(broken)
     result = subprocess.run([str(exe.resolve()), '--scene', str(scene), '--frames', '1'], capture_output=True, text=True)
     assert result.returncode != 0 and 'Mesh index out of bounds' in result.stderr, result
-    print('GE6 object framebuffer: hierarchy placement, shared mesh, diffuse color, original-format texture transport and bounds rejection passed (authored fixtures)')
+    print('GE6 object framebuffer: hierarchy placement, shared mesh, diffuse color, texture binding and bounds rejection passed (authored fixtures)')
 
 
 if __name__ == '__main__':

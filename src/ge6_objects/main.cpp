@@ -125,8 +125,8 @@ struct Scene {
             const auto& m=found->second;require(ni==m.subsets.size(),"Material/subset count mismatch");Object object{mesh,world,std::move(ids),{},0,trs[9]};
             float norm=0;for(int j=0;j<3;++j){object.center[j]=world[12+j];for(int a=0;a<3;++a){object.center[j]+=world[a*4+j]*m.center[a];norm+=world[a*4+j]*world[a*4+j];}}
             object.radius=m.radius*std::sqrt(norm);objects.push_back(std::move(object));
-        }input.end();require(!objects.empty(),"No renderable original objects");
-        std::cout<<"GE6 object transport: "<<meshes.size()<<" original meshes, "<<objects.size()<<" visible instances, "<<textures.size()<<" original textures\n";
+        }input.end();require(!objects.empty(),"No renderable scene objects");
+        std::cout<<"GE6 object transport: "<<meshes.size()<<" decoded meshes, "<<objects.size()<<" eligible instances, "<<textures.size()<<" diffuse textures\n";
     }
 };
 struct Options {std::filesystem::path scene,capture;int frames=0;float distance=600;std::array<float,5> camera{};bool override_camera=false;};

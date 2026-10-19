@@ -20,6 +20,7 @@ try {
     & cmake --build build/ge6-objects-build --config Release --target FS15GE6Objects --parallel 4
     if ($LASTEXITCODE) { throw 'GE6 object compilation failed' }
     Copy-Item -LiteralPath "$sdl/lib/x64/SDL2.dll" -Destination 'build/ge6-objects-build/src/ge6_objects/Release/SDL2.dll'
+    Copy-Item -LiteralPath "$sdl/COPYING.txt" -Destination 'build/ge6-objects-build/src/ge6_objects/Release/SDL2-COPYING.txt'
     & $Python scripts/prepare_ge6_objects.py --scene "recovered/gar/data/maps/$Map.i3d" --output "build/ge6-objects/$Map"
     if ($LASTEXITCODE) { throw 'Stage original resources first; Python needs Pillow and NumPy. See docs/GE6_OBJECT_RENDERING.md.' }
     Write-Host "Ready: build/ge6-objects-build/src/ge6_objects/Release/FS15GE6Objects.exe --scene build/ge6-objects/$Map/scene.ge6scene"
