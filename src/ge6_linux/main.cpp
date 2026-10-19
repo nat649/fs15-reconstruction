@@ -50,7 +50,7 @@ void fault(int signal,siginfo_t* info,void* raw){
     auto* context=static_cast<ucontext_t*>(raw);char message[192];
     int count=std::snprintf(message,sizeof(message),"GE6_NATIVE_FAULT signal=%d rip=0x%llx address=0x%llx\n",signal,
         static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RIP]),static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(info->si_addr)));
-    if(count>0)write(STDERR_FILENO,message,std::min(size_t(count),sizeof(message)-1));
+    if(count>0){auto written=write(STDERR_FILENO,message,std::min(size_t(count),sizeof(message)-1));(void)written;}
     _exit(128+signal);
 }
 MS void file_time(uint64_t* out){trace("GetSystemTimeAsFileTime");timespec t{};clock_gettime(CLOCK_REALTIME,&t);*out=(uint64_t(t.tv_sec)+11644473600ull)*10000000ull+uint64_t(t.tv_nsec)/100;}
