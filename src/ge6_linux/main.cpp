@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <asm/prctl.h>
 #include <pthread.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <signal.h>
 #include <ucontext.h>
@@ -70,6 +71,8 @@ MS void* heap_create(uint32_t flags,size_t initial,size_t maximum){trace("HeapCr
 MS void* process_heap(){return &heap_token;}
 MS void* heap_alloc(void* heap,uint32_t flags,size_t size){require(heap==&heap_token&&(flags&~8u)==0,"Unsupported heap allocation");return (flags&8)?std::calloc(1,size):std::malloc(size);}
 MS int heap_free(void* heap,uint32_t flags,void* p){require(heap==&heap_token&&flags==0,"Unsupported heap free");std::free(p);return 1;}
+MS size_t heap_size(void* heap,uint32_t flags,void* p){trace("HeapSize");require(heap==&heap_token&&flags==0,"Unsupported heap size query");if(!p){last_error=87;return ~size_t(0);}return malloc_usable_size(p);}
+MS void* heap_realloc(void* heap,uint32_t flags,void* p,size_t size){trace("HeapReAlloc");require(heap==&heap_token&&(flags&~0x18u)==0,"Unsupported heap realloc");if(!p){last_error=87;return nullptr;}auto previous=malloc_usable_size(p);if(flags&0x10){if(size<=previous)return p;last_error=8;return nullptr;}auto* out=std::realloc(p,size);if(out&&(flags&8)&&size>previous)std::memset(static_cast<uint8_t*>(out)+previous,0,size-previous);return out;}
 MS uint32_t version(){trace("GetVersion");return 0x00000006;}// Compatibility API level, not the Linux OS version.
 MS int heap_info(void* heap,uint32_t kind,void*,size_t size){trace("HeapSetInformation");require(heap==&heap_token&&kind==0&&size==4,"Unsupported heap information");return 1;}
 MS int init_lock(void* p,uint32_t){trace("InitializeCriticalSectionAndSpinCount");locks[p]=std::make_unique<std::recursive_mutex>();return 1;}
@@ -122,9 +125,11 @@ MS int map_string(uint32_t locale,uint32_t flags,const uint16_t* source,int coun
 }
 MS int narrow(uint32_t page,uint32_t flags,const uint16_t* source,int count,char* out,int capacity,const char* fallback,int* used){
     trace("WideCharToMultiByte");require((page==0||page==1252||page==65001)&&flags==0&&!fallback,"Unimplemented codepage/conversion flags");
-    count=wide_count(source,count);require(capacity>=0,"Invalid wide conversion capacity");std::vector<char> bytes;bytes.reserve(size_t(count));
-    for(int i=0;i<count;++i){int value=page==65001?(source[i]<128?int(source[i]):-1):byte_index(source[i]);if(value<0){last_error=1113;return 0;}bytes.push_back(char(value));}// Explicitly bounded encodings; no silent truncation/substitution.
-    if(used)*used=0;
+    count=wide_count(source,count);require(capacity>=0,"Invalid wide conversion capacity");std::vector<char> bytes;bytes.reserve(size_t(count));bool defaulted=false;
+    for(int i=0;i<count;++i){int value=page==65001?(source[i]<128?int(source[i]):-1):byte_index(source[i]);
+        if(value<0&&page!=65001){auto found=std::find(ge6_ansi::bestfit_unicode.begin(),ge6_ansi::bestfit_unicode.end(),source[i]);if(found!=ge6_ansi::bestfit_unicode.end()){auto index=size_t(found-ge6_ansi::bestfit_unicode.begin());value=ge6_ansi::bestfit_byte[index];defaulted=defaulted||ge6_ansi::bestfit_default[index];}}
+        if(value<0){last_error=1113;return 0;}bytes.push_back(char(value));}// Only observed CP1252 case substitutions are supported.
+    if(used)*used=defaulted?1:0;
     if(capacity==0)return count;
     if(!out||capacity<count){last_error=122;return 0;}
     std::memcpy(out,bytes.data(),bytes.size());
@@ -147,6 +152,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetTickCount",ticks);BIND("QueryPerformanceCounter",counter);BIND("QueryPerformanceFrequency",frequency);
     BIND("GetLastError",get_error);BIND("SetLastError",set_error);BIND("EncodePointer",encode);BIND("DecodePointer",encode);
     BIND("HeapCreate",heap_create);BIND("GetProcessHeap",process_heap);BIND("HeapAlloc",heap_alloc);BIND("HeapFree",heap_free);BIND("GetVersion",version);BIND("HeapSetInformation",heap_info);
+    BIND("HeapSize",heap_size);BIND("HeapReAlloc",heap_realloc);
     BIND("InitializeCriticalSectionAndSpinCount",init_lock);BIND("InitializeCriticalSection",initialize_lock);BIND("EnterCriticalSection",enter_lock);BIND("LeaveCriticalSection",leave_lock);BIND("DeleteCriticalSection",delete_lock);
     BIND("FlsAlloc",alloc_slot);BIND("TlsAlloc",tls_alloc);BIND("FlsSetValue",set_slot);BIND("TlsSetValue",set_slot);BIND("FlsGetValue",get_slot);BIND("TlsGetValue",get_slot);BIND("FlsFree",free_slot);BIND("TlsFree",free_slot);
     BIND("GetModuleHandleW",get_module_w);BIND("GetProcAddress",get_proc);BIND("GetCommandLineA",get_command);BIND("GetStdHandle",standard_handle);BIND("GetFileType",file_type);BIND("GetStartupInfoA",startup_info);BIND("GetStartupInfoW",startup_info);BIND("Sleep",sleep_ms);BIND("ExitProcess",terminate);

@@ -31,6 +31,17 @@ def capture(path):
         if kernel.LCMapStringW(0, flags, wide, 256, mapped, 512) != 256:
             raise RuntimeError('Unexpected CP1252 case expansion')
         tables[name] = [ord(mapped[i]) for i in range(256)]
+    extras = sorted((set(tables['lower']) | set(tables['upper'])) - set(tables['unicode']))
+    encoded, defaults = [], []
+    for unit in extras:
+        source_unit = C.create_unicode_buffer(chr(unit))
+        destination = C.create_string_buffer(8)
+        used = C.c_int()
+        if kernel.WideCharToMultiByte(1252, 0, source_unit, 1, destination, 8, None, C.byref(used)) != 1:
+            raise RuntimeError('Unexpected case-result byte encoding')
+        encoded.append(destination.raw[0])
+        defaults.append(used.value)
+    tables.update(bestfit_unicode=extras, bestfit_byte=encoded, bestfit_default=defaults)
     version = sys.getwindowsversion()
     lines = ['// Authored bounded OS observations; no game instructions or resources.',
              f'// Windows {version.major}.{version.minor} build {version.build}; ACP1252; LCMapStringW locale=0.',
@@ -38,8 +49,8 @@ def capture(path):
              '#include <array>', '#include <cstdint>', 'namespace ge6_ansi {',
              f'constexpr uint32_t reference_lcid={kernel.GetUserDefaultLCID()};']
     for name, values in tables.items():
-        lines.append(f'constexpr std::array<uint16_t,256> {name}{{{{')
-        for start in range(0, 256, 16):
+        lines.append(f'constexpr std::array<uint16_t,{len(values)}> {name}{{{{')
+        for start in range(0, len(values), 16):
             lines.append('    ' + ','.join(f'0x{x:04x}' for x in values[start:start + 16]) + ',')
         lines.append('}};')
     lines.append('}')
