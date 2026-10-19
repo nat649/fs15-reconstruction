@@ -86,6 +86,9 @@ MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){require(handle>=0x100&&handle<=0x102,"Unknown CRT standard handle");return isatty(int(handle-0x100))?2:3;}
 MS uint32_t handle_count(uint32_t count){trace("SetHandleCount");return count;}// Documented NT compatibility no-op.
+MS uint32_t ansi_page(){trace("GetACP");return 1252;}// Matches the local Windows reference's ANSI page.
+MS int valid_page(uint32_t page){trace("IsValidCodePage");require(page==1252||page==65001,"Unimplemented code page validation");return 1;}
+MS int page_info(uint32_t page,void* out){trace("GetCPInfo");require(page==0||page==1252||page==65001,"Unimplemented code page information");std::memset(out,0,20);uint32_t size=page==65001?4:1;std::memcpy(out,&size,4);static_cast<uint8_t*>(out)[4]='?';return 1;}
 MS uint16_t* environment_w(){
     trace("GetEnvironmentStringsW");std::vector<uint16_t> out;
     for(char** entry=::environ;entry&&*entry;++entry){for(const unsigned char* p=reinterpret_cast<const unsigned char*>(*entry);*p;++p){if(*p>127){last_error=1113;return nullptr;}out.push_back(*p);}out.push_back(0);}
@@ -125,6 +128,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("FlsAlloc",alloc_slot);BIND("TlsAlloc",tls_alloc);BIND("FlsSetValue",set_slot);BIND("TlsSetValue",set_slot);BIND("FlsGetValue",get_slot);BIND("TlsGetValue",get_slot);BIND("FlsFree",free_slot);BIND("TlsFree",free_slot);
     BIND("GetModuleHandleW",get_module_w);BIND("GetProcAddress",get_proc);BIND("GetCommandLineA",get_command);BIND("GetStdHandle",standard_handle);BIND("GetFileType",file_type);BIND("GetStartupInfoA",startup_info);BIND("GetStartupInfoW",startup_info);BIND("Sleep",sleep_ms);BIND("ExitProcess",terminate);
     BIND("SetHandleCount",handle_count);BIND("GetEnvironmentStringsW",environment_w);BIND("FreeEnvironmentStringsW",free_environment_w);BIND("WideCharToMultiByte",narrow);BIND("GetModuleFileNameA",module_filename);
+    BIND("GetACP",ansi_page);BIND("IsValidCodePage",valid_page);BIND("GetCPInfo",page_info);
 #undef BIND
     return 0;
 }
