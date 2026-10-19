@@ -85,6 +85,7 @@ def fixture(blocked=False):
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-version'], check=True, timeout=15)
     with tempfile.TemporaryDirectory(dir=workdir) as directory:
         subprocess.run([str(exe.resolve()), '--check-files', directory], check=True, timeout=15)
     path = workdir / 'authored.exe'

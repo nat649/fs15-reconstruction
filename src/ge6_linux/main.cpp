@@ -86,6 +86,7 @@ MS int heap_free(void* heap,uint32_t flags,void* p){require(heap==&heap_token&&f
 MS size_t heap_size(void* heap,uint32_t flags,void* p){trace("HeapSize");require(heap==&heap_token&&flags==0,"Unsupported heap size query");if(!p){last_error=87;return ~size_t(0);}return malloc_usable_size(p);}
 MS void* heap_realloc(void* heap,uint32_t flags,void* p,size_t size){trace("HeapReAlloc");require(heap==&heap_token&&(flags&~0x18u)==0,"Unsupported heap realloc");if(!p){last_error=87;return nullptr;}auto previous=malloc_usable_size(p);if(flags&0x10){if(size<=previous)return p;last_error=8;return nullptr;}auto* out=std::realloc(p,size);if(out&&(flags&8)&&size>previous)std::memset(static_cast<uint8_t*>(out)+previous,0,size-previous);return out;}
 MS uint32_t version(){trace("GetVersion");return 0x00000006;}// Compatibility API level, not the Linux OS version.
+MS int version_ex_a(void* raw){trace("GetVersionExA");if(!raw){last_error=87;return 0;}uint32_t size=0;std::memcpy(&size,raw,4);if(size!=148&&size!=156){last_error=87;return 0;}std::memset(raw,0,size);const uint32_t fields[]{size,6,0,0,2};std::memcpy(raw,fields,sizeof(fields));if(size==156)static_cast<uint8_t*>(raw)[154]=1;return 1;}// Same API compatibility level as GetVersion; no claim to be Windows.
 MS int heap_info(void* heap,uint32_t kind,void*,size_t size){trace("HeapSetInformation");require(heap==&heap_token&&kind==0&&size==4,"Unsupported heap information");return 1;}
 MS int init_lock(void* p,uint32_t){trace("InitializeCriticalSectionAndSpinCount");locks[p]=std::make_unique<std::recursive_mutex>();return 1;}
 MS void initialize_lock(void* p){init_lock(p,0);}
@@ -191,6 +192,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("SetUnhandledExceptionFilter",set_exception_filter);
     BIND("CreateMutexA",create_singleton);BIND("CloseHandle",close_handle);BIND("IsDebuggerPresent",debugger_present);
     BIND("GetModuleFileNameW",module_filename_w);
+    BIND("GetVersionExA",version_ex_a);
 #undef BIND
     return 0;
 }
@@ -256,6 +258,10 @@ int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
     try{
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-version"){
+            for(uint32_t size:{148u,156u}){std::array<uint8_t,164> info;info.fill(0xa5);std::memcpy(info.data(),&size,4);require(version_ex_a(info.data())==1,"Compatibility version query failed");uint32_t major=0,platform=0;std::memcpy(&major,info.data()+4,4);std::memcpy(&platform,info.data()+16,4);require(major==(version()&255)&&platform==2&&info[20]==0&&info[size]==0xa5,"Version fields or output bounds differ");if(size==156)require(info[154]==1,"Compatibility product type differs");}
+            uint32_t invalid=147;require(!version_ex_a(&invalid)&&last_error==87&&invalid==147&&!version_ex_a(nullptr),"Invalid version structure accepted");std::cout<<"GE6 API compatibility version fixtures passed; Linux host version is reported separately\n";return 0;
+        }
         if(argc==3&&std::string(argv[1])=="--check-files"){
             auto root=ge6_fs::utf16(std::string(argv[2])+"/unicode-\xc3\xa9-\xe2\x82\xac");auto wide=[](const std::u16string& s){return reinterpret_cast<const uint16_t*>(s.c_str());};
             require(ge6_fs::directory(wide(root),nullptr)==1,"Cannot create filesystem fixture");require(ge6_fs::directory(wide(root),nullptr)==0&&last_error==183,"Directory existence error differs");
