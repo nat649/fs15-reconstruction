@@ -172,9 +172,11 @@ MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
 }// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
 MS int close_handle(uintptr_t handle){auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
+MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 
 uintptr_t resolve(const std::string& library,const std::string& name){
     if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
+    if(library=="ole32.dll"&&name=="CoInitializeEx")return reinterpret_cast<uintptr_t>(&com_initialize);
     if(library!="KERNEL32.dll")return 0;
     if(auto file=ge6_fs::resolve(name))return file;
 #define BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
@@ -259,6 +261,7 @@ int main(int argc,char** argv){
     try{
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-version"){
+            require(com_initialize(nullptr,0)==int32_t(0x80004001u)&&com_initialize(&heap_token,0)==int32_t(0x80070057u),"Unavailable COM reported success");
             for(uint32_t size:{148u,156u}){std::array<uint8_t,164> info;info.fill(0xa5);std::memcpy(info.data(),&size,4);require(version_ex_a(info.data())==1,"Compatibility version query failed");uint32_t major=0,platform=0;std::memcpy(&major,info.data()+4,4);std::memcpy(&platform,info.data()+16,4);require(major==(version()&255)&&platform==2&&info[20]==0&&info[size]==0xa5,"Version fields or output bounds differ");if(size==156)require(info[154]==1,"Compatibility product type differs");}
             uint32_t invalid=147;require(!version_ex_a(&invalid)&&last_error==87&&invalid==147&&!version_ex_a(nullptr),"Invalid version structure accepted");std::cout<<"GE6 API compatibility version fixtures passed; Linux host version is reported separately\n";return 0;
         }
