@@ -27,6 +27,9 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
         raise ValueError('Unexpected native entry addresses')
     if image_kind not in ('reference', 'local-platform'):
         raise ValueError('Unknown private image kind')
+    kinds = re.findall(r'^GE6_(?:VM_)?IMAGE_KIND=([^\s]+)', text, re.MULTILINE)
+    if any(kind != image_kind for kind in kinds):
+        raise ValueError('Image provenance differs from requested evidence kind')
     if image_kind == 'local-platform' and ('GE6_IMAGE_KIND=local-platform' not in text or 'GE6_VM_IMAGE_KIND=local-platform' not in text):
         raise ValueError('Missing local-platform image provenance')
     commit = subprocess.check_output(['git', 'rev-parse', source_commit + '^{commit}'], cwd=ROOT, text=True).strip()
@@ -49,10 +52,12 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 linux_loader_patches_instructions=False, import_addresses_rebound=True, windows_os=False, wine_or_proton_used=False,
                 imported_names=int(mapped[3]) + int(mapped[4]), bound_import_names=int(mapped[3]),
                 stop_trampoline_names=int(mapped[4]),
+                observed_os_calls=list(dict.fromkeys(re.findall(r'^GE6_OS ([^\r\n]+)', text, re.MULTILINE))),
+                com_initialization_reported_unavailable='GE6_COM_UNAVAILABLE' in text,
                 stopped_at=dict(library=blocked[1], symbol=blocked[2], caller=blocked[3], traced_os_calls=int(blocked[4])),
                 full_engine_initialization_verified=False, original_renderer_initialized=False,
                 menu_verified=False, playable_linux_game_verified=False, recompiled_engine=False,
-                limits='CRT/main entry evidence only. Import totals include unexecuted optional paths, not an engine completion percentage. Original binary, private initramfs and serial log stay local.')
+                limits='Original startup execution only, not complete core initialization. Import totals include unexecuted optional paths, not an engine completion percentage. Original binary, private initramfs and serial log stay local.')
 
 
 if __name__ == '__main__':

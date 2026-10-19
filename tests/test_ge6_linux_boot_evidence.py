@@ -1,0 +1,54 @@
+"""Authored logs test provenance parsing, not original engine execution."""
+import hashlib
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+from ge6_linux_images import LOCAL_IMAGE
+from verify_ge6_linux_boot import verify
+
+
+class BootEvidenceTests(unittest.TestCase):
+    def test_local_input_is_explicitly_modified(self):
+        result = self.parse('local-platform')
+        self.assertEqual(result['original_image_sha256'], LOCAL_IMAGE)
+        self.assertTrue(result['native_instruction_patches'])
+        self.assertFalse(result['linux_loader_patches_instructions'])
+        self.assertFalse(result['menu_verified'])
+        self.assertEqual(result['stopped_at']['symbol'], 'ordinal:115')
+
+    def test_local_input_cannot_be_reported_as_reference(self):
+        with self.assertRaisesRegex(ValueError, 'provenance'):
+            self.parse('reference')
+
+    def test_faulted_run_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'faulted'):
+            self.parse('local-platform', 'GE6_NATIVE_FAULT signal=11\n')
+
+    def parse(self, kind, extra=''):
+        fixtures = Path(__file__).resolve().parents[1] / 'build/test-fixtures/ge6-boot-evidence'
+        fixtures.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=fixtures) as directory:
+            log = Path(directory) / 'authored.log'
+            executable = Path(directory) / 'authored.elf'
+            executable.write_bytes(b'authored test payload')
+            log.write_text('GE6_LINUX_VM_STARTED\nLinux authored-fixture\n'
+                           'GE6_VM_IMAGE_KIND=local-platform\nGE6_IMAGE_KIND=local-platform\n'
+                           'GE6_IMAGE_MAPPED base=0x140000000 entry=0x1403fc96c supported_imports=83 blocked_imports=341\n'
+                           'GE6_NATIVE_NT_TIB_READY\nGE6_ORIGINAL_CRT_ENTER\n'
+                           'GE6_ORIGINAL_MAIN_REACHED caller=0x14000c9f5\n'
+                           'GE6_BLOCKED_IMPORT WS2_32.dll!ordinal:115 caller=0x1400011cc os_calls=160\n'
+                           'GE6_LINUX_VM_RESULT=78\n' + extra)
+            def git_output(args, **kwargs):
+                return 'a' * 40 if args[1] == 'rev-parse' else b'authored source fixture'
+            with patch('verify_ge6_linux_boot.subprocess.check_output', side_effect=git_output):
+                result = verify(log, executable, 'HEAD', 1, kind)
+            self.assertEqual(result['private_serial_log_sha256'], hashlib.sha256(log.read_bytes()).hexdigest())
+            return result
+
+
+if __name__ == '__main__':
+    unittest.main()

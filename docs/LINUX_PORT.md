@@ -3,9 +3,11 @@
 **Active porting path:** [original GE6 instruction startup](GE6_LINUX_NATIVE_BOOT.md).
 The private original image has reached its original application entry under
 Linux after CRT/global initialization. This is separate from the authored
-frontend/physics/render fixtures described below. Its current stop is the
-original application's unbound Steam restart import; no original menu or engine
-renderer has initialized through that Linux path yet.
+frontend/physics/render fixtures described below. The unmodified-instruction
+reference stops at the original application's unbound Steam restart import.
+The existing modified Local GE6 input passes this boundary and reaches original
+profile/configuration loading through Linux OS adapters. No original menu or
+engine renderer has initialized through that Linux path yet.
 
 An experimental graphical frontend is now also buildable as `FS15MenuLinux`.
 Use the [Linux tester guide](LINUX_TESTER.md) to prepare a local package and
