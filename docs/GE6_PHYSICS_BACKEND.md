@@ -148,7 +148,9 @@ reaches `0.56` after one step and `0.799629` after 30 steps, approaching the
 collision contacts. This is an authored one-wheel **phase isolation fixture**:
 its motor and velocity phases deliberately do nothing. It is not registered
 as a production vehicle and does not demonstrate drivable gameplay. All 35
-component tests pass locally on Windows; Linux/ARM follow the current CI run.
+component tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU;
+[CI run 39220107155](https://github.com/nat649/fs15-reconstruction/actions/runs/39220107155)
+validates source commit `5a880aa`.
 
 ## Build
 
