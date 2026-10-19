@@ -83,6 +83,7 @@ def fixture(blocked=False):
 
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
+    subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
     path = workdir / 'authored.exe'
     def run(data, mode='--fixture'):
         path.write_bytes(data)

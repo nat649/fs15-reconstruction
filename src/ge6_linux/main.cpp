@@ -9,6 +9,10 @@
 #include <asm/prctl.h>
 #include <pthread.h>
 #include <malloc.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
 #include <ucontext.h>
@@ -40,6 +44,8 @@ std::vector<std::string> imports;
 uint64_t calls=0;
 uintptr_t registered_filter=0;
 bool main_reached=false;
+struct Singleton {int fd;};
+std::map<uintptr_t,std::unique_ptr<Singleton>> singleton_handles;
 thread_local uint32_t last_error=0;
 std::vector<void*> slots;
 std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
@@ -147,6 +153,17 @@ MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
 MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::exit(int(code));}
 MS uintptr_t set_exception_filter(uintptr_t callback){trace("SetUnhandledExceptionFilter");auto previous=registered_filter;registered_filter=callback;return previous;}// Registration only; original Windows exception dispatch remains unimplemented.
+MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
+    trace("CreateMutexA");require(!attributes&&!owner&&name,"Unimplemented general mutex creation");std::string label=name;
+    require(label=="FarmingSimulator2015"||label=="FS15_GE6_BOOT_FIXTURE","Unimplemented mutex name");
+    auto path="/tmp/fs15-ge6-"+std::to_string(geteuid())+(label=="FarmingSimulator2015"?"-runtime.lock":"-fixture.lock");
+    int fd=open(path.c_str(),O_CREAT|O_RDWR|O_CLOEXEC|O_NOFOLLOW,0600);if(fd<0){last_error=5;return 0;}
+    struct stat info{};if(fstat(fd,&info)||!S_ISREG(info.st_mode)||info.st_uid!=geteuid()){close(fd);last_error=5;return 0;}
+    bool exists=false;if(flock(fd,LOCK_EX|LOCK_NB)){if(errno==EWOULDBLOCK)exists=true;else{close(fd);last_error=5;return 0;}}
+    auto record=std::make_unique<Singleton>();record->fd=fd;auto handle=reinterpret_cast<uintptr_t>(record.get());singleton_handles.emplace(handle,std::move(record));last_error=exists?183:0;return handle;
+}// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
+MS int close_handle(uintptr_t handle){trace("CloseHandle");auto found=singleton_handles.find(handle);require(found!=singleton_handles.end(),"Unimplemented handle kind");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
+MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 
 uintptr_t resolve(const std::string& library,const std::string& name){
     if(library!="KERNEL32.dll")return 0;
@@ -163,6 +180,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetACP",ansi_page);BIND("IsValidCodePage",valid_page);BIND("GetCPInfo",page_info);
     BIND("MultiByteToWideChar",widen);BIND("GetStringTypeW",string_type);BIND("LCMapStringW",map_string);
     BIND("SetUnhandledExceptionFilter",set_exception_filter);
+    BIND("CreateMutexA",create_singleton);BIND("CloseHandle",close_handle);BIND("IsDebuggerPresent",debugger_present);
 #undef BIND
     return 0;
 }
@@ -226,7 +244,14 @@ struct Image {
 }
 int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
-    try{require(argc>=3,"Usage: FS15GE6LinuxBoot --image private-runtime.bin [--command-line string] | --fixture authored-test.exe");bool fixture=std::string(argv[1])=="--fixture";require(fixture||std::string(argv[1])=="--image","Expected --image or --fixture");
+    try{
+        if(argc==2&&std::string(argv[1])=="--check-singleton"){
+            auto first=create_singleton(nullptr,0,"FS15_GE6_BOOT_FIXTURE");require(first&&last_error==0,"Cannot create singleton fixture");pid_t child=fork();require(child>=0,"Cannot fork singleton fixture");
+            if(child==0){auto second=create_singleton(nullptr,0,"FS15_GE6_BOOT_FIXTURE");bool ok=second&&last_error==183;if(second)close_handle(second);_exit(ok?0:1);}
+            int status=0;require(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0,"Cross-process singleton detection differs");close_handle(first);
+            auto third=create_singleton(nullptr,0,"FS15_GE6_BOOT_FIXTURE");require(third&&last_error==0,"Singleton lifetime retained stale ownership");close_handle(third);std::cout<<"GE6 singleton creation, cross-process presence and released lifetime passed (authored fixture)\n";return 0;
+        }
+        require(argc>=3,"Usage: FS15GE6LinuxBoot --image private-runtime.bin [--command-line string] | --fixture authored-test.exe");bool fixture=std::string(argv[1])=="--fixture";require(fixture||std::string(argv[1])=="--image","Expected --image or --fixture");
         char* absolute=realpath(argv[2],nullptr);require(absolute!=nullptr,"Cannot resolve private image path");image_path=absolute;std::free(absolute);std::ifstream file(argv[2],std::ios::binary|std::ios::ate);require(bool(file),"Cannot open private GE6 image");auto size=file.tellg();require(size>0&&size<=0x4000000,"Invalid image file size");std::vector<uint8_t> raw(static_cast<size_t>(size));file.seekg(0);file.read(reinterpret_cast<char*>(raw.data()),size);require(bool(file),"Truncated image file");
         if(!fixture){std::array<unsigned char,SHA256_DIGEST_LENGTH> hash{};SHA256(raw.data(),raw.size(),hash.data());std::ostringstream text;for(auto b:hash)text<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(b);require(text.str()==expected,"GE6 image hash differs from pinned private reference");}
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
