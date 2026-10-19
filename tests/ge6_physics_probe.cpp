@@ -4,6 +4,7 @@
 #include "physics_vehicle_sort.h"
 #include "vehicle_wheel.h"
 #include "vehicle_constraint.h"
+#include "vehicle_velocity.h"
 #include <vector>
 #include <memory>
 #include <cstring>
@@ -65,6 +66,26 @@ extern "C" PROBE_API void fs15_ge6_constraint_push(void* sar,void* sbr,void* rec
     for(size_t i=0;i<count;++i)probe_store(records,i*0x1a0+0xa4,constraints[i].push_impulse);
     // Preserve untouched fourth vector lanes in the serialized native record.
     for(int k=0;k<3;++k){probe_store(sar,0x90+k*4,sa.m_pushVelocity[k]);probe_store(sar,0xa0+k*4,sa.m_turnVelocity[k]);if(!alias){probe_store(sbr,0x90+k*4,sb.m_pushVelocity[k]);probe_store(sbr,0xa0+k*4,sb.m_turnVelocity[k]);}}
+}
+extern "C" PROBE_API void fs15_ge6_constraint_velocity(void* sar,void* sbr,void* records,void* wheels,size_t count,int activation,int active,int alias,float dt,const float* gravity,int* counters){
+    btRigidBody a(0,nullptr,nullptr),b(0,nullptr,nullptr);auto sa=probe_solver(sar,a),sb=probe_solver(sbr,b);
+    std::vector<fs15::ge6::WheelVelocity> states(count);
+    for(size_t i=0;i<count;++i){const char* r=static_cast<const char*>(records)+i*0x1a0;const char* p=static_cast<const char*>(wheels)+i*0x160;auto& w=states[i];
+        w.a=&sa;w.b=alias?&sa:&sb;w.normal=probe_vector(p,0);uintptr_t contact;std::memcpy(&contact,p+0x28,8);w.contact=contact!=0;
+        w.suspension.jacobian=probe_jacobian(r+0x20);w.suspension.diagonal=probe_float(r,0x70);w.suspension.rhs=probe_float(r,0x74);w.suspension.cfm=probe_float(r,0x78);w.suspension.impulse=probe_float(r,0x7c);w.suspension.lower_limit=probe_float(r,0x90);
+        w.suspension.push_diagonal=probe_float(r,0x98);w.suspension.correction_rhs=probe_float(r,0x9c);w.correction_impulse=probe_float(r,0x94);
+        w.lateral.jacobian=probe_jacobian(r+0xb0);w.lateral.diagonal=probe_float(r,0x100);w.lateral.rhs=probe_float(r,0x104);w.lateral.impulse=probe_float(r,0x10c);
+        w.longitudinal.jacobian=probe_jacobian(r+0x120);w.longitudinal.diagonal=probe_float(r,0x170);w.longitudinal.rhs=probe_float(r,0x174);w.longitudinal.impulse=probe_float(r,0x17c);
+        w.tire={probe_float(p,0xdc),probe_float(p,0x110),probe_float(p,0x114),probe_float(p,0x118),probe_float(p,0x11c)};
+        w.mass_load=probe_float(p,0x120);w.inverse_inertia=probe_float(p,0x124);w.speed=probe_float(p,0x108);w.brake=probe_float(p,0x134);w.brake_impulse=probe_float(p,0x158);
+        w.friction_floor=probe_float(r,0x18);w.slip_longitudinal=probe_float(r,0x14);w.slip_lateral=probe_float(r,0x10);
+    }
+    struct Services {btVector3 gravity;int drive_calls=0,gravity_calls=0;};Services context{btVector3(gravity[0],gravity[1],gravity[2])};
+    fs15::ge6::WheelVelocityServices services;services.context=&context;services.drive=[](void* p,float){++static_cast<Services*>(p)->drive_calls;};services.gravity=[](void* p){auto& c=*static_cast<Services*>(p);++c.gravity_calls;return c.gravity;};
+    fs15::ge6::solve_wheel_velocity(states.data(),count,activation,active!=0,dt,services);
+    for(size_t i=0;i<count;++i){const auto& w=states[i];probe_store(records,i*0x1a0+0x7c,w.suspension.impulse);probe_store(records,i*0x1a0+0x94,w.correction_impulse);probe_store(records,i*0x1a0+0x10c,w.lateral.impulse);probe_store(records,i*0x1a0+0x17c,w.longitudinal.impulse);probe_store(wheels,i*0x160+0x108,w.speed);probe_store(wheels,i*0x160+0x158,w.brake_impulse);}
+    for(int k=0;k<3;++k){probe_store(sar,0x40+k*4,sa.m_deltaLinearVelocity[k]);probe_store(sar,0x50+k*4,sa.m_deltaAngularVelocity[k]);if(!alias){probe_store(sbr,0x40+k*4,sb.m_deltaLinearVelocity[k]);probe_store(sbr,0x50+k*4,sb.m_deltaAngularVelocity[k]);}}
+    counters[0]=context.drive_calls;counters[1]=context.gravity_calls;
 }
 extern "C" PROBE_API void fs15_ge6_wheel_frame(const float* v,float* out){
     btVector3 p,d;fs15::ge6::wheel_ray_frame(probe_wheel(v),probe_transform(v),p,d);

@@ -113,3 +113,4 @@ __pycache__/
 !/analysis/ge6-physics-world-validation.json
 !/analysis/ge6-vehicle-wheel-validation.json
 !/analysis/ge6-vehicle-constraint-validation.json
+!/analysis/ge6-vehicle-velocity-validation.json

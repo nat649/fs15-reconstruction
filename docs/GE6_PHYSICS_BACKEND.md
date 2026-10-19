@@ -107,8 +107,8 @@ unchanged original GE6 ray/callback bodies execute. A separate portable CTest
 uses actual Bullet world ray queries to validate ground hits, owner/trigger/
 non-rigid rejection, ignored pairs, compression limits and missing contacts.
 These functions are not registered as a complete vehicle solver. The bounded
-constraint helpers and penetration phase below extend them; full setup
-orchestration, friction/velocity and drivetrain remain open.
+constraint helpers, penetration and velocity phases below extend them; full
+setup orchestration and the drivetrain network remain open.
 
 The world/solver checkpoint passes all 34 CTests on Windows x64, Linux x64 and
 ARM64 Linux under QEMU ([CI](https://github.com/nat649/fs15-reconstruction/actions/runs/39155932339)).
@@ -152,6 +152,39 @@ component tests pass on Windows x64, Linux x64 and ARM64 Linux under QEMU;
 [CI run 39220107155](https://github.com/nat649/fs15-reconstruction/actions/runs/39220107155)
 validates source commit `5a880aa`.
 
+## Wheel velocity, friction and braking
+
+[`vehicle_velocity.cpp`](../src/ge6/vehicle_velocity.cpp) recovers the bounded
+`0x1401540b0` phase over the previously recovered tire-force leaf. It applies
+normal and correction velocity impulses, computes wheel load using the native
+gravity queries, limits longitudinal/lateral tire impulses and couples brake
+impulses to wheel spin and chassis velocity. Native impulse clamp order, up to
+ten brake/friction inner iterations, body sharing, static-body guards and
+sleep/inactive/contact guards are retained.
+
+The [local comparison](../scripts/check_ge6_vehicle_velocity.py) and
+[source-pinned report](../analysis/ge6-vehicle-velocity-validation.json) cover
+**1,024 vehicle states / 6,640 successive iterations**, including **18,448
+original gravity queries** and 584 states configured with brakes. Complete
+wheel, constraint and solver-body records are compared. Maximum scaled numeric
+error is **0.0000003242** in the tested finite, positive tire-parameter domain.
+
+The original drivetrain helper `0x140155d50` executes with zero differential
+nodes in these native fixtures. Recompiled code supplies an explicit no-op
+driver callback and typed gravity transport. This does **not** recover the
+motor/differential network or demonstrate power from a recovered engine.
+
+The additional `ge6_wheel_velocity_integration` CTest connects actual world
+rays, recovered Jacobian/spring setup, penetration, velocity/friction/brake
+and wheel readback through the GE6 solver hooks. A one-wheel fixture starts
+with wheel spin `20 rad/s`: the chassis reaches `8 m/s` while suspension keeps
+it near height `1.49` under gravity. Applying the wheel brake brings chassis
+speed and wheel spin to zero. Chassis-ground collision contacts do not supply
+support or traction. Fixed slip inputs, simple geometry and setup orchestration
+are authored fixture data. This is component integration, not an original
+tractor, a recovered motor or a playable game. The new total is 36 component
+tests; Windows passes locally and Linux/ARM validation follows in CI.
+
 ## Build
 
 ```sh
@@ -168,9 +201,9 @@ script also needs the original pinned analysis image and the separately built
 
 ## Remaining path to a playable GE6 Linux runtime
 
-The next steps in **`Bt2RaycastVehicle`** are full setup orchestration and the
-velocity/friction phase, motor/brake/steering inputs and integration of the
-recovered ray/setup/penetration/finish methods into that complete solver. Original GE6 terrain shapes
+The next steps in **`Bt2RaycastVehicle`** are full setup/steering orchestration,
+motor/differential recovery and integration of the recovered ray/setup/
+penetration/velocity/finish methods into that complete class. Original GE6 terrain shapes
 and convex/heightfield algorithms, body/joint/scene loading, the remaining script
 services, graphics shaders/materials/draw submission and the full startup loop
 remain to be linked and tested. A working physics component is not a playable

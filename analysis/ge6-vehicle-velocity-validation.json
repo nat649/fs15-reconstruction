@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "vehicle_states": 1024,
+  "successive_velocity_iterations": 6640,
+  "original_gravity_queries": 18448,
+  "configured_brake_states": 584,
+  "active_nonempty_states": 585,
+  "maximum_scaled_error": 3.2410071235175906e-07,
+  "comparison_digest": "41eaca5375f8b6c7cf1628a65d17a48b7ce4a167ce028e29acea4f67023308e8",
+  "digest_excludes_native_solver_pointers": true,
+  "rebuilt_source_sha256": {
+    "src/ge6/vehicle_velocity.h": "2f84ebf5c56a8bd2711d24e588462714f0139ce6369a2e4bae74016f50944a9d",
+    "src/ge6/vehicle_velocity.cpp": "fe3d43caaadbb13fcba6360285976cafd059ded3158299c41f043fe9589849f2",
+    "src/ge6/vehicle_constraint.h": "f409c6f7a34228a56a5ba5e83f62e63220857c1b0d643ff91f96b4c9165854a7",
+    "src/core/tire_forces.h": "5e28bca9cdd22987ef857f74d87ca780c225d08b40d5b56a832a3e7df893732e"
+  },
+  "scope": "Bounded original 0x1401540b0 wheel velocity/friction phase, valid finite positive tire parameters, empty differential network. Original driver helper executes with zero nodes; typed rebuilt driver callback is explicit no-op transport. Compares complete wheel/constraint/solver records across repeated shared-body/aliased/static cases, sleeping/inactive/contact guards, brakes and gravity-query order. Drivetrain network, full vehicle setup/registration and playable startup remain open."
+}
