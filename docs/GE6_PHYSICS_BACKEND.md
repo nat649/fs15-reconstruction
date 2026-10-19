@@ -220,6 +220,11 @@ straight/reverse scenarios travel about 11.1 m and reach about 7.46 m/s before
 braking below 0.002 m/s. These use sphere fixture bodies and explicit input
 commands, not original vehicle resources or a rendered game.
 
+The four-wheel component test also passes on Linux x64 and ARM64 Linux under
+QEMU in [CI run 39226238887](https://github.com/nat649/fs15-reconstruction/actions/runs/39226238887)
+(source `1d92558`; 38 total component tests). This verifies the CPU component
+course, not a visible playable session.
+
 The [whole-class diagnostic](../analysis/ge6-raycast-vehicle-validation.json)
 compares six original GE6 vehicle lifetimes / 720 frames. It deliberately
 reports `observed_differences`, **not a parity pass**: maximum position error

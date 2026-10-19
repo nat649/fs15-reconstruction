@@ -23,6 +23,12 @@ The context, fixed-function matrices/attributes and constant color are authored
 test transport. They do not implement or replace GE6's scene shaders/materials.
 The CPU-only `portable_gl_draw` CTest checks dispatch and wrapping without a GPU.
 
+[CI run 39226238887](https://github.com/nat649/fs15-reconstruction/actions/runs/39226238887)
+passes all 38 component tests on Linux x64 and ARM64 Linux under QEMU for source
+commit `1d92558`. Its actual-driver step also passes array/index/range primitive
+pixel readback on Mesa llvmpipe (LLVM 20.1.2). This is software OpenGL validation;
+hardware GPU and original scene rendering remain separate.
+
 On Linux with SDL2/OpenGL installed:
 
 ```sh
