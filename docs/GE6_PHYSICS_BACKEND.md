@@ -182,8 +182,10 @@ it near height `1.49` under gravity. Applying the wheel brake brings chassis
 speed and wheel spin to zero. Chassis-ground collision contacts do not supply
 support or traction. Fixed slip inputs, simple geometry and setup orchestration
 are authored fixture data. This is component integration, not an original
-tractor, a recovered motor or a playable game. The new total is 36 component
-tests; Windows passes locally and Linux/ARM validation follows in CI.
+tractor, a recovered motor or a playable game. All 36 component tests pass on
+Windows x64, Linux x64 and ARM64 Linux under QEMU.
+[CI run 39223398050](https://github.com/nat649/fs15-reconstruction/actions/runs/39223398050)
+validates source commit `2c65697`.
 
 ## Build
 
