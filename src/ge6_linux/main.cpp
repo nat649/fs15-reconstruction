@@ -4,6 +4,7 @@
 #include <openssl/sha.h>
 #include "ansi_reference.h"
 #include "local_platform.h"
+#include "file_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -101,7 +102,7 @@ uintptr_t resolve(const std::string& library,const std::string& name);
 MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");require(module==kernel_token&&reinterpret_cast<uintptr_t>(name)>65535,"Unimplemented module/procedure lookup");auto result=resolve("KERNEL32.dll",name);if(!result)std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
-MS uint32_t file_type(uintptr_t handle){require(handle>=0x100&&handle<=0x102,"Unknown CRT standard handle");return isatty(int(handle-0x100))?2:3;}
+MS uint32_t file_type(uintptr_t handle){return ge6_fs::type(handle);}
 MS uint32_t handle_count(uint32_t count){trace("SetHandleCount");return count;}// Documented NT compatibility no-op.
 MS uint32_t ansi_page(){trace("GetACP");return 1252;}// Matches the local Windows reference's ANSI page.
 MS int valid_page(uint32_t page){trace("IsValidCodePage");require(page==1252||page==65001,"Unimplemented code page validation");return 1;}
@@ -116,12 +117,12 @@ MS int free_environment_w(void* p){trace("FreeEnvironmentStringsW");std::free(p)
 int byte_index(uint16_t unit){auto found=std::find(ge6_ansi::unicode.begin(),ge6_ansi::unicode.end(),unit);return found==ge6_ansi::unicode.end()?-1:int(found-ge6_ansi::unicode.begin());}
 int wide_count(const uint16_t* source,int count){if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}require(count>0&&count<=1048576,"Invalid text count");return count;}
 MS int widen(uint32_t page,uint32_t flags,const unsigned char* source,int count,uint16_t* out,int capacity){
-    trace("MultiByteToWideChar");require((page==0||page==1252)&&(flags==0||flags==1||flags==9),"Unimplemented multibyte page/flags");
+    trace("MultiByteToWideChar");require(((page==0||page==1252)&&(flags==0||flags==1||flags==9))||(page==65001&&(flags==0||flags==8)),"Unimplemented multibyte page/flags");
     if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}require(count>0&&count<=1048576&&capacity>=0,"Invalid multibyte conversion bounds");
-    if(capacity==0)return count;
-    if(!out||capacity<count){last_error=122;return 0;}
-    for(int i=0;i<count;++i)out[i]=ge6_ansi::unicode[source[i]];
-    return count;
+    std::u16string converted;try{if(page==65001)converted=ge6_fs::utf16(std::string(reinterpret_cast<const char*>(source),size_t(count)));else for(int i=0;i<count;++i)converted.push_back(char16_t(ge6_ansi::unicode[source[i]]));}catch(const std::range_error&){last_error=1113;return 0;}
+    auto required=int(converted.size());if(capacity==0)return required;
+    if(!out||capacity<required){last_error=122;return 0;}
+    std::memcpy(out,converted.data(),converted.size()*2);return required;
 }
 MS int string_type(uint32_t kind,const uint16_t* source,int count,uint16_t* out){
     trace("GetStringTypeW");require(kind==1,"Unimplemented string classification kind");count=wide_count(source,count);
@@ -137,14 +138,16 @@ MS int map_string(uint32_t locale,uint32_t flags,const uint16_t* source,int coun
 MS int narrow(uint32_t page,uint32_t flags,const uint16_t* source,int count,char* out,int capacity,const char* fallback,int* used){
     trace("WideCharToMultiByte");require((page==0||page==1252||page==65001)&&flags==0&&!fallback,"Unimplemented codepage/conversion flags");
     count=wide_count(source,count);require(capacity>=0,"Invalid wide conversion capacity");std::vector<char> bytes;bytes.reserve(size_t(count));bool defaulted=false;
+    if(page==65001){try{auto converted=ge6_fs::utf8(source,size_t(count));bytes.assign(converted.begin(),converted.end());}catch(const std::range_error&){last_error=1113;return 0;}}
+    else
     for(int i=0;i<count;++i){int value=page==65001?(source[i]<128?int(source[i]):-1):byte_index(source[i]);
         if(value<0&&page!=65001){auto found=std::find(ge6_ansi::bestfit_unicode.begin(),ge6_ansi::bestfit_unicode.end(),source[i]);if(found!=ge6_ansi::bestfit_unicode.end()){auto index=size_t(found-ge6_ansi::bestfit_unicode.begin());value=ge6_ansi::bestfit_byte[index];defaulted=defaulted||ge6_ansi::bestfit_default[index];}}
         if(value<0){last_error=1113;return 0;}bytes.push_back(char(value));}// Only observed CP1252 case substitutions are supported.
     if(used)*used=defaulted?1:0;
-    if(capacity==0)return count;
-    if(!out||capacity<count){last_error=122;return 0;}
+    auto required=int(bytes.size());if(capacity==0)return required;
+    if(!out||capacity<required){last_error=122;return 0;}
     std::memcpy(out,bytes.data(),bytes.size());
-    return count;
+    return required;
 }
 MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
     trace("GetModuleFileNameA");require(module==0||module==base,"Unimplemented module filename");
@@ -152,6 +155,7 @@ MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
     auto size=std::min(image_path.size(),size_t(capacity-1));std::memcpy(out,image_path.data(),size);out[size]=0;
     if(image_path.size()>=capacity){last_error=122;return capacity;}return uint32_t(size);
 }
+MS uint32_t module_filename_w(uintptr_t module,uint16_t* out,uint32_t capacity){trace("GetModuleFileNameW");require(module==0||module==base,"Unimplemented module filename");if(!capacity){last_error=122;return 0;}auto name=ge6_fs::utf16(image_path);auto count=std::min(name.size(),size_t(capacity-1));std::memcpy(out,name.data(),count*2);out[count]=0;if(name.size()>=capacity){last_error=122;return capacity;}return uint32_t(count);}
 MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast<uint8_t*>(raw);std::memset(out,0,104);uint32_t size=104;std::memcpy(out,&size,4);}
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
 MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::exit(int(code));}
@@ -165,12 +169,13 @@ MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
     bool exists=false;if(flock(fd,LOCK_EX|LOCK_NB)){if(errno==EWOULDBLOCK)exists=true;else{close(fd);last_error=5;return 0;}}
     auto record=std::make_unique<Singleton>();record->fd=fd;auto handle=reinterpret_cast<uintptr_t>(record.get());singleton_handles.emplace(handle,std::move(record));last_error=exists?183:0;return handle;
 }// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
-MS int close_handle(uintptr_t handle){trace("CloseHandle");auto found=singleton_handles.find(handle);require(found!=singleton_handles.end(),"Unimplemented handle kind");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
+MS int close_handle(uintptr_t handle){auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 
 uintptr_t resolve(const std::string& library,const std::string& name){
     if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
     if(library!="KERNEL32.dll")return 0;
+    if(auto file=ge6_fs::resolve(name))return file;
 #define BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     BIND("GetSystemTimeAsFileTime",file_time);BIND("GetCurrentProcessId",process_id);BIND("GetCurrentThreadId",thread_id);
     BIND("GetTickCount",ticks);BIND("QueryPerformanceCounter",counter);BIND("QueryPerformanceFrequency",frequency);
@@ -185,6 +190,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("MultiByteToWideChar",widen);BIND("GetStringTypeW",string_type);BIND("LCMapStringW",map_string);
     BIND("SetUnhandledExceptionFilter",set_exception_filter);
     BIND("CreateMutexA",create_singleton);BIND("CloseHandle",close_handle);BIND("IsDebuggerPresent",debugger_present);
+    BIND("GetModuleFileNameW",module_filename_w);
 #undef BIND
     return 0;
 }
@@ -249,6 +255,21 @@ struct Image {
 int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
     try{
+        ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
+        if(argc==3&&std::string(argv[1])=="--check-files"){
+            auto root=ge6_fs::utf16(std::string(argv[2])+"/unicode-\xc3\xa9-\xe2\x82\xac");auto wide=[](const std::u16string& s){return reinterpret_cast<const uint16_t*>(s.c_str());};
+            require(ge6_fs::directory(wide(root),nullptr)==1,"Cannot create filesystem fixture");require(ge6_fs::directory(wide(root),nullptr)==0&&last_error==183,"Directory existence error differs");
+            auto source=root+u"/source.bin",copy=root+u"/copy.bin";auto handle=ge6_fs::create(wide(source),0xc0000000u,1,nullptr,2,0x80,0);require(handle!=~uintptr_t(0),"Cannot open filesystem fixture");
+            const char payload[]{'G','E','6','-',char(0xc3),char(0xa9)};uint32_t done=0;require(ge6_fs::write(handle,payload,sizeof(payload),&done,nullptr)&&done==sizeof(payload),"File write differs");
+            int64_t total=0;require(ge6_fs::size_ex(handle,&total)&&total==6&&file_type(handle)==1,"File size/type differs");require(ge6_fs::seek_ex(handle,0,nullptr,0),"File seek differs");
+            char output[8]{};require(ge6_fs::read(handle,output,6,&done,nullptr)&&done==6&&!std::memcmp(output,payload,6),"File read differs");require(ge6_fs::read(handle,output,1,&done,nullptr)&&done==0,"EOF read differs");
+            int32_t high=0;require(ge6_fs::seek(handle,2,&high,0)==2&&high==0,"Legacy file seek differs");require(ge6_fs::read(handle,output,1,&done,nullptr)&&output[0]=='6',"Legacy seek position differs");require(close_handle(handle)&&!close_handle(handle)&&last_error==6,"File handle lifetime differs");
+            std::array<uint8_t,592> found{};auto search=ge6_fs::find_first(wide(source),found.data());require(search!=~uintptr_t(0),"Cannot find exact fixture file");uint32_t low=0;std::memcpy(&low,found.data()+32,4);require(low==6,"WIN32_FIND_DATAW file size differs");require(!ge6_fs::find_next(search,found.data())&&last_error==18&&ge6_fs::find_close(search),"Find lifetime/EOF differs");
+            require(ge6_fs::copy(wide(source),wide(copy),1)&&!ge6_fs::copy(wide(source),wide(copy),1)&&last_error==183&&ge6_fs::copy(wide(source),wide(copy),0),"CopyFileW disposition differs");
+            auto absent=root+u"/absent";require(ge6_fs::find_first(wide(absent),found.data())==~uintptr_t(0)&&last_error==2,"Missing-file result differs");
+            const unsigned char tractor[]{0xf0,0x9f,0x9a,0x9c,0};uint16_t utf[8]{};char roundtrip[16]{};require(widen(65001,0,tractor,-1,utf,8)==3&&utf[0]==0xd83d&&utf[1]==0xde9c,"UTF8 surrogate conversion differs");require(narrow(65001,0,utf,-1,roundtrip,16,nullptr,nullptr)==5&&!std::memcmp(roundtrip,tractor,5),"UTF8 byte count/roundtrip differs");
+            std::cout<<"GE6 synchronous file and UTF8 fixtures passed; full Windows sharing/namespace parity is not claimed\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-singleton"){
             auto first=create_singleton(nullptr,0,"FS15_GE6_BOOT_FIXTURE");require(first&&last_error==0,"Cannot create singleton fixture");pid_t child=fork();require(child>=0,"Cannot fork singleton fixture");
             if(child==0){auto second=create_singleton(nullptr,0,"FS15_GE6_BOOT_FIXTURE");bool ok=second&&last_error==183;if(second)close_handle(second);_exit(ok?0:1);}

@@ -27,7 +27,7 @@ def archive_entries(raw):
         yield name.lstrip('./'), content
 
 
-def build_initramfs(alpine, executable, image):
+def build_initramfs(alpine, executable, image, resources=None, archives=False):
     original = image.read_bytes()
     kind = image_kind(original)
     source = dict(archive_entries(alpine.read_bytes()))
@@ -44,7 +44,7 @@ def build_initramfs(alpine, executable, image):
         out.extend(b'\0' * (-len(out) % 4))
         out.extend(data)
         out.extend(b'\0' * (-len(out) % 4))
-    for name in ('usr', 'usr/bin', 'usr/lib', 'dev', 'proc', 'tmp'):
+    for name in ('usr', 'usr/bin', 'usr/lib', 'dev', 'proc', 'tmp', 'game', 'game/x64', 'profile'):
         add(name, mode=0o40755)
     add('bin', b'usr/bin', 0o120777)
     add('lib', b'usr/lib', 0o120777)
@@ -55,12 +55,22 @@ def build_initramfs(alpine, executable, image):
     add('dev/null', mode=0o20666, device=(1, 3))
     add('dev/urandom', mode=0o20666, device=(1, 9))
     add('ge6-boot', executable.read_bytes(), 0o100755)
-    add('private-reference.bin', original)
+    add('game/x64/FarmingSimulator2015Game.exe', original)
+    if resources is not None:
+        names = ('game.xml', 'FarmingSimulator2015.xml', 'VERSION', 'steamdata.dat')
+        if archives:
+            names += ('dataS.gar', 'dataS2.gar')
+        for name in names:
+            source_file = resources / name
+            if source_file.is_symlink() or not source_file.is_file():
+                raise ValueError('Missing regular startup resource: ' + name)
+            add('game/' + name, source_file.read_bytes())
     init = b'''#!/bin/sh
 /usr/bin/busybox mount -t proc proc /proc
 echo GE6_LINUX_VM_STARTED
 /usr/bin/busybox uname -a
-/ge6-boot --image /private-reference.bin
+cd /game
+/ge6-boot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile /profile'
 result=$?
 echo GE6_LINUX_VM_RESULT=$result
 /usr/bin/busybox poweroff -f
@@ -78,11 +88,13 @@ def main():
     parser.add_argument('--alpine-initramfs', required=True, type=Path)
     parser.add_argument('--exe', required=True, type=Path)
     parser.add_argument('--image', type=Path, default=DEFAULT_IMAGE)
+    parser.add_argument('--resources', type=Path, help='Optional local GE6 directory; stages only named startup files')
+    parser.add_argument('--archives', action='store_true', help='Also stage the two original GAR archives locally')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     initramfs = args.output / 'private-ge6-initramfs.gz'
-    initramfs.write_bytes(build_initramfs(args.alpine_initramfs, args.exe, args.image))
+    initramfs.write_bytes(build_initramfs(args.alpine_initramfs, args.exe, args.image, args.resources, args.archives))
     command = [str(args.qemu), '-machine', 'q35', '-accel', 'tcg', '-m', '768',
                '-kernel', str(args.kernel), '-initrd', str(initramfs),
                '-append', 'console=ttyS0 rdinit=/init panic=-1 quiet',
