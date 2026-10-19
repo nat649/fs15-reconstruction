@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "original_image_sha256": "6d1beaf9d7e3c57dd51cec03385a53bda82b4ac946e622d8d2fa592a56d71f9f",
+  "states": {
+    "jacobian": 2048,
+    "spring": 2048,
+    "penetration_states": 1024,
+    "penetration_iterations": 6640
+  },
+  "maximum_scaled_error": 5.113983337235942e-07,
+  "comparison_digest": "40ab7a23d87b80cf705196adc2ea10b8465fa6910d9b0c09b6c7e7706a72d7bf",
+  "rebuilt_source_sha256": {
+    "src/ge6/vehicle_constraint.h": "f409c6f7a34228a56a5ba5e83f62e63220857c1b0d643ff91f96b4c9165854a7",
+    "src/ge6/vehicle_constraint.cpp": "9e574f6f57ecd716e0a2fb85069d32025c520a86c16e38616dec6b2cdb50b0a2"
+  },
+  "scope": "Three bounded GE6 wheel Jacobian, suspension spring setup and complete split-penetration phase bodies. Unchanged native image compared using explicit local fixture objects; authored typed transport uses Bullet public fields/APIs. Includes repeated shared-body constraints, aliased body pairs, static solver bodies, sleeping/inactive guards, contact misses and impulse clamping. Full vehicle setup, velocity/friction/drivetrain, registration, terrain and playable engine startup remain open."
+}

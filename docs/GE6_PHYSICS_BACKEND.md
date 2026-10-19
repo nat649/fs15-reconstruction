@@ -106,13 +106,49 @@ The ray fixtures supply controlled results through an authored world callback;
 unchanged original GE6 ray/callback bodies execute. A separate portable CTest
 uses actual Bullet world ray queries to validate ground hits, owner/trigger/
 non-rigid rejection, ignored pairs, compression limits and missing contacts.
-These functions are not registered as a complete vehicle solver: constraint
-setup, friction/velocity and penetration phases still need recovery.
+These functions are not registered as a complete vehicle solver. The bounded
+constraint helpers and penetration phase below extend them; full setup
+orchestration, friction/velocity and drivetrain remain open.
 
 The world/solver checkpoint passes all 34 CTests on Windows x64, Linux x64 and
 ARM64 Linux under QEMU ([CI](https://github.com/nat649/fs15-reconstruction/actions/runs/39155932339)).
-The wheel extensions additionally pass locally; their Linux/ARM validation is
-tracked by subsequent CI runs.
+The ray/finish extensions also pass Linux/ARM CI in
+[run 39156379940](https://github.com/nat649/fs15-reconstruction/actions/runs/39156379940).
+
+## Suspension constraint setup and penetration correction
+
+[`vehicle_constraint.cpp`](../src/ge6/vehicle_constraint.cpp) recovers three
+further bodies: the Jacobian helper `0x1401511a0`, spring setup `0x140150f50`
+and complete wheel split-penetration loop `0x140154d70`. Its typed structures
+are authored transport, not raw casts of the native Windows records. Query
+and application directions remain distinct. Body inertia/angular factors,
+solver velocities/external force impulses, asymmetric damping, compression
+limits and solver ERP/split thresholds follow the original paths.
+
+Instruction inspection corrected an ambiguous decompiler expression: the
+native setup sums both body terms before adding spring softness. Preserving
+that association matters near cancelling terms. Native wheel setup also uses
+the geometric suspension length before its separate readback clamp; passing
+the clamped length would suppress bottom-out correction.
+
+The [local differential harness](../scripts/check_ge6_vehicle_constraint.py)
+and [source-pinned report](../analysis/ge6-vehicle-constraint-validation.json)
+cover 2,048 Jacobians, 2,048 spring states and 1,024 multi-wheel penetration
+states over **6,640 successive iterations**. They compare complete records and
+solver bodies, including inactive/sleeping guards, static solver bodies,
+misses, accumulated-impulse clamps, shared bodies and aliased A/B bodies.
+Maximum scaled numeric error is **0.0000005114** in this domain.
+
+The additional `ge6_suspension_penetration_integration` CTest connects actual
+Bullet world rays, recovered spring setup and the recovered penetration phase
+through GE6's solver hooks to middleware transform writeback. With explicit
+fixture ERP2 `0.2` and split threshold `0`, a chassis starts at height `0.5`,
+reaches `0.56` after one step and `0.799629` after 30 steps, approaching the
+`0.8` compression limit without introducing kinetic velocity or chassis
+collision contacts. This is an authored one-wheel **phase isolation fixture**:
+its motor and velocity phases deliberately do nothing. It is not registered
+as a production vehicle and does not demonstrate drivable gameplay. All 35
+component tests pass locally on Windows; Linux/ARM follow the current CI run.
 
 ## Build
 
@@ -130,9 +166,9 @@ script also needs the original pinned analysis image and the separately built
 
 ## Remaining path to a playable GE6 Linux runtime
 
-The next steps in **`Bt2RaycastVehicle`** are wheel constraint setup and the
-velocity/penetration phases, motor/brake/steering inputs and integration of the
-recovered ray/finish methods into that complete solver. Original GE6 terrain shapes
+The next steps in **`Bt2RaycastVehicle`** are full setup orchestration and the
+velocity/friction phase, motor/brake/steering inputs and integration of the
+recovered ray/setup/penetration/finish methods into that complete solver. Original GE6 terrain shapes
 and convex/heightfield algorithms, body/joint/scene loading, the remaining script
 services, graphics shaders/materials/draw submission and the full startup loop
 remain to be linked and tested. A working physics component is not a playable

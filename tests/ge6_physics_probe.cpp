@@ -3,6 +3,7 @@
 #include "physics_world.h"
 #include "physics_vehicle_sort.h"
 #include "vehicle_wheel.h"
+#include "vehicle_constraint.h"
 #include <vector>
 #include <memory>
 #include <cstring>
@@ -15,11 +16,55 @@
 #define PROBE_API __attribute__((visibility("default")))
 #endif
 namespace {
+float probe_float(const void* p,size_t offset){float f;std::memcpy(&f,static_cast<const char*>(p)+offset,4);return f;}
+void probe_store(void* p,size_t offset,float f){std::memcpy(static_cast<char*>(p)+offset,&f,4);}
+btVector3 probe_vector(const void* p,size_t offset){return btVector3(probe_float(p,offset),probe_float(p,offset+4),probe_float(p,offset+8));}
+void probe_vector_store(void* p,size_t offset,const btVector3& v){for(int i=0;i<4;++i)probe_store(p,offset+i*4,v[i]);}
 btTransform probe_transform(const float* v){return btTransform(btMatrix3x3(v[0],v[1],v[2],v[4],v[5],v[6],v[8],v[9],v[10]),btVector3(v[12],v[13],v[14]));}
 fs15::ge6::WheelSuspension probe_wheel(const float* v){
     fs15::ge6::WheelSuspension w;w.attachment=btVector3(v[16],v[17],v[18]);w.direction=btVector3(v[19],v[20],v[21]);
     w.rest=v[22];w.compression=v[23];w.droop=v[24];w.radius=v[25];return w;
 }
+void probe_body(const void* raw,btRigidBody& body){
+    const float inverse=probe_float(raw,0x1a0);body.setMassProps(inverse==0?0:1.f/inverse,btVector3(0,0,0));body.setAngularFactor(probe_vector(raw,0x290));
+    // Authored test injection of arbitrary inspected inertia rows. Production
+    // GE6 uses the middleware's ordinary body/inertia APIs instead.
+    auto& m=const_cast<btMatrix3x3&>(body.getInvInertiaTensorWorld());for(int i=0;i<3;++i)m[i]=probe_vector(raw,0x150+i*16);
+}
+btSolverBody probe_solver(const void* raw,btRigidBody& body){
+    btSolverBody s{};float transform[16];std::memcpy(transform,raw,64);s.m_worldTransform=probe_transform(transform);
+    s.m_deltaLinearVelocity=probe_vector(raw,0x40);s.m_deltaAngularVelocity=probe_vector(raw,0x50);s.m_angularFactor=probe_vector(raw,0x60);
+    s.m_invMass=probe_vector(raw,0x70);s.m_linearFactor=probe_vector(raw,0x80);s.m_pushVelocity=probe_vector(raw,0x90);s.m_turnVelocity=probe_vector(raw,0xa0);
+    s.m_linearVelocity=probe_vector(raw,0xb0);s.m_angularVelocity=probe_vector(raw,0xc0);s.m_externalForceImpulse=probe_vector(raw,0xd0);s.m_externalTorqueImpulse=probe_vector(raw,0xe0);
+    uintptr_t original;std::memcpy(&original,static_cast<const char*>(raw)+0xf0,8);s.m_originalBody=original?&body:nullptr;return s;
+}
+fs15::ge6::WheelJacobian probe_jacobian(const void* p){fs15::ge6::WheelJacobian j;j.angular_a=probe_vector(p,0);j.angular_b=probe_vector(p,0x10);j.axis=probe_vector(p,0x20);j.component_a=probe_vector(p,0x30);j.component_b=probe_vector(p,0x40);j.projection=probe_float(p,0x60);return j;}
+void probe_jacobian_store(void* p,const fs15::ge6::WheelJacobian& j){probe_vector_store(p,0,j.angular_a);probe_vector_store(p,0x10,j.angular_b);probe_vector_store(p,0x20,j.axis);probe_vector_store(p,0x30,j.component_a);probe_vector_store(p,0x40,j.component_b);probe_store(p,0x60,j.projection);}
+}
+// These bridges translate explicit inspected Windows fixture bytes through
+// memcpy. They never reinterpret foreign solver records as Linux Bullet types.
+extern "C" PROBE_API void fs15_ge6_constraint_setup(int method,const void* ar,const void* br,const void* sar,const void* sbr,const float* q,void* result,float* stats){
+    btRigidBody a(0,nullptr,nullptr),b(0,nullptr,nullptr);probe_body(ar,a);probe_body(br,b);const auto sa=probe_solver(sar,a),sb=probe_solver(sbr,b);
+    const auto n=probe_vector(q,0),p=probe_vector(q,16),application=probe_vector(q,32),lever=probe_vector(q,48);
+    if(!method){fs15::ge6::WheelJacobian j;const auto s=fs15::ge6::setup_wheel_jacobian(j,n,p,application,lever,a,b,sa,sb);probe_jacobian_store(result,j);stats[0]=s.denominator_a;stats[1]=s.denominator_b;stats[2]=s.velocity_a;stats[3]=s.velocity_b;}
+    else{
+        fs15::ge6::SuspensionSpring spring;spring.rest=q[17];spring.compression=q[18];spring.stiffness=q[19];spring.positive_velocity_damping=q[20];spring.nonpositive_velocity_damping=q[21];
+        btContactSolverInfo info;info.m_timeStep=q[22];info.m_erp=q[23];info.m_erp2=q[24];info.m_splitImpulse=int(q[25]);info.m_splitImpulsePenetrationThreshold=q[26];
+        fs15::ge6::SuspensionConstraint c;fs15::ge6::setup_suspension_constraint(c,n,p,application,lever,q[16],spring,a,b,sa,sb,info);probe_jacobian_store(result,c.jacobian);
+        probe_store(result,0x50,c.diagonal);probe_store(result,0x54,c.rhs);probe_store(result,0x58,c.cfm);probe_store(result,0x70,c.lower_limit);probe_store(result,0x78,c.push_diagonal);probe_store(result,0x7c,c.correction_rhs);probe_store(result,0x80,c.push_rhs);
+    }
+}
+extern "C" PROBE_API void fs15_ge6_constraint_push(void* sar,void* sbr,void* records,const void* wheels,size_t count,int activation,int active,int alias){
+    btRigidBody a(0,nullptr,nullptr),b(0,nullptr,nullptr);auto sa=probe_solver(sar,a),sb=probe_solver(sbr,b);
+    std::vector<fs15::ge6::SuspensionConstraint> constraints(count);std::vector<fs15::ge6::PenetrationWheel> states(count);
+    for(size_t i=0;i<count;++i){const char* r=static_cast<const char*>(records)+i*0x1a0+0x20;const char* w=static_cast<const char*>(wheels)+i*0x160;
+        auto& c=constraints[i];c.jacobian=probe_jacobian(r);c.push_diagonal=probe_float(r,0x78);c.push_rhs=probe_float(r,0x80);c.push_impulse=probe_float(r,0x84);
+        auto& s=states[i];s.constraint=&c;s.a=&sa;s.b=alias?&sa:&sb;s.normal=probe_vector(w,0);uintptr_t contact;std::memcpy(&contact,w+0x28,8);s.contact=contact!=0;
+    }
+    fs15::ge6::solve_wheel_penetration(states.data(),count,activation,active!=0);
+    for(size_t i=0;i<count;++i)probe_store(records,i*0x1a0+0xa4,constraints[i].push_impulse);
+    // Preserve untouched fourth vector lanes in the serialized native record.
+    for(int k=0;k<3;++k){probe_store(sar,0x90+k*4,sa.m_pushVelocity[k]);probe_store(sar,0xa0+k*4,sa.m_turnVelocity[k]);if(!alias){probe_store(sbr,0x90+k*4,sb.m_pushVelocity[k]);probe_store(sbr,0xa0+k*4,sb.m_turnVelocity[k]);}}
 }
 extern "C" PROBE_API void fs15_ge6_wheel_frame(const float* v,float* out){
     btVector3 p,d;fs15::ge6::wheel_ray_frame(probe_wheel(v),probe_transform(v),p,d);

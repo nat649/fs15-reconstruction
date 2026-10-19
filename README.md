@@ -94,7 +94,7 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   decoders, tire math, wheel lookup/read adapters, seven bit operations and the
   native affine point transform. Together with subsequent scene, animation,
   Camera and file-stream recovery, the ledger now records
-  **253 native entries on bounded tested paths**. The affine component passes
+  **256 native entries on bounded tested paths**. The affine component passes
   36,000 math comparisons, 5,999 complete node-arena comparisons and 4,799
   complete script-frame comparisons against original code, bit for bit.
   ReFarm uses the recovered local/world adapters through an authored matrix bridge.
@@ -253,6 +253,12 @@ unavailable. See [preparation, evidence and scope](docs/LOCAL_ENGINE_RUNTIME.md)
   middleware rays test owner/trigger exclusion and suspension limits. GIANTS
   terrain collision, the complete raycast vehicle constraint solver and full
   startup remain open. See [provenance and evidence](docs/GE6_PHYSICS_BACKEND.md).
+- **GE6 suspension constraints:** three further paths recover the wheel Jacobian,
+  spring setup and split-penetration phase. **2,048 Jacobian states, 2,048 spring
+  states and 6,640 repeated correction iterations** match unchanged original
+  code. An isolated integration fixture connects real world rays, recovered
+  setup, solver iterations and actual chassis transform writeback. Velocity,
+  friction and drivetrain phases remain open; this is not a drivable vehicle.
 - **OpenGL buffer recovery:** nine native paths now provide portable vertex/index
   storage, staging, direct mapping, discard, subdata upload and deletion.
   **1,024 paired lifetimes** match unchanged GE6 code through recording GL seams.

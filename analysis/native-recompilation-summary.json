@@ -1,9 +1,14 @@
 {
   "catalogued": 12233,
   "eligible": 11667,
-  "pseudocode_only": 11414,
-  "validated_component_path_entries": 253,
+  "pseudocode_only": 11411,
+  "validated_component_path_entries": 256,
   "components": [
+    {
+      "name": "ge6_vehicle_jacobian_suspension_setup_and_split_penetration",
+      "entries": 3,
+      "evidence": "analysis/ge6-vehicle-constraint-validation.json"
+    },
     {
       "name": "ge6_vehicle_suspension_ray_filter_and_solved_wheel_readback",
       "entries": 5,
