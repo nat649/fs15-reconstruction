@@ -27,25 +27,31 @@ def fixture(blocked=False):
             (b'.data', 0x3000, 0xc00, 0x400, 0xc0000040))):
         at = opt + 240 + index * 40
         data[at:at + 8] = name.ljust(8, b'\0')
-        put(at + 8, 'IIII', size, rva, size, raw)
+        put(at + 8, 'IIII', 0x1000 if name == b'.data' else size, rva, size, raw)
         put(at + 36, 'I', flags)
     put(0x600, '5I', 0x2080, 0, 0, 0x2040, 0x2100)
     data[0x640:0x64d] = b'KERNEL32.dll\0'
-    names = [b'QueryPerformanceFrequency', b'UnsupportedFixtureAPI'] if blocked else [b'QueryPerformanceFrequency']
+    names = [b'SetHandleCount', b'QueryPerformanceFrequency']
+    if blocked:
+        names.append(b'UnsupportedFixtureAPI')
     for index, name in enumerate(names):
         put(0x680 + index * 8, 'Q', 0x2200 + index * 64)
         put(0x700 + index * 8, 'Q', 0x2200 + index * 64)
         at = 0x802 + index * 64
         data[at:at + len(name) + 1] = name + b'\0'
     code = bytearray(b'\x48\x83\xec\x28')  # Windows ABI shadow space + stack alignment.
-    code += b'\x48\xb9' + struct.pack('<Q', 0x140003000)
     def call(iat):
         code.extend(b'\xff\x15' + struct.pack('<i', iat - (0x1000 + len(code) + 6)))
+    code += b'\xb9' + struct.pack('<I', 2048)
     call(0x2100)
-    code += b'\x48\xb8' + struct.pack('<Q', 0x140003000) + b'\x48\x8b\x00'
+    code += b'\x3d' + struct.pack('<I', 2048) + b'\x74\x02\x0f\x0b'
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003800) + b'\x48\x83\x38\x00\x74\x02\x0f\x0b'
+    code += b'\x48\xb9' + struct.pack('<Q', 0x140003800)
+    call(0x2108)
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003800) + b'\x48\x8b\x00'
     code += b'\x3d' + struct.pack('<I', 1000000000) + b'\x74\x02\x0f\x0b'
     if blocked:
-        call(0x2108)
+        call(0x2110)
     code += b'\x48\x83\xc4\x28\xc3'
     data[0x400:0x400 + len(code)] = code
     return data
@@ -58,8 +64,8 @@ def check(exe, workdir):
         path.write_bytes(data)
         return subprocess.run([str(exe.resolve()), mode, str(path)], capture_output=True, text=True, timeout=15)
     result = run(fixture())
-    assert result.returncode == 0 and 'GE6_ORIGINAL_CRT_RETURN os_calls=1' in result.stdout, result
-    assert 'supported_imports=1 blocked_imports=0' in result.stdout, result
+    assert result.returncode == 0 and 'GE6_AUTHORED_FIXTURE_RETURN os_calls=2' in result.stdout, result
+    assert 'supported_imports=2 blocked_imports=0' in result.stdout, result
     result = run(fixture(True))
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x1400010' in result.stderr, result
     result = run(fixture(), '--image')

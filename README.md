@@ -13,6 +13,11 @@ repository does not provide a ready-to-download copy of the game.
 [Linux tester guide](docs/LINUX_TESTER.md) ·
 [Contributing](CONTRIBUTING.md) · [Project and dependency notices](NOTICE.md)
 
+**Exclusive active focus: original GE6 startup on Linux.** The new
+[native-instruction launch path](docs/GE6_LINUX_NATIVE_BOOT.md) preserves original
+x64 engine code and works on missing OS dependencies. ReFarm and the object
+preview remain fixtures. Complete original-engine Linux boot is not yet validated.
+
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;
 the full engine and farming simulation remain incomplete.**

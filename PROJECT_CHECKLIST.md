@@ -1,7 +1,12 @@
 # Project progress checklist
 
-Updated: **2026-10-18**. Checked items have supporting local build, analysis
+Updated: **2026-10-19**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
+
+**Exclusive active focus:** original GE6 startup on Linux. The
+[native-instruction launch path](docs/GE6_LINUX_NATIVE_BOOT.md) keeps the original
+engine code and targets its OS dependencies. ReFarm and object-preview work
+are fixtures, not the active porting target.
 
 **Current native milestone:** the installed GIANTS Engine 6.0.2 opens its menu,
 loads Bjornholm and executes recovered WheelsUtil source with 104 passing helper

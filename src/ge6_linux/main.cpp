@@ -40,6 +40,7 @@ std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
 int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
 std::string command_line="FarmingSimulator2015Game.exe";
+std::string image_path;
 void trace(const char* name){++calls;std::cout<<"GE6_OS "<<name<<'\n';}
 [[noreturn]] MS void missing(uint32_t id){
     std::cerr<<"GE6_BLOCKED_IMPORT "<<(id<imports.size()?imports[id]:"invalid-index")
@@ -84,6 +85,31 @@ MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress")
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){require(handle>=0x100&&handle<=0x102,"Unknown CRT standard handle");return isatty(int(handle-0x100))?2:3;}
+MS uint32_t handle_count(uint32_t count){trace("SetHandleCount");return count;}// Documented NT compatibility no-op.
+MS uint16_t* environment_w(){
+    trace("GetEnvironmentStringsW");std::vector<uint16_t> out;
+    for(char** entry=::environ;entry&&*entry;++entry){for(const unsigned char* p=reinterpret_cast<const unsigned char*>(*entry);*p;++p){if(*p>127){last_error=1113;return nullptr;}out.push_back(*p);}out.push_back(0);}
+    if(out.empty())out.push_back(0);
+    out.push_back(0);auto* result=static_cast<uint16_t*>(std::malloc(out.size()*2));if(result)std::memcpy(result,out.data(),out.size()*2);return result;
+}
+MS int free_environment_w(void* p){trace("FreeEnvironmentStringsW");std::free(p);return 1;}
+MS int narrow(uint32_t page,uint32_t flags,const uint16_t* source,int count,char* out,int capacity,const char* fallback,int* used){
+    trace("WideCharToMultiByte");require((page==0||page==65001)&&flags==0&&!fallback,"Unimplemented codepage/conversion flags");
+    if(count==-1){count=0;while(count<1048576&&source[count])++count;++count;}
+    require(count>0&&count<=1048576&&capacity>=0,"Invalid wide conversion bounds");
+    for(int i=0;i<count;++i)if(source[i]>127){last_error=1113;return 0;}// Bounded ASCII startup path; no silent non-ASCII truncation.
+    if(used)*used=0;
+    if(capacity==0)return count;
+    if(!out||capacity<count){last_error=122;return 0;}
+    for(int i=0;i<count;++i)out[i]=char(source[i]);
+    return count;
+}
+MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
+    trace("GetModuleFileNameA");require(module==0||module==base,"Unimplemented module filename");
+    if(!capacity){last_error=122;return 0;}
+    auto size=std::min(image_path.size(),size_t(capacity-1));std::memcpy(out,image_path.data(),size);out[size]=0;
+    if(image_path.size()>=capacity){last_error=122;return capacity;}return uint32_t(size);
+}
 MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast<uint8_t*>(raw);std::memset(out,0,104);uint32_t size=104;std::memcpy(out,&size,4);}
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
 MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::exit(int(code));}
@@ -98,16 +124,18 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("InitializeCriticalSectionAndSpinCount",init_lock);BIND("InitializeCriticalSection",initialize_lock);BIND("EnterCriticalSection",enter_lock);BIND("LeaveCriticalSection",leave_lock);BIND("DeleteCriticalSection",delete_lock);
     BIND("FlsAlloc",alloc_slot);BIND("TlsAlloc",tls_alloc);BIND("FlsSetValue",set_slot);BIND("TlsSetValue",set_slot);BIND("FlsGetValue",get_slot);BIND("TlsGetValue",get_slot);BIND("FlsFree",free_slot);BIND("TlsFree",free_slot);
     BIND("GetModuleHandleW",get_module_w);BIND("GetProcAddress",get_proc);BIND("GetCommandLineA",get_command);BIND("GetStdHandle",standard_handle);BIND("GetFileType",file_type);BIND("GetStartupInfoA",startup_info);BIND("GetStartupInfoW",startup_info);BIND("Sleep",sleep_ms);BIND("ExitProcess",terminate);
+    BIND("SetHandleCount",handle_count);BIND("GetEnvironmentStringsW",environment_w);BIND("FreeEnvironmentStringsW",free_environment_w);BIND("WideCharToMultiByte",narrow);BIND("GetModuleFileNameA",module_filename);
 #undef BIND
     return 0;
 }
 
 struct Image {
-    uint8_t* mapped=nullptr;size_t size=0;uint8_t* trampolines=nullptr;size_t trampoline_bytes=65536;uint32_t entry=0;
+    uint8_t* mapped=nullptr;size_t size=0;uint8_t* trampolines=nullptr;size_t trampoline_bytes=65536;uint32_t entry=0;bool authored_fixture=false;
     ~Image(){if(mapped)munmap(mapped,size);if(trampolines)munmap(trampolines,trampoline_bytes);}
     template<class T>T get(uint32_t rva)const{require(rva<=size&&sizeof(T)<=size-rva,"PE virtual field outside image");T value;std::memcpy(&value,mapped+rva,sizeof(value));return value;}
     std::string name(uint32_t rva)const{require(rva<size,"PE name outside image");auto* begin=reinterpret_cast<const char*>(mapped+rva);auto* end=static_cast<const char*>(std::memchr(begin,0,std::min(size-rva,size_t(1024))));require(end!=nullptr,"Unterminated PE name");return std::string(begin,end);}
     void load(const std::vector<uint8_t>& raw,bool fixture){
+        authored_fixture=fixture;
         require(read<uint16_t>(raw,0)==0x5a4d,"Not a PE image");auto pe=read<uint32_t>(raw,0x3c);require(read<uint32_t>(raw,pe)==0x4550&&read<uint16_t>(raw,pe+4)==0x8664,"Expected PE x86_64");
         auto count=read<uint16_t>(raw,pe+6),optional_size=read<uint16_t>(raw,pe+20);size_t opt=size_t(pe)+24;
         require(read<uint16_t>(raw,opt)==0x20b&&read<uint64_t>(raw,opt+24)==base,"Unsupported PE optional header/base");
@@ -140,13 +168,13 @@ struct Image {
         auto found=std::find_if(sections.begin(),sections.end(),[&](const Section& s){return !s.skip&&(s.flags&0x20000000)&&entry>=s.rva&&uint64_t(entry)<uint64_t(s.rva)+s.length;});require(found!=sections.end(),"CRT entry is not in executable code");
         std::cout<<"GE6_IMAGE_MAPPED base=0x"<<std::hex<<base<<" entry=0x"<<base+entry<<std::dec<<" supported_imports="<<supported<<" blocked_imports="<<imports.size()<<'\n';
     }
-    void run(){using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);std::cout<<"GE6_ORIGINAL_CRT_ENTER\n";entrypoint();std::cout<<"GE6_ORIGINAL_CRT_RETURN os_calls="<<calls<<'\n';}
+    void run(){using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
 };
 }
 int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
     try{require(argc>=3,"Usage: FS15GE6LinuxBoot --image private-runtime.bin [--command-line string] | --fixture authored-test.exe");bool fixture=std::string(argv[1])=="--fixture";require(fixture||std::string(argv[1])=="--image","Expected --image or --fixture");
-        std::ifstream file(argv[2],std::ios::binary|std::ios::ate);require(bool(file),"Cannot open private GE6 image");auto size=file.tellg();require(size>0&&size<=0x4000000,"Invalid image file size");std::vector<uint8_t> raw(static_cast<size_t>(size));file.seekg(0);file.read(reinterpret_cast<char*>(raw.data()),size);require(bool(file),"Truncated image file");
+        char* absolute=realpath(argv[2],nullptr);require(absolute!=nullptr,"Cannot resolve private image path");image_path=absolute;std::free(absolute);std::ifstream file(argv[2],std::ios::binary|std::ios::ate);require(bool(file),"Cannot open private GE6 image");auto size=file.tellg();require(size>0&&size<=0x4000000,"Invalid image file size");std::vector<uint8_t> raw(static_cast<size_t>(size));file.seekg(0);file.read(reinterpret_cast<char*>(raw.data()),size);require(bool(file),"Truncated image file");
         if(!fixture){std::array<unsigned char,SHA256_DIGEST_LENGTH> hash{};SHA256(raw.data(),raw.size(),hash.data());std::ostringstream text;for(auto b:hash)text<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(b);require(text.str()==expected,"GE6 image hash differs from pinned private reference");}
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
