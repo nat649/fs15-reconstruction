@@ -6,6 +6,8 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
+#include <asm/prctl.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
 #include <ucontext.h>
@@ -155,6 +157,21 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     return 0;
 }
 
+// Keep Linux libc's FS TLS untouched. The original MSVC __chkstk reads GS:0x10.
+// Only the inspected NT_TIB stack/self prefix is supplied; no complete PEB/SEH.
+struct NativeThread {
+    alignas(16) std::array<uint8_t,0x100> tib{};uintptr_t previous_gs=0;bool installed=false;
+    NativeThread(){
+        pthread_attr_t attr;require(pthread_getattr_np(pthread_self(),&attr)==0,"Cannot inspect Linux thread stack");
+        void* stack=nullptr;size_t bytes=0;int result=pthread_attr_getstack(&attr,&stack,&bytes);pthread_attr_destroy(&attr);require(result==0&&bytes,"Cannot inspect Linux stack bounds");
+        uintptr_t limit=reinterpret_cast<uintptr_t>(stack),upper=limit+bytes,self=reinterpret_cast<uintptr_t>(tib.data()),none=~uintptr_t(0);
+        std::memcpy(tib.data(),&none,8);std::memcpy(tib.data()+8,&upper,8);std::memcpy(tib.data()+0x10,&limit,8);std::memcpy(tib.data()+0x30,&self,8);
+        require(syscall(SYS_arch_prctl,ARCH_GET_GS,&previous_gs)==0,"Cannot read Linux GS base");require(syscall(SYS_arch_prctl,ARCH_SET_GS,self)==0,"Cannot install native NT_TIB prefix");installed=true;
+        std::cout<<"GE6_NATIVE_NT_TIB_READY\n";
+    }
+    ~NativeThread(){if(installed){auto result=syscall(SYS_arch_prctl,ARCH_SET_GS,previous_gs);(void)result;}}
+};
+
 struct Image {
     uint8_t* mapped=nullptr;size_t size=0;uint8_t* trampolines=nullptr;size_t trampoline_bytes=65536;uint32_t entry=0;bool authored_fixture=false;
     ~Image(){if(mapped)munmap(mapped,size);if(trampolines)munmap(trampolines,trampoline_bytes);}
@@ -194,7 +211,7 @@ struct Image {
         auto found=std::find_if(sections.begin(),sections.end(),[&](const Section& s){return !s.skip&&(s.flags&0x20000000)&&entry>=s.rva&&uint64_t(entry)<uint64_t(s.rva)+s.length;});require(found!=sections.end(),"CRT entry is not in executable code");
         std::cout<<"GE6_IMAGE_MAPPED base=0x"<<std::hex<<base<<" entry=0x"<<base+entry<<std::dec<<" supported_imports="<<supported<<" blocked_imports="<<imports.size()<<'\n';
     }
-    void run(){using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
+    void run(){NativeThread thread;using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
 };
 }
 int main(int argc,char** argv){

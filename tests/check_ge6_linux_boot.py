@@ -41,6 +41,9 @@ def fixture(blocked=False):
         data[at:at + len(name) + 1] = name + b'\0'
     data[0xc00:0xc03] = bytes((0xe9, 0x80, 0))
     code = bytearray(b'\x48\x83\xec\x48')  # Shadow space + four stack arguments + alignment.
+    # Original MSVC stack probes use GS, independently of Linux libc's FS TLS.
+    code += b'\x65\x48\x8b\x04\x25\x30\x00\x00\x00\x48\x3b\x40\x30\x74\x02\x0f\x0b'
+    code += b'\x65\x48\x8b\x0c\x25\x10\x00\x00\x00\x48\x39\xcc\x77\x02\x0f\x0b'
     def call(iat):
         code.extend(b'\xff\x15' + struct.pack('<i', iat - (0x1000 + len(code) + 6)))
     code += b'\xb9' + struct.pack('<I', 2048)
