@@ -9,6 +9,8 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
+#include <iomanip>
+#include <iostream>
 #include <locale>
 #include <map>
 #include <memory>
@@ -24,7 +26,9 @@ inline uint32_t win_error(int value){switch(value){case ENOENT:return 2;case ENO
 inline void error(){set_error(win_error(errno));}
 inline std::u16string utf16(const std::string& value){std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> converter;return converter.from_bytes(value);}
 inline std::string utf8(const uint16_t* value,size_t count){std::u16string staged;staged.reserve(count);for(size_t i=0;i<count;++i)staged.push_back(char16_t(value[i]));std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> converter;return converter.to_bytes(staged);}
-inline std::string path(const uint16_t* value){size_t size=0;while(size<32768&&value[size])++size;if(size==32768)throw std::runtime_error("Unterminated native filename");auto result=utf8(value,size);std::replace(result.begin(),result.end(),'\\','/');if(result.size()>1&&result[1]==':')throw std::runtime_error("Windows drive namespace is not mapped");return result;}
+// GE6 recognizes drive/UNC absolute names, not POSIX / names. Z: explicitly
+// exposes the Linux root to the original path resolver; other drives stop.
+inline std::string path(const uint16_t* value){size_t size=0;while(size<32768&&value[size])++size;if(size==32768)throw std::runtime_error("Unterminated native filename");auto result=utf8(value,size);std::replace(result.begin(),result.end(),'\\','/');if(result.size()>1&&result[1]==':'){if((result[0]!='Z'&&result[0]!='z')||result.size()<3||result[2]!='/')throw std::runtime_error("Only absolute Z: paths map the Linux root");result.erase(0,2);}return result;}
 struct File {int fd;};
 struct Search {std::vector<std::string> names;size_t index=0;};
 inline std::map<uintptr_t,std::unique_ptr<File>> files;
@@ -51,7 +55,7 @@ inline GE6_FS_MS uintptr_t create(const uint16_t* name,uint32_t access,uint32_t 
     trace("CreateFileW");if(security||template_file||share>7||(flags&0x40000000u)||(access&~0xc0000004u))throw std::runtime_error("Unsupported synchronous file-open contract");
     int mode=(access&0x40000000u)?((access&0x80000000u)?O_RDWR:O_WRONLY):O_RDONLY;if(access&4)mode=O_WRONLY|O_APPEND;
     switch(disposition){case 1:mode|=O_CREAT|O_EXCL;break;case 2:mode|=O_CREAT|O_TRUNC;break;case 3:break;case 4:mode|=O_CREAT;break;case 5:mode|=O_TRUNC;break;default:throw std::runtime_error("Unsupported file creation disposition");}
-    int opened=open(path(name).c_str(),mode|O_CLOEXEC,0666);if(opened<0){error();return ~uintptr_t(0);}auto record=std::make_unique<File>();record->fd=opened;auto handle=reinterpret_cast<uintptr_t>(record.get());files.emplace(handle,std::move(record));return handle;
+    auto local=path(name);int opened=open(local.c_str(),mode|O_CLOEXEC,0666);if(opened<0){int saved=errno;std::cerr<<"GE6_FILE_OPEN_ERROR path="<<std::quoted(local)<<" error="<<win_error(saved)<<'\n';set_error(win_error(saved));return ~uintptr_t(0);}auto record=std::make_unique<File>();record->fd=opened;auto handle=reinterpret_cast<uintptr_t>(record.get());files.emplace(handle,std::move(record));return handle;
 }
 inline GE6_FS_MS int read(uintptr_t handle,void* buffer,uint32_t count,uint32_t* done,void* overlapped){trace("ReadFile");if(overlapped)throw std::runtime_error("Overlapped read unsupported");if(done)*done=0;ssize_t size;do{size=::read(fd(handle),buffer,count);}while(size<0&&errno==EINTR);if(size<0){error();return 0;}if(done)*done=uint32_t(size);return 1;}
 inline GE6_FS_MS int write(uintptr_t handle,const void* buffer,uint32_t count,uint32_t* done,void* overlapped){trace("WriteFile");if(overlapped)throw std::runtime_error("Overlapped write unsupported");if(done)*done=0;ssize_t size;do{size=::write(fd(handle),buffer,count);}while(size<0&&errno==EINTR);if(size<0){error();return 0;}if(done)*done=uint32_t(size);return 1;}

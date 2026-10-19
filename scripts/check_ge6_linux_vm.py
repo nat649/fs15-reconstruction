@@ -70,7 +70,7 @@ def build_initramfs(alpine, executable, image, resources=None, archives=False):
 echo GE6_LINUX_VM_STARTED
 /usr/bin/busybox uname -a
 cd /game
-/ge6-boot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile /profile'
+/ge6-boot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile'
 result=$?
 echo GE6_LINUX_VM_RESULT=$result
 /usr/bin/busybox poweroff -f

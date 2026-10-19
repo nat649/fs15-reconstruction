@@ -268,6 +268,9 @@ int main(int argc,char** argv){
             require(ge6_fs::copy(wide(source),wide(copy),1)&&!ge6_fs::copy(wide(source),wide(copy),1)&&last_error==183&&ge6_fs::copy(wide(source),wide(copy),0),"CopyFileW disposition differs");
             handle=ge6_fs::create(wide(copy),0x80000000u,1,nullptr,3,0x80,0);uint64_t copied_time=0;require(handle!=~uintptr_t(0)&&ge6_fs::times(handle,nullptr,nullptr,&copied_time)&&copied_time==modified,"CopyFileW modification time differs");require(close_handle(handle),"Copied handle cleanup differs");
             auto absent=root+u"/absent";require(ge6_fs::find_first(wide(absent),found.data())==~uintptr_t(0)&&last_error==2,"Missing-file result differs");
+            auto drive=u"Z:"+source;require(ge6_fs::path(wide(drive))==ge6_fs::path(wide(source)),"Linux root drive mapping differs");
+            handle=ge6_fs::create(wide(drive),0x80000000u,1,nullptr,3,0x80,0);require(handle!=~uintptr_t(0)&&close_handle(handle),"Mapped drive cannot open original file");
+            for(const auto* invalid:{u"C:/unmapped",u"Z:relative"}){bool rejected=false;try{ge6_fs::path(reinterpret_cast<const uint16_t*>(invalid));}catch(const std::runtime_error&){rejected=true;}require(rejected,"Unsupported drive path accepted");}
             const unsigned char tractor[]{0xf0,0x9f,0x9a,0x9c,0};uint16_t utf[8]{};char roundtrip[16]{};require(widen(65001,0,tractor,-1,utf,8)==3&&utf[0]==0xd83d&&utf[1]==0xde9c,"UTF8 surrogate conversion differs");require(narrow(65001,0,utf,-1,roundtrip,16,nullptr,nullptr)==5&&!std::memcmp(roundtrip,tractor,5),"UTF8 byte count/roundtrip differs");
             std::cout<<"GE6 synchronous file and UTF8 fixtures passed; full Windows sharing/namespace parity is not claimed\n";return 0;
         }
@@ -281,6 +284,7 @@ int main(int argc,char** argv){
         char* absolute=realpath(argv[2],nullptr);require(absolute!=nullptr,"Cannot resolve private image path");image_path=absolute;std::free(absolute);std::ifstream file(argv[2],std::ios::binary|std::ios::ate);require(bool(file),"Cannot open private GE6 image");auto size=file.tellg();require(size>0&&size<=0x4000000,"Invalid image file size");std::vector<uint8_t> raw(static_cast<size_t>(size));file.seekg(0);file.read(reinterpret_cast<char*>(raw.data()),size);require(bool(file),"Truncated image file");
         if(!fixture){std::array<unsigned char,SHA256_DIGEST_LENGTH> hash{};SHA256(raw.data(),raw.size(),hash.data());std::ostringstream text;for(auto b:hash)text<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(b);require(text.str()==expected||text.str()==local_expected,"GE6 image hash differs from pinned private reference/local platform");image_kind=text.str()==expected?"reference":"local-platform";}
         std::cout<<"GE6_IMAGE_KIND="<<image_kind<<'\n';
+        if(!fixture)image_path="Z:"+image_path;
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
         Image image;image.load(raw,fixture);image.run();return 0;
