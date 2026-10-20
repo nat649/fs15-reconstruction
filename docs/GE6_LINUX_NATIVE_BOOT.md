@@ -106,10 +106,14 @@ device `OpenAL Soft` and 512 sources. This isolated VM explicitly selects the
 silent `null` backend; audible desktop/game audio is not verified. The next
 observed dependency after audio was `d3d9.dll!Direct3DCreate9`, caller
 `0x140049a26`, in the original adapter probe. Its documented unavailable result
-now lets original startup continue. The current explicit stop is
-`KERNEL32.dll!SetConsoleCtrlHandler`, caller `0x140400bf8`, in the original
-SDL/CRT signal initialization. The run binds 146 imported names and records
-1,651 OS/audio calls before stopping. Import totals are not completion
+now lets original startup continue. The original SDL/CRT signal initialization
+registers its native control handler at `0x1404009d8`. Startup reaches the
+original SDL application-class preparation routine at `0x14037deb0`, then
+stops explicitly at `USER32.dll!LoadImageW`, caller `0x14037dfa1`. This call
+requests the application-class icon before `RegisterClassW`; neither a window
+nor a graphics context has been created. The pinned run binds 147 imported
+names and records 1,655 OS/audio calls before stopping; scheduling may change
+the number of worker timer calls. Import totals are not completion
 percentages. These startup log sections do not
 demonstrate a simulated game world, delivered input, a rendered window or
 playable physics.
@@ -123,13 +127,13 @@ Other drives and drive-relative paths are rejected.
 The [separate local-image evidence](../analysis/ge6-linux-local-boot-validation.json)
 records the input/source/ELF/log hashes and the current stop; it does not replace
 the reference-image evidence above. Dedicated
-[Linux CI run 39454323743](https://github.com/nat649/fs15-reconstruction/actions/runs/39454323743)
+[Linux CI run 39457537661](https://github.com/nat649/fs15-reconstruction/actions/runs/39457537661)
 passes authored ABI, Unicode, file lifecycle/search/copy/timestamp, drive mapping,
 compatibility-version and unavailable-platform contracts for that source,
 plus real UDP loopback, timer-slack/affinity, CPU/memory/registry queries,
 manual/auto-reset event wakeups, virtual-memory protection/lifetime checks and
 actual pthread callback/TLS/FLS lifecycle tests, plus OpenAL PCM mixing and
-Microsoft float ABI checks. An authored PE fixture also
+Microsoft float ABI checks and actual console-signal callbacks. An authored PE fixture also
 creates and waits for PE worker instructions through a six-argument Microsoft
 ABI import, checks the child's GS stack/self metadata and verifies isolated TLS.
 Public CI does not contain the original game. The missing optional
@@ -193,6 +197,30 @@ documented failure (`nullptr`), allowing the original optional adapter probe
 to choose its own continuation. It does not create an adapter, synthesize a GPU
 identity or implement Direct3D rendering. The original application supports a
 separate default graphics path; connecting its window/context APIs remains work.
+
+`SetConsoleCtrlHandler` registers/removes actual callbacks, following reverse
+registration order and stopping at a handled event. Linux `SIGINT` maps to
+`CTRL_C_EVENT`, and `SIGQUIT` to `CTRL_BREAK_EVENT`; the null-handler ignore flag
+affects only Ctrl+C. The POSIX signal routine writes to a nonblocking pipe;
+it never calls original PE code or takes C++ locks. A dispatcher starts a fresh
+thread for each queued event, installs the GS stack prefix, calls the Microsoft
+ABI handlers and performs FLS cleanup before restoring GS. Notifications are
+serialized. Host shutdown joins this dispatcher before unmapping original code.
+The two pipe descriptors remain owned until process exit so an in-flight signal
+handler cannot write into a recycled descriptor. Initialization failures after
+signal installation also retain those descriptors and restore host dispositions.
+See the [Windows API contract](https://learn.microsoft.com/en-us/windows/console/setconsolectrlhandler).
+
+Authored fixtures send real SIGINT/SIGQUIT, check order, ignore/removal (including
+self-removal), distinct callback TIDs, GS/TLS isolation and FLS cleanup. A small
+authored PE receives a real SIGINT through the IAT-registered callback and checks
+its GS metadata and distinct TID. An unhandled signal test exits with Linux
+status 130. Close/logoff/shutdown console events, console attachment/reset,
+debugger exceptions, child ignore-flag inheritance and complete Windows process
+status semantics remain unsupported; pipe saturation/POSIX signals can coalesce
+notifications. The original-game boot test observes **registration only**; it
+does not inject a control event or establish original handler return/shutdown.
+Aggregate evidence distinguishes registration from a completed callback.
 
 OS bindings use Linux clocks/process/thread identifiers, allocations, recursive
 mutexes and bounded main-thread CRT slot/module services. These are authored
