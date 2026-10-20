@@ -92,6 +92,7 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-events'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
+    subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
     rejected = subprocess.run([str(exe.resolve()), '--check-unknown-exception'], capture_output=True, text=True, timeout=15)
     assert rejected.returncode == 78 and 'KERNEL32.dll!RaiseException' in rejected.stderr and 'exception=0xdeadbeef' in rejected.stderr, rejected
     rejected = subprocess.run([str(exe.resolve()), '--check-alertable-wait'], capture_output=True, text=True, timeout=15)
