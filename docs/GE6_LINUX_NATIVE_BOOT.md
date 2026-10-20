@@ -23,7 +23,7 @@ image described below. Original instructions are not distributed.
 On Linux x86_64:
 
 ```sh
-sudo apt-get install g++ cmake libssl-dev
+sudo apt-get install g++ cmake libssl-dev libasound2-dev libpulse-dev
 cmake -S src/ge6_linux -B build/ge6-linux-boot -DCMAKE_BUILD_TYPE=Release
 cmake --build build/ge6-linux-boot --parallel 2
 build/ge6-linux-boot/FS15GE6LinuxBoot \
@@ -32,7 +32,9 @@ build/ge6-linux-boot/FS15GE6LinuxBoot \
 
 The root portable CMake also exposes `FS15_BUILD_GE6_LINUX_BOOT=ON`. Linux
 workflow artifacts include `bin/FS15GE6LinuxBoot`; this remains a diagnostic,
-not a playable GE6 build. OpenSSL only checks the original-image SHA-256.
+not a playable GE6 build. OpenSSL checks the original-image SHA-256. CMake
+downloads a SHA-256-pinned OpenAL Soft source release for Linux audio; it does
+not download original game files. See [dependency and relinking materials](../src/ge6_linux/AUDIO_DEPENDENCY.md).
 
 ## Observed original-code Linux result (2026-10-19)
 
@@ -98,9 +100,19 @@ that worker (`timeBeginPeriod` and an event wait in the observed run).
 With the unchanged original integrity manifest, checked map files and two GAR
 archives staged locally, GE6 advances through its integrity-check stage and
 writes its original Physics System and Input System initialization messages.
-The next explicit stop is `OpenAL32.dll!alcOpenDevice`, caller `0x14004b6a4`.
-Linux audio transport is not connected. These log sections do not demonstrate
-a simulated game world, delivered input, a rendered window or playable physics.
+The original audio initialization now opens a real OpenAL Soft device and
+context through the Linux ABI transport. Its own journal reports OpenAL 1.1,
+device `OpenAL Soft` and 512 sources. This isolated VM explicitly selects the
+silent `null` backend; audible desktop/game audio is not verified. The next
+observed dependency after audio was `d3d9.dll!Direct3DCreate9`, caller
+`0x140049a26`, in the original adapter probe. Its documented unavailable result
+now lets original startup continue. The current explicit stop is
+`KERNEL32.dll!SetConsoleCtrlHandler`, caller `0x140400bf8`, in the original
+SDL/CRT signal initialization. The run binds 146 imported names and records
+1,651 OS/audio calls before stopping. Import totals are not completion
+percentages. These startup log sections do not
+demonstrate a simulated game world, delivered input, a rendered window or
+playable physics.
 
 The original file manager, configuration parser, logger and Lua allocation code
 remain in control; these additions are authored OS transport. `Z:/` maps
@@ -111,12 +123,13 @@ Other drives and drive-relative paths are rejected.
 The [separate local-image evidence](../analysis/ge6-linux-local-boot-validation.json)
 records the input/source/ELF/log hashes and the current stop; it does not replace
 the reference-image evidence above. Dedicated
-[Linux CI run 39442120023](https://github.com/nat649/fs15-reconstruction/actions/runs/39442120023)
+[Linux CI run 39454323743](https://github.com/nat649/fs15-reconstruction/actions/runs/39454323743)
 passes authored ABI, Unicode, file lifecycle/search/copy/timestamp, drive mapping,
 compatibility-version and unavailable-platform contracts for that source,
 plus real UDP loopback, timer-slack/affinity, CPU/memory/registry queries,
 manual/auto-reset event wakeups, virtual-memory protection/lifetime checks and
-actual pthread callback/TLS/FLS lifecycle tests. An authored PE fixture also
+actual pthread callback/TLS/FLS lifecycle tests, plus OpenAL PCM mixing and
+Microsoft float ABI checks. An authored PE fixture also
 creates and waits for PE worker instructions through a six-argument Microsoft
 ABI import, checks the child's GS stack/self metadata and verifies isolated TLS.
 Public CI does not contain the original game. The missing optional
@@ -127,6 +140,12 @@ captured-block hash, bounded startup observations and resource hashes are publis
 `Windows NT 6.0` text comes from original logging of the compatibility API level;
 the actual host kernel remains Linux. Journal output is evidence of partial
 initialization, not proof of a menu, renderer or loaded game world.
+
+The same audio-enabled Linux executable was also retested against the
+unmodified-instruction reference image: it still stops at the original
+`SteamAPI_RestartAppIfNecessary`, caller `0x14000c8b4` (129 traced OS calls).
+The earlier source-pinned reference report is retained separately; the audio
+and unavailable graphics bindings do not synthesize platform access.
 
 The private VM invocation can stage startup configuration files from the local
 prepared game directory:
@@ -141,7 +160,9 @@ python3 scripts/check_ge6_linux_vm.py \
   --output build/private-ge6-linux-vm
 ```
 
-The helper passes the original `-profile Z:/profile` option. By default it stages
+The helper passes the original `-profile Z:/profile` option and explicitly sets
+`ALSOFT_DRIVERS=null`, recorded separately in the evidence. It leaves the
+original audio-enabled game configuration unchanged. By default it stages
 only four named startup files; `--archives` additionally stages the two original
 GAR archives locally. `--integrity-resources` adds the original `crc_files.xml`
 and its two checked files, `data/maps/map01.i3d` and `data/maps/map01/map01_dem.png`.
@@ -151,6 +172,27 @@ serial output on timeout. It attaches no network device. Generated image archive
 and full logs embed or describe private input and remain under ignored `build/`.
 
 ## OS transport and remaining work
+
+All 32 statically imported OpenAL functions have typed Microsoft-x64 wrappers
+which call the actual Linux OpenAL Soft 1.24.3 implementation. Device/context
+creation, errors, buffers, source queues and mixing are provided by that
+third-party library. Only the two Windows router default selectors map to the
+Linux default device; explicit device names are preserved and unknown ones
+fail. No System V extension function pointer is returned to original PE code.
+ALSA and PulseAudio backends are compiled in; the VM/CI select silent output.
+Authored tests verify actual PCM loopback energy, queue order, source state,
+errors and cleanup. A separate authored PE fixture calls the wrappers through
+its IAT and checks the Windows XMM1 argument for a listener gain value. The
+workflow also relinks the supplied object/archive and repeats the mixer test.
+Complete upstream source, notices and relinking materials accompany installed
+boot artifacts. This reuses Linux audio middleware; it does not reconstruct
+GE6's engine logic or the original Windows OpenAL DLL.
+
+There is no Direct3D9 service in this Linux transport. Its factory reports
+documented failure (`nullptr`), allowing the original optional adapter probe
+to choose its own continuation. It does not create an adapter, synthesize a GPU
+identity or implement Direct3D rendering. The original application supports a
+separate default graphics path; connecting its window/context APIs remains work.
 
 OS bindings use Linux clocks/process/thread identifiers, allocations, recursive
 mutexes and bounded main-thread CRT slot/module services. These are authored
@@ -204,7 +246,7 @@ against concurrent mutation. Process exit and missing-import stops terminate
 directly instead of destructing/unmapping code beneath live native workers.
 Authored fixtures verify two workers, isolated errors/slots, 1000 protected
 counter updates, real stack bounds and FLS callbacks. The original VM workers
-are alive when the audio stop ends the process; complete original worker return,
+are alive when the startup dependency stop ends the process; complete original worker return,
 shutdown and cleanup remain unverified. `ExitThread`, arbitrary thread suspension,
 termination, priorities, exception dispatch and processor groups remain open.
 

@@ -27,7 +27,10 @@ reads actual Linux CPU/memory information and reserves/commits memory for its
 original embedded Lua allocator. Two original workers now execute on Linux
 threads with separate stacks and TLS/FLS state. With unchanged integrity inputs
 and GAR archives staged privately, startup reaches the original physics/input
-log sections and stops at `OpenAL32.dll!alcOpenDevice`; audio transport is next.
+log sections and initializes OpenAL audio through Linux OpenAL Soft (512 sources
+in the isolated VM). The VM uses an explicit silent backend; audible gameplay
+is unverified. After the original optional graphics probe, startup now stops
+at `SetConsoleCtrlHandler` in SDL/CRT initialization.
 These logs do not establish playable physics or working input/rendering.
 That input retains its
 previous Windows platform-bootstrap modification; the Linux loader adds no

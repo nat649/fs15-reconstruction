@@ -164,7 +164,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Execute two original workers through `CreateThread` on Linux with per-thread NT_TIB stacks, separate TLS/FLS pools/values and synchronized OS registries; verify PE callbacks, suspended startup/resume, waits, return codes and FLS cleanup with authored Linux fixtures.
 - [x] Transport the observed debugger thread-name packet to Linux names without swallowing other exceptions; connect non-alertable script-startup waits and retain explicit stops for unsupported APC waits.
 - [x] Stage the unchanged original CRC manifest, checked map files and both GAR archives privately; observe original Physics System/Input System startup logs and reach `OpenAL32.dll!alcOpenDevice`.
-- [ ] Connect the original OpenAL imports to Linux audio services, then continue original window/renderer startup.
+- [x] Connect all 32 original OpenAL imports to pinned Linux OpenAL Soft; observe original audio initialization with 512 sources in the headless VM and verify real PCM loopback mixing and PE float ABI fixtures.
+- [ ] Validate audible original game audio on a Linux desktop; the VM explicitly uses OpenAL Soft's silent backend.
+- [x] Preserve the optional original D3D9 adapter probe's unavailable/failure path and let native startup continue without a synthetic GPU.
+- [ ] Connect original SDL/CRT console-signal initialization (`SetConsoleCtrlHandler` is the current stop), then continue original window/context/renderer startup.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
