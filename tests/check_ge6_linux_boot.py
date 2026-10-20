@@ -108,6 +108,52 @@ def check(exe, workdir):
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x140001' in result.stderr, result
     result = run(fixture(), '--image')
     assert result.returncode == 1 and 'hash differs' in result.stderr, result
+    threaded = fixture()
+    thread_names = (b'CreateThread', b'WaitForSingleObject', b'CloseHandle', b'GetCurrentThreadId', b'TlsGetValue', b'TlsSetValue', b'TlsAlloc', b'TlsFree')
+    for i, name in enumerate(thread_names):
+        struct.pack_into('<Q', threaded, 0x680 + i * 8, 0x2200 + i * 64)
+        struct.pack_into('<Q', threaded, 0x700 + i * 8, 0x2200 + i * 64)
+        at = 0x802 + i * 64
+        threaded[at:at + 62] = (name + b'\0').ljust(62, b'\0')
+    def thread_code(rva):
+        code = bytearray(b'\x53\x48\x83\xec' + (b'\x40' if rva == 0x1000 else b'\x20'))
+        def call(iat):
+            code.extend(b'\xff\x15' + struct.pack('<i', iat - (rva + len(code) + 6)))
+        return code, call
+    code, call = thread_code(0x1000)
+    call(0x2130)  # TlsAlloc; parent and child use the same index.
+    code += b'\x48\xbb' + struct.pack('<Q', 0x140003000) + b'\x89\x03\x89\xc1\xba\x11\x11\x00\x00'
+    call(0x2128)
+    code += b'\x83\xf8\x01\x74\x02\x0f\x0b'
+    call(0x2118)
+    code += b'\x89\x43\x04\x31\xc9\x31\xd2\x49\xb8' + struct.pack('<Q', 0x140001100)
+    code += b'\x49\x89\xd9\x48\xc7\x44\x24\x20\x00\x00\x00\x00\x48\x8d\x43\x0c\x48\x89\x44\x24\x28'
+    call(0x2100)  # Six-argument Microsoft ABI CreateThread.
+    code += b'\x48\x85\xc0\x75\x02\x0f\x0b\x48\x89\xc3\x48\x89\xd9\xba\x88\x13\x00\x00'
+    call(0x2108)
+    code += b'\x85\xc0\x74\x02\x0f\x0b\x48\x89\xd9'
+    call(0x2110)
+    code += b'\x83\xf8\x01\x74\x02\x0f\x0b\x48\xbb' + struct.pack('<Q', 0x140003000) + b'\x8b\x0b'
+    call(0x2120)
+    code += b'\x48\x3d\x11\x11\x00\x00\x74\x02\x0f\x0b\x8b\x43\x04\x3b\x43\x08\x75\x02\x0f\x0b\x8b\x0b'
+    call(0x2138)
+    code += b'\x48\x83\xc4\x40\x5b\xc3'
+    assert len(code) <= 0x100
+    threaded[0x400:0x500] = code.ljust(0x100, b'\0')
+    code, call = thread_code(0x1100)
+    code += b'\x48\x89\xcb\x65\x48\x8b\x04\x25\x30\x00\x00\x00\x48\x3b\x40\x30\x74\x02\x0f\x0b'
+    code += b'\x65\x48\x8b\x04\x25\x10\x00\x00\x00\x48\x39\xc4\x77\x02\x0f\x0b'
+    call(0x2118)
+    code += b'\x89\x43\x08\x8b\x0b'
+    call(0x2120)
+    code += b'\x48\x85\xc0\x74\x02\x0f\x0b\x8b\x0b\xba\x22\x22\x00\x00'
+    call(0x2128)
+    code += b'\xb8\x42\x00\x00\x00\x48\x83\xc4\x20\x5b\xc3'
+    assert len(code) <= 0x100
+    threaded[0x500:0x600] = code.ljust(0x100, b'\0')
+    result = run(threaded)
+    assert result.returncode == 0 and 'GE6_NATIVE_THREAD_FIRST_OS name=GetCurrentThreadId entry=0x140001100' in result.stdout, result
+    assert 'GE6_NATIVE_THREAD_EXIT entry=0x140001100' in result.stdout and 'code=66' in result.stdout, result
     network = fixture()
     network[0x640:0x660] = b'WS2_32.dll\0'.ljust(32, b'\0')
     for i, ordinal in enumerate((115, 116, 111, 0, 0)):

@@ -41,7 +41,7 @@ inline GE6_THREAD_MS uintptr_t create(void* security,size_t stack,Entry entry,vo
     trace("CreateThread");if(security){set_error(50);return 0;}if(!entry||(flags&~0x10004u)||stack>64*1024*1024){set_error(87);return 0;}
     auto bytes=stack?((flags&0x10000u)?stack:std::max(stack,default_stack)):default_stack;auto page=size_t(sysconf(_SC_PAGESIZE));bytes=(std::max(bytes,size_t(PTHREAD_STACK_MIN))+page-1)&~(page-1);
     auto state=std::make_shared<State>();state->entry=entry;state->argument=argument;state->suspended=(flags&4)?1:0;uintptr_t handle;{std::lock_guard<std::mutex> guard(registry_mutex);handle=next++;registry.emplace(handle,state);}
-    pthread_attr_t attr;int error=pthread_attr_init(&attr);if(!error){error=pthread_attr_setstacksize(&attr,bytes);if(!error)error=pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);if(!error){auto* transfer=new std::shared_ptr<State>(state);++running;error=pthread_create(&state->native,&attr,start,transfer);if(error){--running;delete transfer;}}pthread_attr_destroy(&attr);}
+    pthread_attr_t attr;int error=pthread_attr_init(&attr);if(!error){error=pthread_attr_setstacksize(&attr,bytes);if(!error)error=pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);if(!error){auto* transfer=new std::shared_ptr<State>(state);++running;{std::lock_guard<std::mutex> guard(state->mutex);error=pthread_create(&state->native,&attr,start,transfer);}if(error){--running;delete transfer;}}pthread_attr_destroy(&attr);}
     if(error){std::lock_guard<std::mutex> guard(registry_mutex);registry.erase(handle);set_error(error==EINVAL?87:8);return 0;}
     std::unique_lock<std::mutex> lock(state->mutex);state->changed.wait(lock,[&](){return state->ready;});if(tid)*tid=state->tid;return handle;
 }
@@ -52,7 +52,7 @@ inline GE6_THREAD_MS int close(uintptr_t handle){trace("CloseHandle(thread)");st
 inline bool name(uint32_t tid,const char* raw){
     trace("ThreadNameNotification");std::string label(raw);label.resize(std::min(label.size(),size_t(15)));int error=ESRCH;
     if(tid==0xffffffffu||tid==uint32_t(syscall(SYS_gettid)))error=pthread_setname_np(pthread_self(),label.c_str());
-    else{std::shared_ptr<State> state;{std::lock_guard<std::mutex> guard(registry_mutex);for(auto& item:registry)if(item.second->tid==tid){state=item.second;break;}}if(state){std::lock_guard<std::mutex> guard(state->mutex);if(!state->done)error=pthread_setname_np(state->native,label.c_str());}}
+    else{std::vector<std::shared_ptr<State>> states;{std::lock_guard<std::mutex> guard(registry_mutex);for(auto& item:registry)states.push_back(item.second);}for(auto& state:states){std::lock_guard<std::mutex> guard(state->mutex);if(state->tid==tid){if(!state->done)error=pthread_setname_np(state->native,label.c_str());break;}}}
     if(error){set_error(error==ESRCH?87:5);return false;}return true;
 }
 #undef GE6_THREAD_MS
