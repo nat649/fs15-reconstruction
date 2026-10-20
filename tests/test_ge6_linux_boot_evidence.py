@@ -36,6 +36,17 @@ class BootEvidenceTests(unittest.TestCase):
         self.assertFalse(result['full_engine_initialization_verified'])
         self.assertFalse(result['menu_verified'])
 
+    def test_worker_entry_without_native_os_call_is_not_execution_evidence(self):
+        result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\n')
+        self.assertEqual(result['original_workers_with_os_calls'], [])
+
+    def test_worker_execution_requires_matching_image_entry(self):
+        result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\nGE6_NATIVE_THREAD_FIRST_OS name=SetEvent entry=0x140043620 tid=12\n')
+        self.assertEqual(result['original_workers_with_os_calls'], [dict(entry='0x140043620', linux_tid=12, first_os_call='SetEvent')])
+        self.assertFalse(result['original_worker_shutdown_verified'])
+        with self.assertRaisesRegex(ValueError, 'Worker OS-call'):
+            self.parse('local-platform', 'GE6_NATIVE_THREAD_FIRST_OS name=SetEvent entry=0x140043620 tid=13\n')
+
     def parse(self, kind, extra=''):
         fixtures = Path(__file__).resolve().parents[1] / 'build/test-fixtures/ge6-boot-evidence'
         fixtures.mkdir(parents=True, exist_ok=True)

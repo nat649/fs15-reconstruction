@@ -58,6 +58,7 @@ def build_initramfs(alpine, executable, image, resources=None, archives=False, i
     add('dev/urandom', mode=0o20666, device=(1, 9))
     add('ge6-boot', executable.read_bytes(), 0o100755)
     add('game/x64/FarmingSimulator2015Game.exe', original)
+    resource_evidence = []
     if resources is not None:
         names = ('game.xml', 'FarmingSimulator2015.xml', 'VERSION', 'steamdata.dat')
         if archives:
@@ -77,7 +78,9 @@ def build_initramfs(alpine, executable, image, resources=None, archives=False, i
                 if directory != '.' and directory not in directories:
                     add(directory, mode=0o40755)
                     directories.add(directory)
-            add(target, source_file.read_bytes())
+            data = source_file.read_bytes()
+            add(target, data)
+            resource_evidence.append(f'echo GE6_VM_RESOURCE path={name} sha256={hashlib.sha256(data).hexdigest()} size={len(data)}')
     init = b'''#!/bin/sh
 /usr/bin/busybox mount -t proc proc /proc
 echo GE6_LINUX_VM_STARTED
@@ -94,6 +97,7 @@ fi
 /usr/bin/busybox poweroff -f
 '''
     init = init.replace(b'echo GE6_LINUX_VM_STARTED', b'echo GE6_LINUX_VM_STARTED\necho GE6_VM_IMAGE_KIND=' + kind.encode())
+    init = init.replace(b'cd /game', ('\n'.join(resource_evidence) + '\ncd /game').encode())
     add('init', init, 0o100755)
     add('TRAILER!!!')
     return gzip.compress(out, mtime=0)
@@ -120,7 +124,11 @@ def main():
                '-kernel', str(args.kernel), '-initrd', str(initramfs),
                '-append', 'console=ttyS0 rdinit=/init panic=-1 quiet',
                '-nographic', '-monitor', 'none', '-nic', 'none', '-no-reboot']
-    result = subprocess.run(command, capture_output=True, timeout=60)
+    try:
+        result = subprocess.run(command, capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired as error:
+        (args.output / 'serial.log').write_bytes((error.stdout or b'') + (error.stderr or b''))
+        raise RuntimeError('Linux diagnostic timed out; partial private serial log was preserved') from error
     log = result.stdout + result.stderr
     (args.output / 'serial.log').write_bytes(log)
     text = log.decode(errors='replace')

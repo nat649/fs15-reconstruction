@@ -1,5 +1,6 @@
 """Authored payloads validate private VM packaging; no original code executes."""
 from pathlib import Path
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -33,6 +34,8 @@ class VmPackagingTests(unittest.TestCase):
             unpacked = dict(entries)
             for name in names:
                 self.assertEqual(unpacked['game/' + name], (resources / name).read_bytes())
+                digest = hashlib.sha256((resources / name).read_bytes()).hexdigest()
+                self.assertIn(f'path={name} sha256={digest}'.encode(), unpacked['init'])
             self.assertIn('game/data/maps/map01', unpacked)
             self.assertNotIn('game/dataS.gar', unpacked)
             self.assertIn(b'-profile Z:/profile', unpacked['init'])

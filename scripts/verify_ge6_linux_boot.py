@@ -44,6 +44,14 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
             for name in sources}
     journal = re.search(r'^GE6_ORIGINAL_LOG_BEGIN\r?\n(.*?)^GE6_ORIGINAL_LOG_END', text, re.MULTILINE | re.DOTALL)
     original_log = journal[1].encode() if journal else b''
+    entries = set(re.findall(r'^GE6_NATIVE_THREAD_ENTER entry=(0x[0-9a-f]+) tid=(\d+) code=0', text, re.MULTILINE))
+    workers = []
+    for api, entry, tid in re.findall(r'^GE6_NATIVE_THREAD_FIRST_OS name=(\S+) entry=(0x[0-9a-f]+) tid=(\d+)', text, re.MULTILINE):
+        if (entry, tid) not in entries or not 0x140000000 <= int(entry, 16) < 0x140480000:
+            raise ValueError('Worker OS-call evidence has no matching original-image thread entry')
+        workers.append(dict(entry=entry, linux_tid=int(tid), first_os_call=api))
+    resources = [dict(path=path, sha256=digest, size=int(size)) for path, digest, size in
+                 re.findall(r'^GE6_VM_RESOURCE path=(\S+) sha256=([0-9a-f]{64}) size=(\d+)', text, re.MULTILINE)]
     return dict(scope='Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port',
                 source_commit=commit, committed_source_sha256=pins,
                 ci_run=f'https://github.com/nat649/fs15-reconstruction/actions/runs/{int(run_id)}',
@@ -60,6 +68,10 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 com_initialization_reported_unavailable='GE6_COM_UNAVAILABLE' in text,
                 original_core_startup_log_observed=b'GIANTS Engine Runtime 6.0.2 64bit' in original_log,
                 captured_original_log_sha256=hashlib.sha256(original_log).hexdigest() if journal else None,
+                original_workers_with_os_calls=workers,
+                original_worker_shutdown_verified=False,
+                original_physics_startup_log_observed=b'Physics System' in original_log,
+                staged_private_resources=resources,
                 stopped_at=dict(library=blocked[1], symbol=blocked[2], caller=blocked[3], traced_os_calls=int(blocked[4])),
                 full_engine_initialization_verified=False, original_renderer_initialized=False,
                 menu_verified=False, playable_linux_game_verified=False, recompiled_engine=False,
