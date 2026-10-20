@@ -64,6 +64,8 @@ std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
 int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
 constexpr uintptr_t nt_token=0x47453602;
+constexpr uintptr_t winmm_token=0x47453603;
+std::map<uintptr_t,uint32_t> explicit_module_refs;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
 void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';}
@@ -107,11 +109,13 @@ MS uint32_t tls_alloc(){return alloc_slot(nullptr);}
 MS int set_slot(uint32_t i,void* p){require(i<slots.size(),"Invalid TLS slot");slots[i]=p;return 1;}
 MS void* get_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");last_error=0;return slots[i];}
 MS int free_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");slots[i]=nullptr;return 1;}
-uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;last_error=126;return 0;}
+uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;last_error=126;return 0;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
+MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}auto handle=module(name);if(handle)++explicit_module_refs[handle];else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
+MS int free_library(uintptr_t handle){trace("FreeLibrary");auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
-MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
+MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){return ge6_fs::type(handle);}
@@ -223,6 +227,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
     BIND("CreateEventA",ge6_events::create);BIND("SetEvent",ge6_events::set);BIND("ResetEvent",ge6_events::reset);BIND("WaitForSingleObject",ge6_events::wait);
     BIND("VirtualFree",ge6_vm::free);BIND("VirtualQuery",ge6_vm::query);
+    BIND("LoadLibraryA",load_library_a);BIND("FreeLibrary",free_library);
 #undef BIND
     return 0;
 }
@@ -305,6 +310,7 @@ int main(int argc,char** argv){
             auto manual=ge6_events::create(nullptr,1,1,nullptr);require(manual&&ge6_events::wait(manual,0)==0&&ge6_events::wait(manual,0)==0,"Manual event did not remain signaled");require(ge6_events::reset(manual)&&ge6_events::wait(manual,3)==258,"Manual reset/timeout differs");require(close_handle(automatic)&&close_handle(manual)&&!close_handle(manual)&&last_error==6,"Event handle lifetime differs");require(ge6_events::wait(manual,0)==0xffffffffu&&last_error==6&&ge6_events::create(nullptr,0,0,"unsupported-name")==0&&last_error==50,"Unknown/named event accepted");std::cout<<"GE6 unnamed auto/manual event waits, actual worker wakeup and lifetime fixtures passed; native PE threads and named events remain unsupported\n";return 0;
         }
         if(argc==2&&std::string(argv[1])=="--check-system"){
+            auto mm=load_library_a("winmm.dll");require(mm==winmm_token&&load_library_a("WINMM.DLL")==mm&&get_proc(mm,"timeBeginPeriod")!=0&&get_proc(mm,"timeEndPeriod")!=0,"Known timer module bindings missing");require(free_library(mm)&&free_library(mm)&&!free_library(mm)&&last_error==6,"Explicit module reference lifetime differs");require(!load_library_a("unavailable-fixture.dll")&&last_error==126&&!get_proc(mm,"unsupported-function")&&last_error==127,"Unavailable module/procedure reported present");
             using namespace ge6_system;uintptr_t key=0;require(open_key(0x80000002u,"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",0,0x20019,&key)==0&&key,"Linux CPU view missing");uint32_t size=0,type=0;require(query_key(key,"ProcessorNameString",nullptr,&type,nullptr,&size)==0&&type==1&&size>1,"CPU value size/type differs");std::vector<char> model(size+1,char(0x5a));uint32_t small=1;require(query_key(key,"ProcessorNameString",nullptr,&type,model.data(),&small)==234&&small==size&&model[0]==0x5a,"Small registry buffer contract differs");require(query_key(key,"ProcessorNameString",nullptr,nullptr,model.data(),&size)==0&&std::string(model.data())==cpu_name()&&model[size]==0x5a,"CPU value/source or bounds differ");require(close_key(key)==0&&close_key(key)==6&&query_key(key,"ProcessorNameString",nullptr,nullptr,nullptr,&size)==6,"Registry handle lifetime differs");require(open_key(0x80000002u,"SOFTWARE\\MissingFixture",0,0x20019,&key)==2&&key==0,"Unavailable registry key synthesized");
             MemoryStatus mem{};mem.size=64;require(memory(&mem)&&mem.physical>0&&mem.available<=mem.physical&&mem.load<=100&&mem.available_pagefile<=mem.pagefile&&mem.virtual_available<=mem.virtual_total,"Linux memory values differ");mem.size=0;require(!memory(&mem)&&last_error==87,"Invalid memory status size accepted");SystemInfo sys{};information(&sys);require(sys.architecture==9&&sys.page_size==uint32_t(sysconf(_SC_PAGESIZE))&&sys.processors>0&&sys.minimum<sys.maximum,"System info fields differ");require(get_module_a("KERNEL32.DLL")==kernel_token&&get_proc(kernel_token,"GetNativeSystemInfo")!=0&&get_module_a("absent-fixture.dll")==0&&last_error==126,"Optional module resolution differs");std::cout<<"GE6 live Linux CPU/memory/system-query and read-only registry-view fixtures passed; complete registry/Windows memory parity is not claimed\n";return 0;
         }
