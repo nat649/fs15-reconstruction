@@ -49,5 +49,11 @@ inline GE6_THREAD_MS uint32_t resume(uintptr_t handle){trace("ResumeThread");aut
 inline GE6_THREAD_MS uint32_t wait(uintptr_t handle,uint32_t milliseconds){trace("WaitForSingleObject(thread)");auto state=get(handle);if(!state){set_error(6);return 0xffffffffu;}std::unique_lock<std::mutex> lock(state->mutex);auto ready=[&](){return state->done;};if(milliseconds==0xffffffffu)state->changed.wait(lock,ready);else if(!state->changed.wait_for(lock,std::chrono::milliseconds(milliseconds),ready))return 258;return 0;}
 inline GE6_THREAD_MS int exit_code(uintptr_t handle,uint32_t* code){trace("GetExitCodeThread");auto state=get(handle);if(!state){set_error(6);return 0;}if(!code){set_error(87);return 0;}std::lock_guard<std::mutex> lock(state->mutex);*code=state->done?state->code:259;return 1;}
 inline GE6_THREAD_MS int close(uintptr_t handle){trace("CloseHandle(thread)");std::lock_guard<std::mutex> guard(registry_mutex);if(registry.erase(handle))return 1;set_error(6);return 0;}
+inline bool name(uint32_t tid,const char* raw){
+    trace("ThreadNameNotification");std::string label(raw);label.resize(std::min(label.size(),size_t(15)));int error=ESRCH;
+    if(tid==0xffffffffu||tid==uint32_t(syscall(SYS_gettid)))error=pthread_setname_np(pthread_self(),label.c_str());
+    else{std::shared_ptr<State> state;{std::lock_guard<std::mutex> guard(registry_mutex);for(auto& item:registry)if(item.second->tid==tid){state=item.second;break;}}if(state){std::lock_guard<std::mutex> guard(state->mutex);if(!state->done)error=pthread_setname_np(state->native,label.c_str());}}
+    if(error){set_error(error==ESRCH?87:5);return false;}return true;
+}
 #undef GE6_THREAD_MS
 }
