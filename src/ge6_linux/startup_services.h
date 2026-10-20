@@ -13,8 +13,8 @@ inline void(*trace)(const char*)=nullptr;
 inline void(*set_error)(uint32_t)=nullptr;
 inline thread_local std::map<uint32_t,uint32_t> periods;
 inline thread_local unsigned long original_slack=0;
-inline cpu_set_t allowed;
-inline bool affinity_ready=false;
+inline thread_local cpu_set_t allowed;
+inline thread_local bool affinity_ready=false;
 inline bool capture_affinity(){affinity_ready=pthread_getaffinity_np(pthread_self(),sizeof(allowed),&allowed)==0;return affinity_ready;}
 inline GE6_START_MS uint32_t begin(uint32_t period){
     trace("timeBeginPeriod");if(period<1||period>1000)return 97;timespec resolution{};if(clock_getres(CLOCK_MONOTONIC,&resolution)||uint64_t(resolution.tv_sec)*1000000000+uint64_t(resolution.tv_nsec)>uint64_t(period)*1000000)return 97;

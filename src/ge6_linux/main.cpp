@@ -10,6 +10,7 @@
 #include "system_services.h"
 #include "event_services.h"
 #include "virtual_memory.h"
+#include "thread_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -54,13 +55,14 @@ template<class T>T read(const std::vector<uint8_t>& bytes,size_t offset){require
 std::vector<std::string> imports;
 std::atomic<uint64_t> calls{0};
 std::mutex trace_mutex;
-uintptr_t registered_filter=0;
+std::atomic<uintptr_t> registered_filter{0};
 bool main_reached=false;
 struct Singleton {int fd;};
 std::map<uintptr_t,std::unique_ptr<Singleton>> singleton_handles;
 thread_local uint32_t last_error=0;
-std::vector<void*> slots;
-std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
+std::mutex locks_mutex;
+std::recursive_mutex runtime_registry_mutex;
+std::map<void*,std::shared_ptr<std::recursive_mutex>> locks;
 int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
 constexpr uintptr_t nt_token=0x47453602;
@@ -68,11 +70,11 @@ constexpr uintptr_t winmm_token=0x47453603;
 std::map<uintptr_t,uint32_t> explicit_module_refs;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
-void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';}
+void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';if(ge6_threads::active_entry&&!ge6_threads::traced_import){ge6_threads::traced_import=true;std::cout<<"GE6_NATIVE_THREAD_FIRST_OS name="<<name<<" entry=0x"<<std::hex<<ge6_threads::active_entry<<std::dec<<" tid="<<syscall(SYS_gettid)<<'\n';}}
 [[noreturn]] MS void missing(uint32_t id){
     std::cerr<<"GE6_BLOCKED_IMPORT "<<(id<imports.size()?imports[id]:"invalid-index")
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
-             <<std::dec<<" os_calls="<<calls<<'\n';std::exit(78);
+             <<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);
 }
 void fault(int signal,siginfo_t* info,void* raw){
     auto* context=static_cast<ucontext_t*>(raw);char message[192];
@@ -99,21 +101,17 @@ MS void* heap_realloc(void* heap,uint32_t flags,void* p,size_t size){trace("Heap
 MS uint32_t version(){trace("GetVersion");return 0x00000006;}// Compatibility API level, not the Linux OS version.
 MS int version_ex_a(void* raw){trace("GetVersionExA");if(!raw){last_error=87;return 0;}uint32_t size=0;std::memcpy(&size,raw,4);if(size!=148&&size!=156){last_error=87;return 0;}std::memset(raw,0,size);const uint32_t fields[]{size,6,0,0,2};std::memcpy(raw,fields,sizeof(fields));if(size==156)static_cast<uint8_t*>(raw)[154]=1;return 1;}// Same API compatibility level as GetVersion; no claim to be Windows.
 MS int heap_info(void* heap,uint32_t kind,void*,size_t size){trace("HeapSetInformation");require(heap==&heap_token&&kind==0&&size==4,"Unsupported heap information");return 1;}
-MS int init_lock(void* p,uint32_t){trace("InitializeCriticalSectionAndSpinCount");locks[p]=std::make_unique<std::recursive_mutex>();return 1;}
+MS int init_lock(void* p,uint32_t){trace("InitializeCriticalSectionAndSpinCount");std::lock_guard<std::mutex> guard(locks_mutex);locks[p]=std::make_shared<std::recursive_mutex>();return 1;}
 MS void initialize_lock(void* p){init_lock(p,0);}
-MS void enter_lock(void* p){auto it=locks.find(p);require(it!=locks.end(),"Uninitialized critical section");it->second->lock();}
-MS void leave_lock(void* p){auto it=locks.find(p);require(it!=locks.end(),"Uninitialized critical section");it->second->unlock();}
-MS void delete_lock(void* p){require(locks.erase(p)==1,"Uninitialized critical section deletion");}
-MS uint32_t alloc_slot(void*){trace("FlsAlloc/TlsAlloc");require(slots.size()<128,"TLS slots exhausted");slots.push_back(nullptr);return uint32_t(slots.size()-1);}
-MS uint32_t tls_alloc(){return alloc_slot(nullptr);}
-MS int set_slot(uint32_t i,void* p){require(i<slots.size(),"Invalid TLS slot");slots[i]=p;return 1;}
-MS void* get_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");last_error=0;return slots[i];}
-MS int free_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");slots[i]=nullptr;return 1;}
+std::shared_ptr<std::recursive_mutex> lock_record(void* p){std::lock_guard<std::mutex> guard(locks_mutex);auto found=locks.find(p);require(found!=locks.end(),"Uninitialized critical section");return found->second;}
+MS void enter_lock(void* p){lock_record(p)->lock();}
+MS void leave_lock(void* p){lock_record(p)->unlock();}
+MS void delete_lock(void* p){std::lock_guard<std::mutex> guard(locks_mutex);require(locks.erase(p)==1,"Uninitialized critical section deletion");}
 uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;last_error=126;return 0;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
-MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}auto handle=module(name);if(handle)++explicit_module_refs[handle];else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
-MS int free_library(uintptr_t handle){trace("FreeLibrary");auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
+MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
+MS int free_library(uintptr_t handle){trace("FreeLibrary");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
 MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
@@ -174,10 +172,10 @@ MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
 MS uint32_t module_filename_w(uintptr_t module,uint16_t* out,uint32_t capacity){trace("GetModuleFileNameW");require(module==0||module==base,"Unimplemented module filename");if(!capacity){last_error=122;return 0;}auto name=ge6_fs::utf16(image_path);auto count=std::min(name.size(),size_t(capacity-1));std::memcpy(out,name.data(),count*2);out[count]=0;if(name.size()>=capacity){last_error=122;return capacity;}return uint32_t(count);}
 MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast<uint8_t*>(raw);std::memset(out,0,104);uint32_t size=104;std::memcpy(out,&size,4);}
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
-MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::exit(int(code));}
-MS uintptr_t set_exception_filter(uintptr_t callback){trace("SetUnhandledExceptionFilter");auto previous=registered_filter;registered_filter=callback;return previous;}// Registration only; original Windows exception dispatch remains unimplemented.
+MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::_Exit(int(code));}
+MS uintptr_t set_exception_filter(uintptr_t callback){trace("SetUnhandledExceptionFilter");return registered_filter.exchange(callback);}// Registration only; original Windows exception dispatch remains unimplemented.
 MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
-    trace("CreateMutexA");require(!attributes&&!owner&&name,"Unimplemented general mutex creation");std::string label=name;
+    trace("CreateMutexA");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);require(!attributes&&!owner&&name,"Unimplemented general mutex creation");std::string label=name;
     require(label=="FarmingSimulator2015"||label=="FS15_GE6_BOOT_FIXTURE","Unimplemented mutex name");
     auto path="/tmp/fs15-ge6-"+std::to_string(geteuid())+(label=="FarmingSimulator2015"?"-runtime.lock":"-fixture.lock");
     int fd=open(path.c_str(),O_CREAT|O_RDWR|O_CLOEXEC|O_NOFOLLOW,0600);if(fd<0){last_error=5;return 0;}
@@ -185,9 +183,17 @@ MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
     bool exists=false;if(flock(fd,LOCK_EX|LOCK_NB)){if(errno==EWOULDBLOCK)exists=true;else{close(fd);last_error=5;return 0;}}
     auto record=std::make_unique<Singleton>();record->fd=fd;auto handle=reinterpret_cast<uintptr_t>(record.get());singleton_handles.emplace(handle,std::move(record));last_error=exists?183:0;return handle;
 }// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
-MS int close_handle(uintptr_t handle){if(ge6_events::owns(handle))return ge6_events::close(handle);auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
+MS int close_handle(uintptr_t handle){if(ge6_threads::owns(handle))return ge6_threads::close(handle);std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);if(ge6_events::owns(handle))return ge6_events::close(handle);auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
+
+MS uint32_t wait_handle(uintptr_t handle,uint32_t milliseconds){return ge6_threads::owns(handle)?ge6_threads::wait(handle,milliseconds):ge6_events::wait(handle,milliseconds);}
+
+// Authored multithreaded fixtures: no original game code in these callbacks.
+struct ThreadFixture {uint32_t tls,fls;uintptr_t gate;int critical=0;uint32_t increments=0;std::atomic<uint32_t> entered{0},cleaned{0};};
+void check_native_stack(){uintptr_t self=0;asm("movq %%gs:0x30,%0":"=r"(self));uintptr_t repeated=0,upper=0,lower=0;std::memcpy(&repeated,reinterpret_cast<void*>(self+0x30),8);std::memcpy(&upper,reinterpret_cast<void*>(self+8),8);std::memcpy(&lower,reinterpret_cast<void*>(self+0x10),8);auto stack=reinterpret_cast<uintptr_t>(&self);require(self==repeated&&lower<stack&&stack<upper,"Per-thread NT_TIB stack/self differs");}
+MS void fixture_fls_cleanup(void* raw){check_native_stack();++static_cast<ThreadFixture*>(raw)->cleaned;}
+MS uint32_t fixture_thread(void* raw){auto& fixture=*static_cast<ThreadFixture*>(raw);check_native_stack();require(ge6_slots::tls_get(fixture.tls)==nullptr&&ge6_slots::fls_get(fixture.fls)==nullptr,"Child inherited parent TLS/FLS values");require(ge6_slots::tls_set(fixture.tls,raw)&&ge6_slots::fls_set(fixture.fls,raw),"Cannot set native worker slots");last_error=12345;++fixture.entered;require(ge6_events::wait(fixture.gate,5000)==0,"Fixture worker gate timed out");for(int i=0;i<500;++i){int local=0;init_lock(&local,0);enter_lock(&local);leave_lock(&local);delete_lock(&local);enter_lock(&fixture.critical);++fixture.increments;leave_lock(&fixture.critical);}require(ge6_slots::tls_get(fixture.tls)==raw&&ge6_slots::fls_get(fixture.fls)==raw,"Concurrent TLS/FLS values changed");require(last_error==0,"TLS successful get did not clear last error");return 0x42;}
 
 uintptr_t resolve(const std::string& library,const std::string& name){
     if(library=="ADVAPI32.dll"){
@@ -214,7 +220,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("HeapCreate",heap_create);BIND("GetProcessHeap",process_heap);BIND("HeapAlloc",heap_alloc);BIND("HeapFree",heap_free);BIND("GetVersion",version);BIND("HeapSetInformation",heap_info);
     BIND("HeapSize",heap_size);BIND("HeapReAlloc",heap_realloc);
     BIND("InitializeCriticalSectionAndSpinCount",init_lock);BIND("InitializeCriticalSection",initialize_lock);BIND("EnterCriticalSection",enter_lock);BIND("LeaveCriticalSection",leave_lock);BIND("DeleteCriticalSection",delete_lock);
-    BIND("FlsAlloc",alloc_slot);BIND("TlsAlloc",tls_alloc);BIND("FlsSetValue",set_slot);BIND("TlsSetValue",set_slot);BIND("FlsGetValue",get_slot);BIND("TlsGetValue",get_slot);BIND("FlsFree",free_slot);BIND("TlsFree",free_slot);
+    BIND("FlsAlloc",ge6_slots::fls_alloc);BIND("TlsAlloc",ge6_slots::tls_alloc);BIND("FlsSetValue",ge6_slots::fls_set);BIND("TlsSetValue",ge6_slots::tls_set);BIND("FlsGetValue",ge6_slots::fls_get);BIND("TlsGetValue",ge6_slots::tls_get);BIND("FlsFree",ge6_slots::fls_free);BIND("TlsFree",ge6_slots::tls_free);
     BIND("GetModuleHandleW",get_module_w);BIND("GetProcAddress",get_proc);BIND("GetCommandLineA",get_command);BIND("GetStdHandle",standard_handle);BIND("GetFileType",file_type);BIND("GetStartupInfoA",startup_info);BIND("GetStartupInfoW",startup_info);BIND("Sleep",sleep_ms);BIND("ExitProcess",terminate);
     BIND("SetHandleCount",handle_count);BIND("GetEnvironmentStringsW",environment_w);BIND("FreeEnvironmentStringsW",free_environment_w);BIND("WideCharToMultiByte",narrow);BIND("GetModuleFileNameA",module_filename);
     BIND("GetACP",ansi_page);BIND("IsValidCodePage",valid_page);BIND("GetCPInfo",page_info);
@@ -225,27 +231,13 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetVersionExA",version_ex_a);
     BIND("GetModuleHandleA",get_module_a);BIND("GlobalMemoryStatusEx",ge6_system::memory);BIND("GetSystemInfo",ge6_system::information);BIND("GetNativeSystemInfo",ge6_system::information);
     BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
-    BIND("CreateEventA",ge6_events::create);BIND("SetEvent",ge6_events::set);BIND("ResetEvent",ge6_events::reset);BIND("WaitForSingleObject",ge6_events::wait);
+    BIND("CreateEventA",ge6_events::create);BIND("SetEvent",ge6_events::set);BIND("ResetEvent",ge6_events::reset);BIND("WaitForSingleObject",wait_handle);
+    BIND("CreateThread",ge6_threads::create);BIND("ResumeThread",ge6_threads::resume);BIND("GetExitCodeThread",ge6_threads::exit_code);
     BIND("VirtualFree",ge6_vm::free);BIND("VirtualQuery",ge6_vm::query);
     BIND("LoadLibraryA",load_library_a);BIND("FreeLibrary",free_library);
 #undef BIND
     return 0;
 }
-
-// Keep Linux libc's FS TLS untouched. The original MSVC __chkstk reads GS:0x10.
-// Only the inspected NT_TIB stack/self prefix is supplied; no complete PEB/SEH.
-struct NativeThread {
-    alignas(16) std::array<uint8_t,0x100> tib{};uintptr_t previous_gs=0;bool installed=false;
-    NativeThread(){
-        pthread_attr_t attr;require(pthread_getattr_np(pthread_self(),&attr)==0,"Cannot inspect Linux thread stack");
-        void* stack=nullptr;size_t bytes=0;int result=pthread_attr_getstack(&attr,&stack,&bytes);pthread_attr_destroy(&attr);require(result==0&&bytes,"Cannot inspect Linux stack bounds");
-        uintptr_t limit=reinterpret_cast<uintptr_t>(stack),upper=limit+bytes,self=reinterpret_cast<uintptr_t>(tib.data()),none=~uintptr_t(0);
-        std::memcpy(tib.data(),&none,8);std::memcpy(tib.data()+8,&upper,8);std::memcpy(tib.data()+0x10,&limit,8);std::memcpy(tib.data()+0x30,&self,8);
-        require(syscall(SYS_arch_prctl,ARCH_GET_GS,&previous_gs)==0,"Cannot read Linux GS base");require(syscall(SYS_arch_prctl,ARCH_SET_GS,self)==0,"Cannot install native NT_TIB prefix");installed=true;
-        std::cout<<"GE6_NATIVE_NT_TIB_READY\n";
-    }
-    ~NativeThread(){if(installed){auto result=syscall(SYS_arch_prctl,ARCH_SET_GS,previous_gs);(void)result;}}
-};
 
 struct Image {
     uint8_t* mapped=nullptr;size_t size=0;uint8_t* trampolines=nullptr;size_t trampoline_bytes=65536;uint32_t entry=0;bool authored_fixture=false;
@@ -258,6 +250,7 @@ struct Image {
         auto count=read<uint16_t>(raw,pe+6),optional_size=read<uint16_t>(raw,pe+20);size_t opt=size_t(pe)+24;
         require(read<uint16_t>(raw,opt)==0x20b&&read<uint64_t>(raw,opt+24)==base,"Unsupported PE optional header/base");
         require(count&&count<=32&&optional_size>=240,"Unsupported PE section/directory count");
+        auto stack_reserve=read<uint64_t>(raw,opt+72);if(stack_reserve)ge6_threads::default_stack=std::min(uint64_t(64*1024*1024),stack_reserve);
         size=read<uint32_t>(raw,opt+56);auto headers=read<uint32_t>(raw,opt+60);require(size>=4096&&size<=0x10000000&&size%4096==0&&headers<=size&&headers<=raw.size(),"Invalid PE image size");
         require(read<uint32_t>(raw,opt+112+9*8)==0,"PE TLS callbacks are not implemented");
         auto allocation=mmap(reinterpret_cast<void*>(base),size,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED_NOREPLACE,-1,0);
@@ -286,18 +279,24 @@ struct Image {
         auto found=std::find_if(sections.begin(),sections.end(),[&](const Section& s){return !s.skip&&(s.flags&0x20000000)&&entry>=s.rva&&uint64_t(entry)<uint64_t(s.rva)+s.length;});require(found!=sections.end(),"CRT entry is not in executable code");
         std::cout<<"GE6_IMAGE_MAPPED base=0x"<<std::hex<<base<<" entry=0x"<<base+entry<<std::dec<<" supported_imports="<<supported<<" blocked_imports="<<imports.size()<<'\n';
     }
-    void run(){NativeThread thread;using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
+    void run(){ge6_native::Context thread;std::cout<<"GE6_NATIVE_NT_TIB_READY\n";using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
 };
 }
 int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
     try{
+        ge6_slots::trace=trace;ge6_slots::set_error=[](uint32_t value){last_error=value;};
+        ge6_threads::trace=trace;ge6_threads::set_error=[](uint32_t value){last_error=value;};
+        ge6_threads::record=[](const char* event,uintptr_t entry,uint32_t tid,uint32_t code){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_NATIVE_THREAD_"<<event<<" entry=0x"<<std::hex<<entry<<std::dec<<" tid="<<tid<<" code="<<code<<'\n';};
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
         ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-threads"){
+            ge6_native::Context context;ThreadFixture fixture{};fixture.tls=ge6_slots::tls_alloc();fixture.fls=ge6_slots::fls_alloc(fixture_fls_cleanup);require(fixture.tls==fixture.fls,"TLS and FLS pools are not independent");require(ge6_slots::tls_set(fixture.tls,&fixture)&&ge6_slots::fls_set(fixture.fls,&fixture),"Cannot set parent slots");fixture.gate=ge6_events::create(nullptr,1,0,nullptr);init_lock(&fixture.critical,0);uint32_t tid=0,code=0;auto first=ge6_threads::create(nullptr,0,fixture_thread,&fixture,4,&tid);require(first&&tid&&tid!=uint32_t(syscall(SYS_gettid))&&fixture.entered==0,"Suspended thread ran or ID differs");require(ge6_threads::exit_code(first,&code)&&code==259&&wait_handle(first,0)==258,"Suspended thread status differs");require(ge6_threads::resume(first)==1&&ge6_threads::resume(first)==0,"Resume count differs");auto second=ge6_threads::create(nullptr,0,fixture_thread,&fixture,0,nullptr);require(second&&wait_handle(second,0)==258,"Worker did not wait for gate");last_error=54321;require(ge6_events::set(fixture.gate)&&wait_handle(first,5000)==0&&wait_handle(second,5000)==0,"Native worker wait timed out");require(last_error==54321&&fixture.entered==2&&fixture.cleaned==2&&fixture.increments==1000,"Thread errors, FLS cleanup or critical-section updates differ");require(ge6_threads::exit_code(first,&code)&&code==0x42&&ge6_threads::running==0,"Native worker exit code/lifetime differs");require(ge6_slots::tls_get(fixture.tls)==&fixture&&ge6_slots::fls_get(fixture.fls)==&fixture,"Workers overwrote parent slot values");require(close_handle(first)&&close_handle(second)&&close_handle(fixture.gate)&&!close_handle(first)&&last_error==6,"Thread handle cleanup differs");delete_lock(&fixture.critical);require(ge6_slots::fls_free(fixture.fls)&&fixture.cleaned==3&&ge6_slots::tls_free(fixture.tls),"Parent FLS/TLS cleanup differs");auto reused=ge6_slots::tls_alloc();require(reused==fixture.tls&&ge6_slots::tls_get(reused)==nullptr&&ge6_slots::tls_free(reused),"Reused TLS slot retained data");ge6_slots::cleanup();std::cout<<"GE6 actual pthread Microsoft-ABI callbacks, distinct TIDs/stacks/TLS/FLS, suspended resume, critical-section contention, waits and FLS cleanup passed; fibers/SEH/arbitrary suspension remain unsupported\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-virtual-memory"){
             auto denied=[](void* memory){pid_t child=fork();require(child>=0,"Cannot fork page-protection fixture");if(!child){signal(SIGSEGV,+[](int){_exit(33);});*static_cast<volatile uint8_t*>(memory)=1;_exit(1);}int status=0;require(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==33,"Linux page protection did not reject write");};
             void* memory=nullptr;size_t bytes=3*ge6_vm::page();require(ge6_vm::allocate(~uintptr_t(0),&memory,1,&bytes,0x2000,4)==0&&reinterpret_cast<uintptr_t>(memory)<0x80000000,"Cannot reserve low Lua memory");denied(memory);ge6_vm::Information info{};require(ge6_vm::query(memory,&info,48)==48&&info.state==0x2000&&info.size==bytes,"Reserved region query differs");
@@ -367,6 +366,6 @@ int main(int argc,char** argv){
         if(!fixture)image_path="Z:"+image_path;
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
-        Image image;image.load(raw,fixture);image.run();return 0;
+        Image image;image.load(raw,fixture);image.run();require(ge6_threads::running==0,"Native entry returned with active worker threads");return 0;
     }catch(const std::exception& error){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR "<<error.what()<<'\n';return 1;}
 }

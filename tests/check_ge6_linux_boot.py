@@ -91,6 +91,7 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-system'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-events'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     with tempfile.TemporaryDirectory(dir=workdir) as directory:
         subprocess.run([str(exe.resolve()), '--check-files', directory], check=True, timeout=15)
     path = workdir / 'authored.exe'

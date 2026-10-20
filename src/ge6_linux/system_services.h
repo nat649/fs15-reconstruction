@@ -6,6 +6,7 @@
 #include <cstring>
 #include <fstream>
 #include <map>
+#include <mutex>
 #include <sched.h>
 #include <sstream>
 #include <string>
@@ -16,13 +17,14 @@ namespace ge6_system {
 #define GE6_SYS_MS __attribute__((ms_abi))
 inline void(*trace)(const char*)=nullptr;
 inline void(*set_error)(uint32_t)=nullptr;
+inline std::recursive_mutex registry_mutex;
 inline std::map<uintptr_t,std::string> cpu_keys;
 inline uintptr_t next_key=0x70000000;
 inline std::string cpu_name(){std::ifstream file("/proc/cpuinfo");std::string line;while(std::getline(file,line)){auto split=line.find(':');if(split==std::string::npos)continue;auto key=line.substr(0,split);while(!key.empty()&&(key.back()==' '||key.back()=='\t'))key.pop_back();if(key=="model name"){auto value=line.substr(split+1);auto start=value.find_first_not_of(" \t");return start==std::string::npos?"":value.substr(start);}}return "";}
 inline std::string lower(std::string text){for(auto& c:text)if(c>='A'&&c<='Z')c=char(c+('a'-'A'));return text;}
-inline GE6_SYS_MS int32_t open_key(uintptr_t root,const char* name,uint32_t options,uint32_t access,uintptr_t* out){trace("RegOpenKeyExA");if(!out||!name||options)return 87;if(access&~0x20319u)return 5;*out=0;if(uint32_t(root)!=0x80000002u||lower(name)!="hardware\\description\\system\\centralprocessor\\0")return 2;auto model=cpu_name();if(model.empty())return 2;auto key=next_key++;cpu_keys.emplace(key,std::move(model));*out=key;return 0;}
-inline GE6_SYS_MS int32_t query_key(uintptr_t key,const char* name,uint32_t* reserved,uint32_t* type,void* out,uint32_t* size){trace("RegQueryValueExA");if(reserved||!name||!size)return 87;auto found=cpu_keys.find(key);if(found==cpu_keys.end())return 6;if(lower(name)!="processornamestring")return 2;uint32_t required=uint32_t(found->second.size()+1),capacity=*size;*size=required;if(type)*type=1;if(!out)return 0;if(capacity<required)return 234;std::memcpy(out,found->second.c_str(),required);return 0;}
-inline GE6_SYS_MS int32_t close_key(uintptr_t key){trace("RegCloseKey");return cpu_keys.erase(key)?0:6;}
+inline GE6_SYS_MS int32_t open_key(uintptr_t root,const char* name,uint32_t options,uint32_t access,uintptr_t* out){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegOpenKeyExA");if(!out||!name||options)return 87;if(access&~0x20319u)return 5;*out=0;if(uint32_t(root)!=0x80000002u||lower(name)!="hardware\\description\\system\\centralprocessor\\0")return 2;auto model=cpu_name();if(model.empty())return 2;auto key=next_key++;cpu_keys.emplace(key,std::move(model));*out=key;return 0;}
+inline GE6_SYS_MS int32_t query_key(uintptr_t key,const char* name,uint32_t* reserved,uint32_t* type,void* out,uint32_t* size){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegQueryValueExA");if(reserved||!name||!size)return 87;auto found=cpu_keys.find(key);if(found==cpu_keys.end())return 6;if(lower(name)!="processornamestring")return 2;uint32_t required=uint32_t(found->second.size()+1),capacity=*size;*size=required;if(type)*type=1;if(!out)return 0;if(capacity<required)return 234;std::memcpy(out,found->second.c_str(),required);return 0;}
+inline GE6_SYS_MS int32_t close_key(uintptr_t key){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegCloseKey");return cpu_keys.erase(key)?0:6;}
 struct MemoryStatus {uint32_t size,load;uint64_t physical,available,pagefile,available_pagefile,virtual_total,virtual_available,extended;};
 static_assert(sizeof(MemoryStatus)==64 && offsetof(MemoryStatus,physical)==8);
 inline uint64_t virtual_used(){std::ifstream maps("/proc/self/maps");std::string line;uint64_t total=0;while(std::getline(maps,line)){std::istringstream fields(line);uint64_t start=0,end=0;char dash=0;if(fields>>std::hex>>start>>dash>>end&&dash=='-'&&end>=start&&start<(1ull<<47))total+=end-start;}return total;}
