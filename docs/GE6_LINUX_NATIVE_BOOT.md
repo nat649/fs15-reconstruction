@@ -89,10 +89,18 @@ caller continues. Winsock startup now succeeds through POSIX sockets, followed
 by original central initialization at `0x14008abe0`. GE6 writes its own journal
 with its runtime banner and actual QEMU CPU/Linux memory observations. The
 original script system creates its events and reserves/commits its Lua memory.
-The next explicit stop is `KERNEL32.dll!CreateThread`, caller `0x140424d26`, while
-the embedded Lua subsystem is starting a worker. No native PE worker is started
-yet. Correct thread-local NT_TIB/CRT/TLS and lifecycle support must accompany
-that implementation; the existing CRT slots remain bounded to the main thread.
+Two original workers now execute on real Linux pthreads: the Lua timer worker
+at `0x140424bb0` and the engine worker wrapper at `0x140043620`. Each has its own
+stack NT_TIB prefix and TLS/FLS values. A host entry marker alone is not counted
+as execution: the evidence also requires a first OS call issued while executing
+that worker (`timeBeginPeriod` and an event wait in the observed run).
+
+With the unchanged original integrity manifest, checked map files and two GAR
+archives staged locally, GE6 advances through its integrity-check stage and
+writes its original Physics System and Input System initialization messages.
+The next explicit stop is `OpenAL32.dll!alcOpenDevice`, caller `0x14004b6a4`.
+Linux audio transport is not connected. These log sections do not demonstrate
+a simulated game world, delivered input, a rendered window or playable physics.
 
 The original file manager, configuration parser, logger and Lua allocation code
 remain in control; these additions are authored OS transport. `Z:/` maps
@@ -103,16 +111,19 @@ Other drives and drive-relative paths are rejected.
 The [separate local-image evidence](../analysis/ge6-linux-local-boot-validation.json)
 records the input/source/ELF/log hashes and the current stop; it does not replace
 the reference-image evidence above. Dedicated
-[Linux CI run 39392545756](https://github.com/nat649/fs15-reconstruction/actions/runs/39392545756)
+[Linux CI run 39442120023](https://github.com/nat649/fs15-reconstruction/actions/runs/39442120023)
 passes authored ABI, Unicode, file lifecycle/search/copy/timestamp, drive mapping,
 compatibility-version and unavailable-platform contracts for that source,
 plus real UDP loopback, timer-slack/affinity, CPU/memory/registry queries,
-manual/auto-reset event wakeups and virtual-memory protection/lifetime checks.
+manual/auto-reset event wakeups, virtual-memory protection/lifetime checks and
+actual pthread callback/TLS/FLS lifecycle tests. An authored PE fixture also
+creates and waits for PE worker instructions through a six-argument Microsoft
+ABI import, checks the child's GS stack/self metadata and verifies isolated TLS.
 Public CI does not contain the original game. The missing optional
 `preloadMemory.pak` produces an ordinary file-not-found result and the original
 engine continues to configuration loading; no cache contents are synthesized.
 The private serial log also captures the original journal after exit. Only its
-captured-block hash and a startup-banner observation are published. Its
+captured-block hash, bounded startup observations and resource hashes are published. Its
 `Windows NT 6.0` text comes from original logging of the compatibility API level;
 the actual host kernel remains Linux. Journal output is evidence of partial
 initialization, not proof of a menu, renderer or loaded game world.
@@ -126,12 +137,17 @@ python3 scripts/check_ge6_linux_vm.py \
   --kernel /path/to/vmlinuz-virt --alpine-initramfs /path/to/initramfs-virt \
   --exe build/ge6-linux-boot/FS15GE6LinuxBoot \
   --image build/ge6-local/x64/FarmingSimulator2015Game.exe \
-  --resources build/ge6-local --output build/private-ge6-linux-vm
+  --resources build/ge6-local --integrity-resources --archives \
+  --output build/private-ge6-linux-vm
 ```
 
 The helper passes the original `-profile Z:/profile` option. By default it stages
 only four named startup files; `--archives` additionally stages the two original
-GAR archives locally. It attaches no network device. Generated image archives
+GAR archives locally. `--integrity-resources` adds the original `crc_files.xml`
+and its two checked files, `data/maps/map01.i3d` and `data/maps/map01/map01_dem.png`.
+Their contents/checksums are not rewritten and original integrity code is not
+disabled. The helper records staged-file hashes and preserves partial private
+serial output on timeout. It attaches no network device. Generated image archives
 and full logs embed or describe private input and remain under ignored `build/`.
 
 ## OS transport and remaining work
@@ -169,7 +185,34 @@ restore it when leases end. Affinity uses actual Linux CPU masks within the
 supported low 64 CPUs; it rejects unsupported handles/masks. Full Windows
 multimedia/process-wide scheduling behavior is not reproduced. Unnamed events
 support auto/manual reset and finite/infinite waits through mutexes/condition
-variables. Named events and native PE thread creation remain unavailable.
+variables. Non-alertable `WaitForSingleObjectEx` calls use that same transport;
+alertable/APC waits stop explicitly. Named events remain unavailable.
+
+`CreateThread` uses a Linux pthread with the PE's default stack reserve or a
+bounded requested size. Every worker installs its own inspected NT_TIB prefix
+without changing Linux FS TLS, then invokes the original callback with the
+Microsoft ABI. Initially suspended creation, `ResumeThread`, wait/status queries
+and handle closure are connected. Closing a handle does not cancel the worker;
+normal callback return performs FLS callbacks before restoring GS and signaling
+completion. Separate TLS (1088) and FLS (128) index pools hold per-thread values,
+clear values on index reuse and dispatch non-null FLS callbacks on free/exit.
+This supplies the observed native CRT storage mechanism; fibers and general
+Windows TLS/CRT/DLL thread lifecycle parity are not claimed.
+
+Shared critical-section, file/socket/key/module handle registries are protected
+against concurrent mutation. Process exit and missing-import stops terminate
+directly instead of destructing/unmapping code beneath live native workers.
+Authored fixtures verify two workers, isolated errors/slots, 1000 protected
+counter updates, real stack bounds and FLS callbacks. The original VM workers
+are alive when the audio stop ends the process; complete original worker return,
+shutdown and cleanup remain unverified. `ExitThread`, arbitrary thread suspension,
+termination, priorities, exception dispatch and processor groups remain open.
+
+Only the documented legacy debugger naming packet (`0x406d1388`, validated
+24-byte structure) is consumed by `RaiseException`, and maps to actual Linux
+thread names truncated to 15 bytes. Other exception codes/payloads stop; C++
+exceptions, assertions and engine failures are not ignored. Environment queries
+use the actual Linux process and remain ASCII-bounded/case-sensitive.
 
 The read-only CPU registry view exposes only `ProcessorNameString` from Linux
 `/proc/cpuinfo`; unknown keys/values fail. Memory totals/availability come from
@@ -189,7 +232,7 @@ large-page/NUMA policies and general NT/JIT contracts remain open.
 kernel/NT/timer ABI modules. Explicit loads/releases track references; this does
 not load Windows DLL code or unload the resident import transport. Missing
 modules/procedures fail. General Windows DLL loading, SEH/unwind and exception
-dispatch, TEB/PEB, native threads, window/OpenGL, audio and Steam services remain
+dispatch, full TEB/PEB/thread behavior, window/OpenGL, audio and Steam services remain
 unimplemented here.
 
 Exception-filter registration retains/replaces the native callback and returns
@@ -221,6 +264,10 @@ API contracts use Microsoft's [Winsock startup](https://learn.microsoft.com/en-u
 [timer requests](https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod)
 and [NT virtual allocation](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntallocatevirtualmemory)
 documentation; satisfying a bounded observed contract does not establish complete Windows API parity.
+Thread behavior follows the bounded contracts from
+[CreateThread](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createthread),
+[FLS cleanup](https://learn.microsoft.com/en-us/windows/win32/api/fibersapi/nf-fibersapi-flsfree)
+and [legacy debugger naming](https://learn.microsoft.com/en-us/visualstudio/debugger/tips-for-debugging-threads?view=visualstudio).
 
 Acceptance milestones are original CRT completion, original application startup,
 renderer/window creation, resource loading and a native GE6 menu/map session.

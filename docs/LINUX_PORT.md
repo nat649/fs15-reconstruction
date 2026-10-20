@@ -8,7 +8,10 @@ reference stops at the original application's unbound Steam restart import.
 The existing modified Local GE6 input passes this boundary, loads configuration,
 enters central initialization and writes the original engine journal. Linux
 socket/timer/system/event and virtual-memory services now carry startup into the
-original embedded Lua allocator; the next stop is native `CreateThread`.
+original embedded Lua allocator. Two original workers now run with distinct
+Linux stacks and TLS/FLS state. Staging unchanged integrity inputs and GAR files
+advances startup through original physics/input logging to the next stop,
+`OpenAL32.dll!alcOpenDevice`. This is startup evidence, not gameplay/input parity.
 No original menu or
 engine renderer has initialized through that Linux path yet.
 

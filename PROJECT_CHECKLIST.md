@@ -161,7 +161,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Bind original Winsock startup/cleanup and bounded IPv4 UDP operations to POSIX sockets; validate actual loopback datagrams, error/lifetime behavior and authored PE ordinal-import/WSADATA ABI checks.
 - [x] Enter original central engine initialization and write its own startup journal on Linux, with actual Linux CPU/memory information, main-thread timer/affinity services and a bounded read-only CPU registry view.
 - [x] Pass original script-system unnamed-event creation and embedded Lua NT memory reservation/commitment through Linux OS bindings; test event wakeups and actual page protections/lifetimes.
-- [ ] Complete native thread startup with per-thread NT_TIB/TLS/CRT state and lifetime handling; the current original-code stop is `CreateThread`, caller `0x140424d26`.
+- [x] Execute two original workers through `CreateThread` on Linux with per-thread NT_TIB stacks, separate TLS/FLS pools/values and synchronized OS registries; verify PE callbacks, suspended startup/resume, waits, return codes and FLS cleanup with authored Linux fixtures.
+- [x] Transport the observed debugger thread-name packet to Linux names without swallowing other exceptions; connect non-alertable script-startup waits and retain explicit stops for unsupported APC waits.
+- [x] Stage the unchanged original CRC manifest, checked map files and both GAR archives privately; observe original Physics System/Input System startup logs and reach `OpenAL32.dll!alcOpenDevice`.
+- [ ] Connect the original OpenAL imports to Linux audio services, then continue original window/renderer startup.
+- [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).

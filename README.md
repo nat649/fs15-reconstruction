@@ -24,13 +24,16 @@ instruction patches; it stops at the unbound Steam restart API. The separately
 pinned, existing **Local GE6** image now proceeds through original profile/XML
 loading into central engine initialization. It writes its own startup journal,
 reads actual Linux CPU/memory information and reserves/commits memory for its
-original embedded Lua allocator. Winsock startup, bounded UDP, timers and unnamed
-events have Linux transports; native `CreateThread` is the next observed stop.
+original embedded Lua allocator. Two original workers now execute on Linux
+threads with separate stacks and TLS/FLS state. With unchanged integrity inputs
+and GAR archives staged privately, startup reaches the original physics/input
+log sections and stops at `OpenAL32.dll!alcOpenDevice`; audio transport is next.
+These logs do not establish playable physics or working input/rendering.
 That input retains its
 previous Windows platform-bootstrap modification; the Linux loader adds no
 instruction patches. Original core renderer/window initialization remains open;
 this is not a playable Linux game.
-See [the exact evidence and current boundary](docs/GE6_LINUX_NATIVE_BOOT.md#observed-original-code-linux-result-2026-10-19).
+See [the exact evidence and current boundary](docs/GE6_LINUX_NATIVE_BOOT.md#existing-local-ge6-input-on-linux-2026-10-20).
 
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;

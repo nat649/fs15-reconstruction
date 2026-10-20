@@ -1,27 +1,30 @@
 {
   "scope": "Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port",
-  "source_commit": "c24806a4206b5c409059a1fe1fc5601c764406d5",
+  "source_commit": "3271e9a8d39396ab50e7078e8d5b7075cc5e4a00",
   "committed_source_sha256": {
-    "src/ge6_linux/main.cpp": "2ca690487c04d3664879dc6ec39671af089f5181903cccde94e3c85bdf0036eb",
+    "src/ge6_linux/main.cpp": "303e64ff3e72b3e9dab6f904b283075d7e6dc3140a8547e420fd29fe5f42f5da",
     "src/ge6_linux/ansi_reference.h": "8490e210cf1d5be613bded042b455f21968357c77f3950b74eedc9427b02bdde",
     "src/ge6_linux/CMakeLists.txt": "98a6617bb3b50380abdc065383e2bdd6bd52f78a92ea73785373f602f30d9928",
-    "tests/check_ge6_linux_boot.py": "d829133b60f1b877d0f48279c4cfe7f7a1a7e70b002bed813baf613c5a3d79cb",
-    "scripts/check_ge6_linux_vm.py": "912b4ddbdbdcb8fa168baf3c902dd033b31c60912756eaabe07de9c7ef91c0c0",
+    "tests/check_ge6_linux_boot.py": "2beea3e4c985c3c39be7678c48e12492ffe778ab2b6f0f21adf75b657985ab3b",
+    "scripts/check_ge6_linux_vm.py": "d6a18cb522dcddf85bf7c2ea9394c462177bcbe5a2ade6bafe4c1fd2f99543af",
     "src/ge6_linux/local_platform.h": "2af930d4f584da3d6af7f00ac492646ddd1d64f5139e59211b26382455ca7f03",
-    "src/ge6_linux/file_services.h": "1b372e8a24f4d2c538ca7d0aa3dd06ce38366ba32475d12af5c52af1da9fae25",
+    "src/ge6_linux/file_services.h": "f3b2a0013c2ba24824d2b7e25ab97a661215cca53529890e45db779d9a35d787",
     "scripts/ge6_linux_images.py": "f9d1f9e142fab0674894dbd3667a4435a90cd51ff7e3f72aeab1f8c991ac27b8",
     "scripts/prepare_local_engine.py": "5690456572a26893957edffc9985cdc47703ea443eb9bf3bd362d5f4d805fa33",
     "src/ge6_linux/event_services.h": "c327700570a311a87417c69e7ba616ee337266f3a2a272a8133d0d90d2b8a20b",
-    "src/ge6_linux/network_services.h": "877797c63787d68f64a1db3b9e48c432cc4dd069c21868c5752ea36c50e1f664",
-    "src/ge6_linux/startup_services.h": "89be93bb9ebfecebe071d304cfabf143ef72433d89074b7c082eadf4fde2fa63",
-    "src/ge6_linux/system_services.h": "d10135ed345dd8abf75fdedfbb02a910b5be220b51b2d9c6d0b5cc734754abd3",
+    "src/ge6_linux/native_thread.h": "b0830f06dbbcafc09da14acfdce23dac022754421aeb99b44c6465fd997883b5",
+    "src/ge6_linux/network_services.h": "8061d9613b5835d6a5bc9e2a1d8f100ced576b05761d9fbfe1923a6a5b9fd8de",
+    "src/ge6_linux/startup_services.h": "2e23540b3cd7020dc09af8f8ec21517308131611daa9a6cc58a48ddc7f027458",
+    "src/ge6_linux/system_services.h": "39dd70017bc46e99d7e35d7158cb78f0ac53349ceac9f0831e7409a029fb0604",
+    "src/ge6_linux/thread_services.h": "0d07571e0bb59a90deaf3ab8186abaa841333d65980524d9fc0383b08ee6094e",
+    "src/ge6_linux/thread_slots.h": "271ea4029fe0e1fd8d45942ba9ec24d0e0d0fc5afadfcbfc8234a04edb223f82",
     "src/ge6_linux/virtual_memory.h": "5f2e61343d459e4dcc45f9e4de160b7c9c58901ef62e59e327d61da759c015a9"
   },
-  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39392545756",
+  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39442120023",
   "image_kind": "local-platform",
   "original_image_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
-  "linux_elf_sha256": "9f47afe7f964f0b8c0546df983f923fe7472f354b016491cb956ac07f2a67cff",
-  "private_serial_log_sha256": "109e8d49bd91422b739d45b4e4d52e132c19ea39567854a013a36028c12da40a",
+  "linux_elf_sha256": "9c899010c0ca149b3f98f2fc586104b6a41e33619774a0b047c58f1dd0f1bbca",
+  "private_serial_log_sha256": "6ef26f5558d3e7d985429c665186f312d09349279b11e07a90d469b8a56fa5d9",
   "kernel": "Linux (none) 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 x86_64 Linux",
   "original_crt_entered": true,
   "original_application_entry_reached": true,
@@ -33,8 +36,8 @@
   "windows_os": false,
   "wine_or_proton_used": false,
   "imported_names": 424,
-  "bound_import_names": 109,
-  "stop_trampoline_names": 315,
+  "bound_import_names": 113,
+  "stop_trampoline_names": 311,
   "observed_os_calls": [
     "GetSystemTimeAsFileTime",
     "GetCurrentProcessId",
@@ -44,7 +47,7 @@
     "HeapCreate",
     "GetVersion",
     "InitializeCriticalSectionAndSpinCount",
-    "FlsAlloc/TlsAlloc",
+    "FlsAlloc",
     "GetStartupInfoW/A",
     "GetFileType",
     "SetHandleCount",
@@ -90,16 +93,84 @@
     "GetSystemInfo/GetNativeSystemInfo",
     "CreateEventA",
     "NtAllocateVirtualMemory",
-    "LoadLibraryA"
+    "LoadLibraryA",
+    "CreateThread",
+    "Sleep",
+    "WaitForSingleObject",
+    "RaiseException",
+    "ThreadNameNotification",
+    "GetEnvironmentVariableA",
+    "TlsAlloc"
   ],
   "com_initialization_reported_unavailable": true,
   "original_core_startup_log_observed": true,
-  "captured_original_log_sha256": "3323d7df2aa4eacfd4eb92e98bca9eb34599ac20174501fa0909542bbcbad178",
+  "captured_original_log_sha256": "2c454bb25d18262c6a27fd843837f67f22432a44ca09c4a806d93758d51a57d7",
+  "original_workers_with_os_calls": [
+    {
+      "entry": "0x140424bb0",
+      "linux_tid": 469,
+      "first_os_call": "timeBeginPeriod"
+    },
+    {
+      "entry": "0x140043620",
+      "linux_tid": 470,
+      "first_os_call": "WaitForSingleObject"
+    }
+  ],
+  "original_worker_shutdown_verified": false,
+  "original_physics_startup_log_observed": true,
+  "staged_private_resources": [
+    {
+      "path": "game.xml",
+      "sha256": "200b54156b11eb978b8a62395d9d95f3e9617be8b28ee704bac7f8d7782f62d8",
+      "size": 1181
+    },
+    {
+      "path": "FarmingSimulator2015.xml",
+      "sha256": "b362df0e420304f4f6e76ae9e7484c93c7024f2aa96965ca92d9872fd56a9f1b",
+      "size": 161
+    },
+    {
+      "path": "VERSION",
+      "sha256": "1d9a70a747f501fcedc9a74ff7268acd6c386387041cbc6b59516b1345af632f",
+      "size": 7
+    },
+    {
+      "path": "steamdata.dat",
+      "sha256": "a6f99156e8f02ffdc4ca71df4820c7e86eb419444e111791c0c2c7a184cdc285",
+      "size": 29
+    },
+    {
+      "path": "dataS.gar",
+      "sha256": "a39d2226a0a3c5e53d3acf5b82ce898c007a2595fc4f688a56807bb917fbed18",
+      "size": 10725376
+    },
+    {
+      "path": "dataS2.gar",
+      "sha256": "64348d90a4c4b288696469faab646d45812d8a114965b70482f51cb4ce061abd",
+      "size": 132797952
+    },
+    {
+      "path": "crc_files.xml",
+      "sha256": "6b7c3e6eb82f5c90f24ba4ceedae6a6abc829158a095d729afcac5013402e6e7",
+      "size": 218
+    },
+    {
+      "path": "data/maps/map01.i3d",
+      "sha256": "c10d4094b69b139142ab5860d58312c3cdf472e51fbcb5dfde9b7e4fa5c0e949",
+      "size": 55498627
+    },
+    {
+      "path": "data/maps/map01/map01_dem.png",
+      "sha256": "60ee62c655ffc12d466f932fb0bf04d202ae5c541ce51efe4e7e3c564fd2b8e7",
+      "size": 1341248
+    }
+  ],
   "stopped_at": {
-    "library": "KERNEL32.dll",
-    "symbol": "CreateThread",
-    "caller": "0x140424d26",
-    "traced_os_calls": 298
+    "library": "OpenAL32.dll",
+    "symbol": "alcOpenDevice",
+    "caller": "0x14004b6a4",
+    "traced_os_calls": 514
   },
   "full_engine_initialization_verified": false,
   "original_renderer_initialized": false,
