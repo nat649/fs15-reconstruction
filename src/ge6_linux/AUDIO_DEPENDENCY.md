@@ -15,11 +15,15 @@ been modified. The installed archive contains the fmt objects as well.
 
 For this diagnostic's static build, `main.cpp.o`, `libopenal.a`, the complete
 OpenAL Soft source and `relink.sh` are supplied together. On Ubuntu 24.04 x86_64,
-install `g++`, `cmake`, `libssl-dev`, `libasound2-dev` and `libpulse-dev`.
+install `g++`, `cmake`, `libssl-dev`, `libasound2-dev`, `libpulse-dev` and `libpng-dev`.
 Run `sh relink.sh` to relink the diagnostic, including with a compatible modified
 OpenAL Soft archive. The adapters' source is in the public repository at the
 artifact's source commit. No restriction is imposed on modifying this library
 or reverse engineering this diagnostic to debug those modifications.
+
+The executable also links the distribution libpng/zlib for PNG frames in PE
+icon resources. Their copyright/license notices accompany the boot artifact.
+The relink script links those distribution development archives as well.
 
 To rebuild OpenAL, use its supplied source with `-DLIBTYPE=STATIC`,
 `-DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF -DALSOFT_TESTS=OFF` and the backend

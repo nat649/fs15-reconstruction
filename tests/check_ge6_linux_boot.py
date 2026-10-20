@@ -182,6 +182,7 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-window-resources'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-console'], check=True, timeout=15, stdout=subprocess.PIPE)
     unhandled = subprocess.run([str(exe.resolve()), '--check-console-default'], capture_output=True, text=True, timeout=15)
     assert unhandled.returncode == 130 and 'GE6_CONSOLE_CALL' in unhandled.stdout, unhandled

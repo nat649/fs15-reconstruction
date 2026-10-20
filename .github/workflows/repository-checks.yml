@@ -31,7 +31,7 @@ jobs:
       - name: Install Linux script/XML development dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth libssl-dev libasound2-dev libpulse-dev
+          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth libssl-dev libasound2-dev libpulse-dev libpng-dev
       - name: Build and test recovered portable components without Windows or original resources
         run: |
           cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DFS15_BUILD_GE6_PHYSICS=ON -DFS15_BUILD_GE6_OBJECTS=ON -DFS15_BUILD_GE6_LINUX_BOOT=ON -DFS15_GE6_BOOT_STATIC=ON -DCMAKE_BUILD_TYPE=Release
@@ -53,6 +53,8 @@ jobs:
         run: |
           cmake --install build/ci-portable-core --prefix build/linux-portable-host
           cp /usr/share/doc/libssl-dev/copyright build/linux-portable-host/share/fs15-reconstruction/OpenSSL-copyright.txt
+          cp /usr/share/doc/libpng-dev/copyright build/linux-portable-host/share/fs15-reconstruction/libpng-copyright.txt
+          cp /usr/share/doc/zlib1g-dev/copyright build/linux-portable-host/share/fs15-reconstruction/zlib-copyright.txt
           python tests/check_portable_host.py --exe build/linux-portable-host/bin/FS15PortableHost --workdir build/linux-host-integration --report build/linux-host-validation.json
           build/ci-portable-core/src/portable/FS15PortableMetadataCheck build/linux-script-metadata
           python tests/check_script_host.py --exe build/linux-portable-host/bin/FS15ScriptHost --workdir build/linux-script-integration --report build/linux-script-host-validation.json

@@ -30,6 +30,7 @@ to their respective material and are preserved separately.
 | [Pillow](https://github.com/python-pillow/Pillow) / [NumPy](https://github.com/numpy/numpy) | Local DDS/DEM object-preview staging tools | Upstream HPND/Pillow notices and BSD-3-Clause, respectively; installed separately, not vendored |
 | [OpenSSL](https://openssl-library.org/) | SHA-256 verification of the private original image in the Linux native-code boot diagnostic | OpenSSL 3 Apache-2.0; the Linux workflow archive includes the distribution copyright notices |
 | [OpenAL Soft 1.24.3](https://openal-soft.org/) | Linux audio middleware called by original GE6 instructions through authored ABI adapters | LGPL-2.0-or-later with upstream exceptions/per-file notices; complete unmodified source, license, static library and relink object/script accompany the boot artifact; see [audio dependency details](src/ge6_linux/AUDIO_DEPENDENCY.md) |
+| [libpng](http://www.libpng.org/pub/png/libpng.html) / [zlib](https://zlib.net/) | Decode embedded original PNG icon frames in Linux PE resource transport | libpng and zlib licenses; distribution copyright notices accompany the Linux boot and host artifacts |
 
 The setup scripts pin dependency revisions; see
 [analysis/lua-toolchain.json](analysis/lua-toolchain.json) and

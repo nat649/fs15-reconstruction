@@ -14,6 +14,7 @@
 #include "audio_services.h"
 #include "audio_check.h"
 #include "console_check.h"
+#include "window_resource_check.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -80,6 +81,7 @@ void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++ca
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
              <<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);
 }
+[[noreturn]] void window_unsupported(const char* name,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT USER32.dll!"<<name<<" caller=0x"<<std::hex<<caller<<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);}
 void fault(int signal,siginfo_t* info,void* raw){
     auto* context=static_cast<ucontext_t*>(raw);char message[192];
     int count=std::snprintf(message,sizeof(message),"GE6_NATIVE_FAULT signal=%d rip=0x%llx address=0x%llx\n",signal,
@@ -223,6 +225,13 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     }
     if(library=="WS2_32.dll")return ge6_net::resolve(name);
     if(library=="OpenAL32.dll")return ge6_audio::resolve(name);
+    if(library=="USER32.dll"){
+        if(name=="LoadImageW")return reinterpret_cast<uintptr_t>(&ge6_images::load);
+        if(name=="DestroyIcon")return reinterpret_cast<uintptr_t>(&ge6_images::destroy);
+        if(name=="RegisterClassW")return reinterpret_cast<uintptr_t>(&ge6_classes::add);
+        if(name=="UnregisterClassW")return reinterpret_cast<uintptr_t>(&ge6_classes::remove);
+        return 0;
+    }
     if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
     if(library=="ole32.dll"&&name=="CoInitializeEx")return reinterpret_cast<uintptr_t>(&com_initialize);
     if(library=="d3d9.dll"&&name=="Direct3DCreate9")return reinterpret_cast<uintptr_t>(&direct3d9_unavailable);
@@ -282,6 +291,9 @@ struct Image {
             if(!skip&&bytes)std::memcpy(mapped+rva,raw.data()+file,bytes);
             sections.push_back({rva,length,flags,skip});
         }
+        auto resource=read<uint32_t>(raw,opt+128),resource_size=read<uint32_t>(raw,opt+132);
+        if(resource||resource_size){require(resource&&resource_size&&uint64_t(resource)+resource_size<=size,"Invalid PE resource bounds");auto readable=std::find_if(sections.begin(),sections.end(),[&](const Section& section){return !section.skip&&(section.flags&0x40000000)&&resource>=section.rva&&uint64_t(resource)+resource_size<=uint64_t(section.rva)+section.length;});require(readable!=sections.end(),"PE resource directory outside readable section");}
+        ge6_images::install(base,resource,resource_size?std::vector<uint8_t>(mapped+resource,mapped+resource+resource_size):std::vector<uint8_t>{});
         auto table=read<uint32_t>(raw,opt+120),table_size=read<uint32_t>(raw,opt+124);require(table&&table_size>=20&&table<size&&table_size<=size-table,"Invalid PE import directory");
         auto allocation2=mmap(nullptr,trampoline_bytes,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);require(allocation2!=MAP_FAILED,"Cannot allocate import-stop trampolines");trampolines=static_cast<uint8_t*>(allocation2);
         uint32_t supported=0;bool terminated=false;
@@ -310,6 +322,10 @@ int main(int argc,char** argv){
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
         ge6_audio::trace=trace;
+        ge6_images::trace=trace;ge6_images::set_error=[](uint32_t value){last_error=value;};ge6_images::stop=window_unsupported;
+        ge6_images::record=[](const char* event,uint32_t first,uint32_t second){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_IMAGE_RESOURCE_"<<event<<" first="<<first<<" second="<<second<<'\n';};
+        ge6_classes::trace=trace;ge6_classes::set_error=[](uint32_t value){last_error=value;};ge6_classes::stop=window_unsupported;
+        ge6_classes::record=[](const char* event,uint16_t atom,uintptr_t procedure){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_WINDOW_CLASS_"<<event<<" atom="<<atom<<" procedure=0x"<<std::hex<<procedure<<std::dec<<'\n';};
         ge6_console::trace=trace;ge6_console::set_error=[](uint32_t value){last_error=value;};
         ge6_console::record=[](const char* action,uintptr_t entry,uint32_t event){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_CONSOLE_"<<action<<" entry=0x"<<std::hex<<entry<<std::dec<<" event="<<event<<" tid="<<syscall(SYS_gettid)<<'\n';};
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
@@ -318,6 +334,7 @@ int main(int argc,char** argv){
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
+        if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check();std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}
         if(argc==2&&std::string(argv[1])=="--check-audio"){ge6_audio::check();std::cout<<"GE6 Linux OpenAL Soft actual device/context, PCM loopback energy, source queue/play/pause/stop and errors passed\n";return 0;}
