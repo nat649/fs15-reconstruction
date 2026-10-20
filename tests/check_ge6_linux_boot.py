@@ -223,6 +223,27 @@ def window_resource_fixture():
     return data
 
 
+def message_fixture():
+    """Seven Microsoft-ABI arguments, UTF-16 result and untouched buffer guard."""
+    data = fixture()
+    data[0x680:0x700] = bytes(0x80)
+    data[0x700:0x780] = bytes(0x80)
+    for table in (0x680, 0x700):
+        struct.pack_into('<Q', data, table, 0x2200)
+    data[0x802:0x811] = b'FormatMessageW\0'
+    data[0xc00:0xc80] = bytes((0xa5,)) * 0x80
+    code = bytearray(b'\x48\x83\xec\x38\xb9\x00\x10\x00\x00\x31\xd2\x41\xb8\x7f\x00\x00\x00\x45\x31\xc9')
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003000) + b'\x48\x89\x44\x24\x20'
+    code += b'\x48\xc7\x44\x24\x28\x40\x00\x00\x00\x48\xc7\x44\x24\x30\x00\x00\x00\x00'
+    code += b'\xff\x15' + struct.pack('<i', 0x2100 - (0x1000 + len(code) + 6))
+    code += b'\x83\xf8\x2d\x74\x02\x0f\x0b\x48\xb8' + struct.pack('<Q', 0x140003000)
+    code += b'\x81\x38' + struct.pack('<I', 0x00680054) + b'\x74\x02\x0f\x0b'
+    code += b'\x48\xb8' + struct.pack('<Q', 0x14000305a)
+    code += b'\x81\x38' + struct.pack('<I', 0xa5a50000) + b'\x74\x02\x0f\x0b\x48\x83\xc4\x38\xc3'
+    data[0x400:0x600] = code.ljust(0x200, b'\0')
+    return data
+
+
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
@@ -237,6 +258,11 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-window-resources'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-modules'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-user-module'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-format-message'], check=True, timeout=15)
+    message_path = workdir / 'authored-system-message.exe'
+    message_path.write_bytes(message_fixture())
+    message = subprocess.run([str(exe.resolve()), '--fixture', str(message_path)], capture_output=True, text=True, timeout=15)
+    assert message.returncode == 0 and 'GE6_AUTHORED_FIXTURE_RETURN' in message.stdout, message.stdout + message.stderr
     window_path = workdir / 'authored-window-resources.exe'
     window_path.write_bytes(window_resource_fixture())
     window = subprocess.run([str(exe.resolve()), '--fixture', str(window_path)], capture_output=True, text=True, timeout=15)

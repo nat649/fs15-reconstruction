@@ -82,7 +82,8 @@ void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++ca
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
              <<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);
 }
-[[noreturn]] void window_unsupported(const char* name,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT USER32.dll!"<<name<<" caller=0x"<<std::hex<<caller<<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);}
+[[noreturn]] void api_unsupported(const char* library,const char* name,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT "<<library<<'!'<<name<<" caller=0x"<<std::hex<<caller<<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);}
+[[noreturn]] void window_unsupported(const char* name,uintptr_t caller){api_unsupported("USER32.dll",name,caller);}
 void fault(int signal,siginfo_t* info,void* raw){
     auto* context=static_cast<ucontext_t*>(raw);char message[192];
     int count=std::snprintf(message,sizeof(message),"GE6_NATIVE_FAULT signal=%d rip=0x%llx address=0x%llx\n",signal,
@@ -97,6 +98,14 @@ MS uint32_t ticks(){trace("GetTickCount");timespec t{};clock_gettime(CLOCK_MONOT
 MS int counter(int64_t* out){trace("QueryPerformanceCounter");auto caller=reinterpret_cast<uintptr_t>(__builtin_return_address(0));if(!main_reached&&caller>=base+0xc9a0&&caller<base+0xc9a0+4364){main_reached=true;std::cout<<"GE6_ORIGINAL_MAIN_REACHED caller=0x"<<std::hex<<caller<<std::dec<<'\n';}timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);*out=int64_t(t.tv_sec)*1000000000+t.tv_nsec;return 1;}
 MS int frequency(int64_t* out){trace("QueryPerformanceFrequency");*out=1000000000;return 1;}
 MS uint32_t get_error(){return last_error;}
+MS uint32_t format_message_w(uint32_t flags,const void*,uint32_t id,uint32_t language,uint16_t* out,uint32_t capacity,void*){
+    trace("FormatMessageW");if(flags!=0x1000&&flags!=0x1200)api_unsupported("KERNEL32.dll","FormatMessageW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));
+    if(language&&language!=0x409){last_error=1815;return 0;}const char16_t* text=nullptr;
+    if(id==126)text=u"The specified module could not be found.\r\n";
+    if(id==127)text=u"The specified procedure could not be found.\r\n";
+    if(!text){if(id<0x10000)api_unsupported("KERNEL32.dll","FormatMessageW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));last_error=317;return 0;}if(!out){last_error=87;return 0;}
+    auto count=std::char_traits<char16_t>::length(text);if(count>=capacity){last_error=122;return 0;}std::memcpy(out,text,(count+1)*2);return uint32_t(count);
+}// Bounded English system messages for optional SDL module/export failures, not a complete Windows message catalogue.
 MS void set_error(uint32_t value){last_error=value;}
 MS uintptr_t encode(uintptr_t p){return p^0x6e61746976654745ull;}
 MS void* heap_create(uint32_t flags,size_t initial,size_t maximum){trace("HeapCreate");require(flags==0&&maximum==0&&initial<=0x100000,"Unsupported CRT heap flags/limits");return &heap_token;}
@@ -250,6 +259,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetTickCount",ticks);BIND("QueryPerformanceCounter",counter);BIND("QueryPerformanceFrequency",frequency);
     BIND("SetConsoleCtrlHandler",ge6_console::set_handler);
     BIND("GetLastError",get_error);BIND("SetLastError",set_error);BIND("EncodePointer",encode);BIND("DecodePointer",encode);
+    BIND("FormatMessageW",format_message_w);
     BIND("HeapCreate",heap_create);BIND("GetProcessHeap",process_heap);BIND("HeapAlloc",heap_alloc);BIND("HeapFree",heap_free);BIND("GetVersion",version);BIND("HeapSetInformation",heap_info);
     BIND("HeapSize",heap_size);BIND("HeapReAlloc",heap_realloc);
     BIND("InitializeCriticalSectionAndSpinCount",init_lock);BIND("InitializeCriticalSection",initialize_lock);BIND("EnterCriticalSection",enter_lock);BIND("LeaveCriticalSection",leave_lock);BIND("DeleteCriticalSection",delete_lock);
@@ -345,6 +355,7 @@ int main(int argc,char** argv){
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
         if(argc==2&&std::string(argv[1])=="--check-modules"){auto first=load_library_w(reinterpret_cast<const uint16_t*>(u"KERNEL32.DLL"));auto second=load_library_a("kernel32.dll");require(first==kernel_token&&second==first&&explicit_module_refs.at(first)==2,"Unicode/ANSI module references differ");require(get_proc(first,"GetCurrentThreadId")!=0&&free_library(first)&&free_library(second)&&!free_library(second)&&last_error==6,"Module procedure/reference cleanup differs");require(!load_library_w(nullptr)&&last_error==87,"Null module name accepted");const uint16_t bad[]{0xd800,0};require(!load_library_w(bad)&&last_error==1113,"Malformed UTF16 module name accepted");require(!load_library_w(reinterpret_cast<const uint16_t*>(u"authored-absent-\u00e9.dll"))&&last_error==126,"Unavailable Unicode DLL did not fail");std::cout<<"GE6 Unicode/ANSI authored-module lookup, Microsoft ABI procedures and reference cleanup passed; no Windows DLL loader\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-user-module"){auto user=load_library_w(reinterpret_cast<const uint16_t*>(u"USER32.DLL"));require(user==user_token&&get_module_a("user32.dll")==user&&get_proc(user,"LoadImageW")==reinterpret_cast<uintptr_t>(&ge6_images::load)&&get_proc(user,"RegisterClassW")==reinterpret_cast<uintptr_t>(&ge6_classes::add),"Dynamic USER32 lookup did not preserve Microsoft ABI adapters");require(get_proc(user,"UnsupportedAuthoredWindowAPI")==0&&last_error==127&&free_library(user)&&explicit_module_refs.empty(),"Partial USER32 export/reference behavior differs");std::cout<<"GE6 dynamic USER32 module resolves only implemented Microsoft-ABI image/class exports; no window created\n";return 0;}
+        if(argc==2&&std::string(argv[1])=="--check-format-message"){uint16_t out[64]{};last_error=987;auto count=format_message_w(0x1000,nullptr,127,0,out,64,nullptr);require(count==45&&last_error==987&&std::memcmp(out,u"The specified procedure could not be found.\r\n",92)==0,"SDL message/count/error preservation differs");out[0]=0xaaaa;require(!format_message_w(0x1000,nullptr,127,0,out,4,nullptr)&&last_error==122&&out[0]==0xaaaa,"Small message buffer overwritten");require(!format_message_w(0x1000,nullptr,0xdeadbeef,0,out,64,nullptr)&&last_error==317&&!format_message_w(0x1000,nullptr,127,0x40c,out,64,nullptr)&&last_error==1815,"Unsupported message/language reported success");std::cout<<"GE6 bounded English SDL module/procedure error formatting, buffer size and error contracts passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check(last_error);std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}
