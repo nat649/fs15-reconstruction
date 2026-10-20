@@ -29,6 +29,13 @@ class BootEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'faulted'):
             self.parse('local-platform', 'GE6_NATIVE_FAULT signal=11\n')
 
+    def test_startup_journal_does_not_establish_complete_engine_boot(self):
+        result = self.parse('local-platform', 'GE6_ORIGINAL_LOG_BEGIN\nGIANTS Engine Runtime 6.0.2 64bit (authored fixture)\nGE6_ORIGINAL_LOG_END\n')
+        self.assertTrue(result['original_core_startup_log_observed'])
+        self.assertIsNotNone(result['captured_original_log_sha256'])
+        self.assertFalse(result['full_engine_initialization_verified'])
+        self.assertFalse(result['menu_verified'])
+
     def parse(self, kind, extra=''):
         fixtures = Path(__file__).resolve().parents[1] / 'build/test-fixtures/ge6-boot-evidence'
         fixtures.mkdir(parents=True, exist_ok=True)

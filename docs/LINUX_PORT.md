@@ -5,8 +5,11 @@ The private original image has reached its original application entry under
 Linux after CRT/global initialization. This is separate from the authored
 frontend/physics/render fixtures described below. The unmodified-instruction
 reference stops at the original application's unbound Steam restart import.
-The existing modified Local GE6 input passes this boundary and reaches original
-profile/configuration loading through Linux OS adapters. No original menu or
+The existing modified Local GE6 input passes this boundary, loads configuration,
+enters central initialization and writes the original engine journal. Linux
+socket/timer/system/event and virtual-memory services now carry startup into the
+original embedded Lua allocator; the next stop is native `CreateThread`.
+No original menu or
 engine renderer has initialized through that Linux path yet.
 
 An experimental graphical frontend is now also buildable as `FS15MenuLinux`.

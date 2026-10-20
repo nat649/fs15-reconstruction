@@ -105,6 +105,30 @@ def check(exe, workdir):
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x140001' in result.stderr, result
     result = run(fixture(), '--image')
     assert result.returncode == 1 and 'hash differs' in result.stderr, result
+    network = fixture()
+    network[0x640:0x660] = b'WS2_32.dll\0'.ljust(32, b'\0')
+    for i, ordinal in enumerate((115, 116, 111, 0, 0)):
+        value = (1 << 63) | ordinal if ordinal else 0
+        struct.pack_into('<Q', network, 0x680 + i * 8, value)
+        struct.pack_into('<Q', network, 0x700 + i * 8, value)
+    network[0xc00 + 408] = 0xa5
+    code = bytearray(b'\x48\x83\xec\x28')
+    def net_call(iat):
+        code.extend(b'\xff\x15' + struct.pack('<i', iat - (0x1000 + len(code) + 6)))
+    code += b'\xb9\x02\x02\x00\x00\x48\xba' + struct.pack('<Q', 0x140003000)
+    net_call(0x2100)
+    code += b'\x85\xc0\x74\x02\x0f\x0b\x48\xb8' + struct.pack('<Q', 0x140003000)
+    code += b'\x81\x38\x02\x02\x02\x02\x74\x02\x0f\x0b'
+    code += b'\x80\xb8' + struct.pack('<I', 408) + b'\xa5\x74\x02\x0f\x0b'
+    net_call(0x2108)
+    code += b'\x85\xc0\x74\x02\x0f\x0b'
+    net_call(0x2108)
+    code += b'\x83\xf8\xff\x74\x02\x0f\x0b'
+    net_call(0x2110)
+    code += b'\x3d' + struct.pack('<I', 10093) + b'\x74\x02\x0f\x0b\x48\x83\xc4\x28\xc3'
+    network[0x400:0x600] = code.ljust(0x200, b'\x00')
+    result = run(network)
+    assert result.returncode == 0 and 'supported_imports=3 blocked_imports=0' in result.stdout and 'GE6_OS WSAStartup' in result.stdout, result
     local = fixture()
     local[0x640:0x640 + 15] = b'fs15_local.dll\0'
     names = (b'SteamAPI_Init', b'SteamApps', b'SteamUtils', b'SteamUser', b'SteamUserStats')

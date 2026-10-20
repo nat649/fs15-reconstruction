@@ -157,7 +157,12 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Resolve the original application platform boundary: the current unmodified-instruction run stops at `SteamAPI_RestartAppIfNecessary`; no Steam service is synthesized. See [evidence and remaining startup dependencies](docs/GE6_LINUX_NATIVE_BOOT.md).
 - [x] Port the existing Local GE6 platform adapter to the Linux instruction transport and accept its separately pinned, previously prepared image; retain its documented Windows bootstrap modification and keep unavailable Steam services false/null.
 - [x] Execute original profile creation, startup configuration copy/timestamp checks and XML read on Linux through synchronous POSIX file and UTF-8/UTF-16 bindings; expose Linux absolute paths as `Z:/` to GE6's original Windows path resolver.
-- [x] Reach original application construction after configuration parsing; preserve optional COM initialization failure. The next observed stop is Winsock `WSAStartup` (`WS2_32.dll`, ordinal 115), before full engine initialization.
+- [x] Reach original application construction after configuration parsing; preserve optional COM initialization failure.
+- [x] Bind original Winsock startup/cleanup and bounded IPv4 UDP operations to POSIX sockets; validate actual loopback datagrams, error/lifetime behavior and authored PE ordinal-import/WSADATA ABI checks.
+- [x] Enter original central engine initialization and write its own startup journal on Linux, with actual Linux CPU/memory information, main-thread timer/affinity services and a bounded read-only CPU registry view.
+- [x] Pass original script-system unnamed-event creation and embedded Lua NT memory reservation/commitment through Linux OS bindings; test event wakeups and actual page protections/lifetimes.
+- [ ] Complete native thread startup with per-thread NT_TIB/TLS/CRT state and lifetime handling; the current original-code stop is `CreateThread`, caller `0x140424d26`.
+- [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [x] Recover GE6 array/index/range draw dispatch and point-size cache; compare 4,096 driver states and 3,853 ordered calls with original code. Add actual-driver primitive framebuffer readback to the optional GL check.

@@ -64,7 +64,7 @@ argument calls with stack arguments, CP1252 accented/euro conversion, GS stack
 metadata, callback registration, and cross-process singleton presence/lifetime.
 Public CI does not contain or run the original image.
 
-## Existing Local GE6 input on Linux
+## Existing Local GE6 input on Linux (2026-10-20)
 
 The existing private `build/ge6-local/x64/FarmingSimulator2015Game.exe` has SHA-256
 `e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955`.
@@ -85,22 +85,37 @@ The actual Linux VM run now executes original profile creation, `game.xml`
 copy/timestamp checks, disk read and the original configuration XML parser,
 then enters the original application constructor at `0x1400010d0`. Its optional
 COM initialization receives an explicit failure (`E_NOTIMPL`); the original
-caller continues. The next stop is `WS2_32.dll!ordinal:115` (`WSAStartup`), caller
-`0x1400011cc`, before complete core engine initialization. These operations use the engine's
-existing file manager and parser; the launcher supplies POSIX calls and text
-conversion only. `Z:/` maps explicitly to the Linux root because the original
+caller continues. Winsock startup now succeeds through POSIX sockets, followed
+by original central initialization at `0x14008abe0`. GE6 writes its own journal
+with its runtime banner and actual QEMU CPU/Linux memory observations. The
+original script system creates its events and reserves/commits its Lua memory.
+The next explicit stop is `KERNEL32.dll!CreateThread`, caller `0x140424d26`, while
+the embedded Lua subsystem is starting a worker. No native PE worker is started
+yet. Correct thread-local NT_TIB/CRT/TLS and lifecycle support must accompany
+that implementation; the existing CRT slots remain bounded to the main thread.
+
+The original file manager, configuration parser, logger and Lua allocation code
+remain in control; these additions are authored OS transport. `Z:/` maps
+explicitly to the Linux root because the original
 Windows engine recognizes drive-qualified absolute paths, not POSIX `/` paths.
 Other drives and drive-relative paths are rejected.
 
 The [separate local-image evidence](../analysis/ge6-linux-local-boot-validation.json)
 records the input/source/ELF/log hashes and the current stop; it does not replace
 the reference-image evidence above. Dedicated
-[Linux CI run 39237900399](https://github.com/nat649/fs15-reconstruction/actions/runs/39237900399)
+[Linux CI run 39392545756](https://github.com/nat649/fs15-reconstruction/actions/runs/39392545756)
 passes authored ABI, Unicode, file lifecycle/search/copy/timestamp, drive mapping,
-compatibility-version and unavailable-platform contracts for that source.
+compatibility-version and unavailable-platform contracts for that source,
+plus real UDP loopback, timer-slack/affinity, CPU/memory/registry queries,
+manual/auto-reset event wakeups and virtual-memory protection/lifetime checks.
 Public CI does not contain the original game. The missing optional
 `preloadMemory.pak` produces an ordinary file-not-found result and the original
 engine continues to configuration loading; no cache contents are synthesized.
+The private serial log also captures the original journal after exit. Only its
+captured-block hash and a startup-banner observation are published. Its
+`Windows NT 6.0` text comes from original logging of the compatibility API level;
+the actual host kernel remains Linux. Journal output is evidence of partial
+initialization, not proof of a menu, renderer or loaded game world.
 
 The private VM invocation can stage startup configuration files from the local
 prepared game directory:
@@ -141,9 +156,41 @@ host; the VM reports its actual Linux kernel separately.
 `CoInitializeEx` explicitly fails: no COM apartment, object activation or
 DirectX/COM service is supplied. Its return value is checked in authored tests;
 the observed original startup caller tolerates the failure.
-Complete Windows DLL loading, SEH/unwind and exception dispatch, TEB/PEB, extra
-threads, window/OpenGL, audio, networking
-and Steam services remain unimplemented here.
+The bounded network adapter negotiates Winsock versions in the x64 `WSADATA`
+layout, probes actual IPv4 UDP support, tracks startup/cleanup references and
+owns real POSIX sockets. Its direct UDP bind/name/send/receive calls translate
+errors and report truncation. TCP, DNS, IPv6, overlapped socket APIs and full
+Winsock provider behavior remain unimplemented. This does not validate FS15
+multiplayer or an online session. The isolated original-code VM has no network
+device; UDP loopback is tested separately on the Linux CI host.
+
+Main-thread timer requests check Linux clock resolution, bound timer slack and
+restore it when leases end. Affinity uses actual Linux CPU masks within the
+supported low 64 CPUs; it rejects unsupported handles/masks. Full Windows
+multimedia/process-wide scheduling behavior is not reproduced. Unnamed events
+support auto/manual reset and finite/infinite waits through mutexes/condition
+variables. Named events and native PE thread creation remain unavailable.
+
+The read-only CPU registry view exposes only `ProcessorNameString` from Linux
+`/proc/cpuinfo`; unknown keys/values fail. Memory totals/availability come from
+`/proc/meminfo`, not an invented Windows machine. Commit accounting/cgroup
+limits and processor groups are not Windows-compatible; virtual space uses a
+conservative low-47-bit budget capped by `RLIMIT_AS`.
+
+The original Lua allocator's dynamically resolved `NtAllocateVirtualMemory`
+uses real anonymous Linux reservations and page commitments, with low-address
+allocation for its observed request. Managed-region `VirtualQuery` and
+decommit/release are connected; recommit preserves existing data or zeroes
+decommitted pages as appropriate. Only owned mappings and non-executable
+protections are supported. Arbitrary address-space queries, guard pages,
+large-page/NUMA policies and general NT/JIT contracts remain open.
+
+`LoadLibraryA`/`GetModuleHandle`/`GetProcAddress` expose only the known authored
+kernel/NT/timer ABI modules. Explicit loads/releases track references; this does
+not load Windows DLL code or unload the resident import transport. Missing
+modules/procedures fail. General Windows DLL loading, SEH/unwind and exception
+dispatch, TEB/PEB, native threads, window/OpenGL, audio and Steam services remain
+unimplemented here.
 
 Exception-filter registration retains/replaces the native callback and returns
 the previous value; native Windows exception dispatch is not connected. The
@@ -170,6 +217,10 @@ log distinguishes CRT execution, missing services, native faults and exits.
 
 PE mapping follows the [Microsoft specification](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format).
 The ABI bridge uses GCC's [`ms_abi` attribute](https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html).
+API contracts use Microsoft's [Winsock startup](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsastartup),
+[timer requests](https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod)
+and [NT virtual allocation](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntallocatevirtualmemory)
+documentation; satisfying a bounded observed contract does not establish complete Windows API parity.
 
 Acceptance milestones are original CRT completion, original application startup,
 renderer/window creation, resource loading and a native GE6 menu/map session.

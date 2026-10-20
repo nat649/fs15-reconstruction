@@ -21,8 +21,12 @@ preview remain fixtures. Complete original-engine Linux boot is not yet validate
 The private reference image executes its CRT/global initialization and reaches
 its original application entry inside a local Linux VM without Wine/Proton or
 instruction patches; it stops at the unbound Steam restart API. The separately
-pinned, existing **Local GE6** image now proceeds through original profile and
-XML configuration loading using Linux file services. That input retains its
+pinned, existing **Local GE6** image now proceeds through original profile/XML
+loading into central engine initialization. It writes its own startup journal,
+reads actual Linux CPU/memory information and reserves/commits memory for its
+original embedded Lua allocator. Winsock startup, bounded UDP, timers and unnamed
+events have Linux transports; native `CreateThread` is the next observed stop.
+That input retains its
 previous Windows platform-bootstrap modification; the Linux loader adds no
 instruction patches. Original core renderer/window initialization remains open;
 this is not a playable Linux game.

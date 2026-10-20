@@ -59,7 +59,7 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 observed_os_calls=list(dict.fromkeys(re.findall(r'^GE6_OS ([^\r\n]+)', text, re.MULTILINE))),
                 com_initialization_reported_unavailable='GE6_COM_UNAVAILABLE' in text,
                 original_core_startup_log_observed=b'GIANTS Engine Runtime 6.0.2 64bit' in original_log,
-                original_engine_log_sha256=hashlib.sha256(original_log).hexdigest() if journal else None,
+                captured_original_log_sha256=hashlib.sha256(original_log).hexdigest() if journal else None,
                 stopped_at=dict(library=blocked[1], symbol=blocked[2], caller=blocked[3], traced_os_calls=int(blocked[4])),
                 full_engine_initialization_verified=False, original_renderer_initialized=False,
                 menu_verified=False, playable_linux_game_verified=False, recompiled_engine=False,
