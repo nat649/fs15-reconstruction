@@ -25,6 +25,13 @@ The executable also links the distribution libpng/zlib for PNG frames in PE
 icon resources. Their copyright/license notices accompany the boot artifact.
 The relink script links those distribution development archives as well.
 
+The X11/GLX artifact supplies the same OpenAL source and relinking objects.
+Its `link-mode.txt` selects dynamic X11, RandR and OpenGL libraries; install
+`libx11-dev`, `libxrandr-dev` and `libgl-dev` before relinking on Ubuntu 24.04.
+X11/RandR provide host display/window services and Mesa/GLX provides native
+OpenGL. Neither is recovered GE6 code. The artifact includes distribution
+copyright notices for these dependencies.
+
 To rebuild OpenAL, use its supplied source with `-DLIBTYPE=STATIC`,
 `-DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF -DALSOFT_TESTS=OFF` and the backend
 options in the transport CMake file; copy the resulting `libopenal.a` here.

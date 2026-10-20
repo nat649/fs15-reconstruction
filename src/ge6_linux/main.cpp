@@ -83,12 +83,22 @@ std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
 void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';if(ge6_threads::active_entry&&!ge6_threads::traced_import){ge6_threads::traced_import=true;std::cout<<"GE6_NATIVE_THREAD_FIRST_OS name="<<name<<" entry=0x"<<std::hex<<ge6_threads::active_entry<<std::dec<<" tid="<<syscall(SYS_gettid)<<'\n';}}
 [[noreturn]] MS void missing(uint32_t id){
+    {
     std::lock_guard<std::mutex> guard(trace_mutex);
     std::cerr<<"GE6_BLOCKED_IMPORT "<<(id<imports.size()?imports[id]:"invalid-index")
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
-             <<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);
+             <<std::dec<<" os_calls="<<calls<<'\n';
+    }
+#ifdef GE6_X11
+    ge6_windows::capture_on_stop();
+#endif
+    std::_Exit(78);
 }
-[[noreturn]] void api_unsupported(const char* library,const char* name,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT "<<library<<'!'<<name<<" caller=0x"<<std::hex<<caller<<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);}
+[[noreturn]] void api_unsupported(const char* library,const char* name,uintptr_t caller){{std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT "<<library<<'!'<<name<<" caller=0x"<<std::hex<<caller<<std::dec<<" os_calls="<<calls<<'\n';}
+#ifdef GE6_X11
+    ge6_windows::capture_on_stop();
+#endif
+    std::_Exit(78);}
 [[noreturn]] void window_unsupported(const char* name,uintptr_t caller){api_unsupported("USER32.dll",name,caller);}
 void fault(int signal,siginfo_t* info,void* raw){
     auto* context=static_cast<ucontext_t*>(raw);char message[192];

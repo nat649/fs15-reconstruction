@@ -33,6 +33,7 @@ inline Display* display=nullptr;
 struct Mode {unsigned long id;int width,height,rate;};
 struct Output {std::u16string name,monitor,description;unsigned long id,crtc;int x,y,width,height,mm_width,mm_height;bool primary;Mode current;std::vector<Mode> modes;};
 inline std::vector<Output> outputs;
+inline std::map<unsigned long,Mode> initial_modes;
 inline int bits=0;
 inline bool connect(){
     if(display)return true;
@@ -53,6 +54,22 @@ inline bool refresh(){
     }XRRFreeScreenResources(resources);if(!outputs.empty()&&!primary)outputs.front().primary=true;return !outputs.empty();
 }
 inline Output* output(const uint16_t* raw){if(outputs.empty()&&!refresh())return nullptr;auto name=wide(raw);for(auto& value:outputs)if(!raw||name==value.name||name==value.monitor)return &value;return nullptr;}
+inline GE6_DISPLAY_MS int32_t change_settings(const uint16_t* name,const void* requested,uintptr_t owner,uint32_t flags,const void* parameter){
+    trace("ChangeDisplaySettingsExW");if(owner||parameter)return -5;if(flags&~uint32_t(6))return -4;
+    std::lock_guard<std::recursive_mutex> lock(mutex);if(!refresh())return -1;auto* value=output(name);if(!value)return -2;
+    Mode selected{};if(!requested){auto previous=initial_modes.find(value->id);selected=previous==initial_modes.end()?value->current:previous->second;}
+    else {if(field<uint16_t>(requested,68)!=220||field<uint16_t>(requested,70))return -5;auto fields=field<uint32_t>(requested,72);if((fields&0x40000)&&field<uint32_t>(requested,168)!=uint32_t(bits))return -2;
+        for(auto candidate:value->modes){if((fields&0x80000)&&field<uint32_t>(requested,172)!=uint32_t(candidate.width))continue;if((fields&0x100000)&&field<uint32_t>(requested,176)!=uint32_t(candidate.height))continue;if((fields&0x400000)&&field<uint32_t>(requested,184)>1&&field<uint32_t>(requested,184)!=uint32_t(candidate.rate))continue;selected=candidate;break;}}
+    if(!selected.id)return -2;
+    if(flags&2)return 0;
+    initial_modes.emplace(value->id,value->current);auto old=value->current.id;auto id=value->id;
+    if(selected.id!=old){auto* resources=XRRGetScreenResourcesCurrent(display,DefaultRootWindow(display));if(!resources)return -1;auto* crtc=XRRGetCrtcInfo(display,resources,value->crtc);if(!crtc){XRRFreeScreenResources(resources);return -1;}
+        bool fits=value->x+selected.width<=DisplayWidth(display,0)&&value->y+selected.height<=DisplayHeight(display,0);int result=fits?XRRSetCrtcConfig(display,resources,value->crtc,CurrentTime,value->x,value->y,selected.id,crtc->rotation,crtc->outputs,crtc->noutput):RRSetConfigFailed;XRRFreeCrtcInfo(crtc);XRRFreeScreenResources(resources);XSync(display,False);if(result!=RRSetConfigSuccess)return -1;
+    }
+    if(!refresh())return -1;
+    auto actual=std::find_if(outputs.begin(),outputs.end(),[id](const Output& item){return item.id==id;});if(actual==outputs.end()||actual->current.id!=selected.id)return -1;
+    std::fprintf(stderr,"GE6_X11_DISPLAY_MODE output=%lu mode=%lu changed=%d width=%d height=%d caller=0x%lx\n",id,selected.id,int(old!=selected.id),actual->width,actual->height,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;
+}
 #endif
 inline GE6_DISPLAY_MS int devices(const uint16_t* parent,uint32_t index,Device* result,uint32_t flags){
     trace("EnumDisplayDevicesW");if(!result||result->size!=840){set_error(87);return 0;}if(flags){stop("USER32.dll","EnumDisplayDevicesW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}
@@ -94,6 +111,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
 #define DISPLAY_BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     if(library=="USER32.dll"){DISPLAY_BIND("EnumDisplayDevicesW",devices);DISPLAY_BIND("EnumDisplaySettingsW",settings);}
 #ifdef GE6_X11
+    if(library=="USER32.dll"){DISPLAY_BIND("ChangeDisplaySettingsExW",change_settings);}
     if(library=="GDI32.dll"){DISPLAY_BIND("CreateDCW",create_dc);DISPLAY_BIND("GetDeviceCaps",caps);DISPLAY_BIND("DeleteDC",delete_dc);DISPLAY_BIND("CreateCompatibleBitmap",bitmap);DISPLAY_BIND("GetDIBits",dibits);DISPLAY_BIND("DeleteObject",delete_object);}
 #endif
 #undef DISPLAY_BIND

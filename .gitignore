@@ -11,6 +11,7 @@
 /analysis/*
 !/analysis/ge6-linux-native-boot-validation.json
 !/analysis/ge6-linux-local-boot-validation.json
+!/analysis/ge6-linux-x11-validation.json
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json
 !/analysis/rle8-reference.json

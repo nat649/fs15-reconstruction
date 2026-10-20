@@ -5,6 +5,7 @@ local setup-generated key. The VM uses official Ubuntu tools and Xvfb.
 """
 import argparse
 import base64
+import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import shlex
@@ -48,13 +49,14 @@ def upload(client, source, target):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=('start','status','compile','stage','run','capture','exec','stop'))
+    parser.add_argument('action',choices=('start','status','compile','deploy','stage','run','capture','exec','stop'))
     parser.add_argument('--directory',type=Path,default=ROOT/'build/ge6-graphics-vm')
     parser.add_argument('--port',type=int,default=22222)
     parser.add_argument('--qemu',type=Path)
     parser.add_argument('--kernel',type=Path,default=ROOT/'build/linux-play-vm/boot/vmlinuz-virt')
     parser.add_argument('--resources',type=Path,default=ROOT/'build/ge6-local')
     parser.add_argument('--command')
+    parser.add_argument('--exe',type=Path)
     args=parser.parse_args();directory=args.directory
     if args.action=='start':
         if not args.qemu:
@@ -80,17 +82,28 @@ def main():
                     upload(client,source,'/work/src/'+source.name)
             code,text=command(client,'cd /work/src && g++ -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -maccumulate-outgoing-args -DGE6_X11=1 -I/work/include main.cpp /work/libopenal.a -lcrypto -lpng -lX11 -lXrandr -lXcursor -lXi -lGL -latomic -ldl -lpthread -lm -o /work/FS15GE6LinuxBoot',timeout=600)
             (directory/'compile.log').write_text(text)
+        elif args.action=='deploy':
+            if not args.exe:
+                parser.error('deploy requires --exe')
+            upload(client,args.exe,'/work/FS15GE6LinuxBoot')
+            code,_=command(client,'chmod 755 /work/FS15GE6LinuxBoot; sha256sum /work/FS15GE6LinuxBoot')
         elif args.action=='stage':
             names=('x64/FarmingSimulator2015Game.exe','game.xml','FarmingSimulator2015.xml','VERSION','steamdata.dat',
                    'dataS.gar','dataS2.gar','crc_files.xml','data/maps/map01.i3d','data/maps/map01/map01_dem.png')
             for name in names:
                 print('Private VM input: '+name,flush=True)
                 upload(client,args.resources/name,'/game/'+name)
+            manifest={name:dict(sha256=hashlib.sha256((args.resources/name).read_bytes()).hexdigest(),size=(args.resources/name).stat().st_size) for name in names}
+            (directory/'staged-inputs.json').write_text(json.dumps(manifest,indent=2)+'\n')
             code,_=command(client,'/usr/bin/busybox mkdir -p /profile')
         elif args.action=='run':
-            code,_=command(client,"cd /game && DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null /usr/bin/busybox timeout 45 /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' > /work/boot.log 2>&1; result=$?; echo GE6_GRAPHICS_RESULT=$result; tail -35 /work/boot.log; cat /profile/log.txt",timeout=90)
+            code,_=command(client,"cd /game && { uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; } > /work/boot.log; rm -f /work/ge6-native-screen.png; cd /game && DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/busybox timeout 90 /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; result=$?; echo GE6_GRAPHICS_RESULT=$result >> /work/boot.log; tail -35 /work/boot.log; cat /profile/log.txt",timeout=150)
             with client.open_sftp() as sftp:
                 sftp.get('/work/boot.log',str(directory/'boot.log'))
+                try:
+                    sftp.get('/work/ge6-native-screen.png',str(directory/'ge6-native-screen.png'))
+                except OSError:
+                    pass
                 try:
                     sftp.get('/profile/log.txt',str(directory/'original-log.txt'))
                 except OSError:

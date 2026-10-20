@@ -28,10 +28,21 @@ jobs:
         env:
           ALSOFT_DRIVERS: 'null'
         run: python3 tests/check_ge6_linux_boot.py --exe build/ge6-x11/FS15GE6LinuxBoot --workdir build/ge6-x11-fixtures
+      - name: Collect executable, LGPL relinking materials and dependency notices
+        run: |
+          mkdir -p build/ge6-x11-artifact/licenses
+          cp build/ge6-x11/FS15GE6LinuxBoot build/ge6-x11-artifact/
+          cmake --install build/ge6-x11 --prefix build/ge6-x11-installed
+          cp -r build/ge6-x11-installed/share/fs15-reconstruction/ge6-audio-relink build/ge6-x11-artifact/
+          for package in libssl-dev libc6 libstdc++6 libpng-dev zlib1g-dev libx11-dev libxrandr-dev libgl1; do
+            cp /usr/share/doc/$package/copyright build/ge6-x11-artifact/licenses/$package-copyright.txt
+          done
+          sh build/ge6-x11-artifact/ge6-audio-relink/relink.sh
+          ALSOFT_DRIVERS=null build/ge6-x11-artifact/ge6-audio-relink/FS15GE6LinuxBoot-relinked --check-audio
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ge6-linux-x11-boot
-          path: build/ge6-x11/FS15GE6LinuxBoot
+          path: build/ge6-x11-artifact/
           if-no-files-found: error
           retention-days: 14
   native-boot:

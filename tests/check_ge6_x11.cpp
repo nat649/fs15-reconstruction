@@ -19,6 +19,9 @@ int main(){try{
     Device adapter{};adapter.size=sizeof(adapter);require(devices(nullptr,0,&adapter,0)&&adapter.flags&1,"Real RandR display unavailable");
     std::array<uint8_t,224> settings_buffer{};store<uint16_t>(settings_buffer.data(),68,220);settings_buffer[220]=0xa5;
     require(settings(adapter.name,0xffffffffu,settings_buffer.data())&&field<uint32_t>(settings_buffer.data(),172)>0&&settings_buffer[220]==0xa5,"Display mode layout or guard differs");
+    require(change_settings(adapter.name,settings_buffer.data(),0,4,nullptr)==0,"Already current real RandR mode rejected");
+    store<uint32_t>(settings_buffer.data(),172,12345);require(change_settings(adapter.name,settings_buffer.data(),0,2,nullptr)==-2,"Absent display mode reported supported");
+    require(change_settings(adapter.name,nullptr,0,0x80000000,nullptr)==-4,"Unsupported display flags accepted");
     ge6_classes::ClassW klass{};klass.procedure=procedure;klass.instance=ge6_images::module;klass.name=reinterpret_cast<const uint16_t*>(u"AuthoredX11Fixture");
     auto atom=ge6_classes::add(&klass);require(atom!=0,"Fixture class registration failed");
     auto hwnd=ge6_windows::create(0,klass.name,reinterpret_cast<const uint16_t*>(u"Authored X11 fixture"),0,40,40,320,180,0,0,klass.instance,1234);
