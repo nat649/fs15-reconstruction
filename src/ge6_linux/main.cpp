@@ -118,7 +118,12 @@ MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!na
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
 uintptr_t acquire_module(const std::string& name){auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
 MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}return acquire_module(name);}
-MS uintptr_t load_library_w(const uint16_t* name){trace("LoadLibraryW");if(!name){last_error=87;return 0;}size_t size=0;while(size<32768&&name[size])++size;if(size==32768){last_error=206;return 0;}try{return acquire_module(ge6_fs::utf8(name,size));}catch(const std::range_error&){last_error=1113;return 0;}}
+MS uintptr_t load_library_w(const uint16_t* name){
+    trace("LoadLibraryW");if(!name){last_error=87;return 0;}
+    size_t size=0;while(size<32768&&name[size])++size;if(size==32768){last_error=206;return 0;}
+    for(size_t i=0;i<size;++i){auto unit=name[i];if(unit>=0xd800&&unit<=0xdbff){if(i+1>=size||name[i+1]<0xdc00||name[i+1]>0xdfff){last_error=1113;return 0;}++i;}else if(unit>=0xdc00&&unit<=0xdfff){last_error=1113;return 0;}}
+    try{return acquire_module(ge6_fs::utf8(name,size));}catch(const std::range_error&){last_error=1113;return 0;}
+}
 MS int free_library(uintptr_t handle){trace("FreeLibrary");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
 MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
