@@ -171,6 +171,58 @@ def console_fixture():
     return data
 
 
+def window_resource_fixture():
+    """An authored PE loads a real icon and registers its native class layout."""
+    data = fixture()
+    data[0x640:0x650] = b'USER32.dll\0'.ljust(16, b'\0')
+    data[0x680:0x700] = bytes(0x80)
+    data[0x700:0x780] = bytes(0x80)
+    data[0xc00:] = bytes(0x400)
+    for index, name in enumerate((b'LoadImageW', b'RegisterClassW', b'DestroyIcon', b'UnregisterClassW')):
+        for table in (0x680, 0x700):
+            struct.pack_into('<Q', data, table + index * 8, 0x2200 + index * 64)
+        at = 0x802 + index * 64
+        data[at:at + len(name) + 1] = name + b'\0'
+    struct.pack_into('<II', data, 0x98 + 128, 0x3200, 0x200)
+    # WNDCLASSW, copied UTF-16 class name, and a harmless native procedure.
+    struct.pack_into('<I4xQiiQQQQQQ', data, 0xc00, 0x1020, 0x140001100, 0, 0, 0x140000000, 0, 0, 0, 0, 0x140003080)
+    label = 'AuthoredWindow\0'.encode('utf-16le')
+    data[0xc80:0xc80 + len(label)] = label
+    def put(at, fmt, *values):
+        struct.pack_into('<' + fmt, data, 0xe00 + at, *values)
+    put(14, 'H', 2)
+    put(16, 'II', 3, 0x800000c0); put(24, 'II', 14, 0x80000020)
+    put(0x2e, 'H', 1); put(0x30, 'II', 101, 0x80000050)
+    put(0x5e, 'H', 1); put(0x60, 'II', 1033, 0x70)
+    put(0x70, 'II', 0x32a0, 20)
+    put(0xa0, 'HHHBBBBHHIH', 0, 1, 1, 2, 2, 0, 0, 1, 32, 64, 7)
+    put(0xce, 'H', 1); put(0xd0, 'II', 7, 0x800000e0)
+    put(0xee, 'H', 1); put(0xf0, 'II', 1033, 0x100)
+    put(0x100, 'II', 0x3340, 64)
+    put(0x140, 'IiiHH', 40, 2, 4, 1, 32)
+    data[0xf68:0xf78] = bytes((255, 0, 0, 255)) * 4
+    code = bytearray(b'\x48\x83\xec\x38')
+    def call(index):
+        code.extend(b'\xff\x15' + struct.pack('<i', 0x2100 + index * 8 - (0x1000 + len(code) + 6)))
+    def pointer(value):
+        code.extend(b'\x48\xb9' + struct.pack('<Q', value))
+    def success():
+        code.extend(b'\x48\x85\xc0\x75\x02\x0f\x0b')
+    pointer(0x140000000)
+    code += b'\xba\x65\x00\x00\x00\x41\xb8\x01\x00\x00\x00\x45\x31\xc9'
+    code += b'\xc7\x44\x24\x20\x00\x00\x00\x00\xc7\x44\x24\x28\x00\x00\x00\x00'
+    call(0); success()
+    code += b'\x48\xa3' + struct.pack('<Q', 0x140003020)
+    pointer(0x140003000); call(1); success()
+    pointer(0x140003020); code += b'\x48\x8b\x09'; call(2); success()
+    pointer(0x140003080); code += b'\x48\xba' + struct.pack('<Q', 0x140000000); call(3); success()
+    code += b'\x48\x83\xc4\x38\xc3'
+    assert len(code) < 0x100
+    data[0x400:0x500] = code.ljust(0x100, b'\0')
+    data[0x500:0x506] = b'\x31\xc0\xc3\x90\x90\x90'
+    return data
+
+
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
@@ -183,6 +235,10 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-window-resources'], check=True, timeout=15)
+    window_path = workdir / 'authored-window-resources.exe'
+    window_path.write_bytes(window_resource_fixture())
+    window = subprocess.run([str(exe.resolve()), '--fixture', str(window_path)], capture_output=True, text=True, timeout=15)
+    assert window.returncode == 0 and 'GE6_IMAGE_RESOURCE_LOADED first=2 second=2' in window.stdout and 'GE6_WINDOW_CLASS_REGISTER' in window.stdout and 'GE6_AUTHORED_FIXTURE_RETURN' in window.stdout, window.stdout + window.stderr
     subprocess.run([str(exe.resolve()), '--check-console'], check=True, timeout=15, stdout=subprocess.PIPE)
     unhandled = subprocess.run([str(exe.resolve()), '--check-console-default'], capture_output=True, text=True, timeout=15)
     assert unhandled.returncode == 130 and 'GE6_CONSOLE_CALL' in unhandled.stdout, unhandled

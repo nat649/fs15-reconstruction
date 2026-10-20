@@ -56,6 +56,15 @@ class BootEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'matching registered'):
             self.parse('local-platform', 'GE6_CONSOLE_HANDLED entry=0x1404009d8 event=0 tid=13\n')
 
+    def test_window_class_registration_does_not_establish_an_os_window(self):
+        result = self.parse('local-platform', 'GE6_WINDOW_CLASS_REGISTER atom=49152 procedure=0x14037cf00\nGE6_IMAGE_RESOURCE_ABSENT first=1814 second=0\n')
+        self.assertEqual(result['original_window_classes_registered'], [dict(atom=49152, procedure='0x14037cf00')])
+        self.assertTrue(result['missing_optional_icon_observed'])
+        self.assertFalse(result['original_renderer_initialized'])
+        self.assertFalse(result['menu_verified'])
+        with self.assertRaisesRegex(ValueError, 'Window class atom/procedure'):
+            self.parse('local-platform', 'GE6_WINDOW_CLASS_REGISTER atom=0 procedure=0x14037cf00\n')
+
     def test_worker_execution_requires_matching_image_entry(self):
         result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\nGE6_NATIVE_THREAD_FIRST_OS name=SetEvent entry=0x140043620 tid=12\n')
         self.assertEqual(result['original_workers_with_os_calls'], [dict(entry='0x140043620', linux_tid=12, first_os_call='SetEvent')])

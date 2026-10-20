@@ -334,7 +334,7 @@ int main(int argc,char** argv){
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
-        if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check();std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
+        if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check(last_error);std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}
         if(argc==2&&std::string(argv[1])=="--check-audio"){ge6_audio::check();std::cout<<"GE6 Linux OpenAL Soft actual device/context, PCM loopback energy, source queue/play/pause/stop and errors passed\n";return 0;}

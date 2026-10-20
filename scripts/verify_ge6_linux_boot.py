@@ -61,6 +61,11 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
         if entry not in console_handlers or f'GE6_CONSOLE_CALL entry={entry} event={event} tid={tid}' not in text:
             raise ValueError('Console return has no matching registered callback/call')
         console_returns.append(dict(entry=entry, event=int(event), linux_tid=int(tid), handled=outcome=='HANDLED'))
+    window_classes = []
+    for atom, procedure in re.findall(r'^GE6_WINDOW_CLASS_REGISTER atom=(\d+) procedure=(0x[0-9a-f]+)', text, re.MULTILINE):
+        if not 0 < int(atom) <= 65535 or not 0x140000000 <= int(procedure, 16) < 0x140480000:
+            raise ValueError('Window class atom/procedure is outside the original image contract')
+        window_classes.append(dict(atom=int(atom), procedure=procedure))
     return dict(scope='Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port',
                 source_commit=commit, committed_source_sha256=pins,
                 ci_run=f'https://github.com/nat649/fs15-reconstruction/actions/runs/{int(run_id)}',
@@ -80,6 +85,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 original_workers_with_os_calls=workers,
                 original_console_handlers_registered=list(dict.fromkeys(console_handlers)),
                 original_console_callback_returns=console_returns,
+                original_window_classes_registered=window_classes,
+                missing_optional_icon_observed='GE6_IMAGE_RESOURCE_ABSENT first=1814 second=0' in text,
                 original_worker_shutdown_verified=False,
                 original_physics_startup_log_observed=b'Physics System' in original_log,
                 original_audio_startup_log_observed=b'Sound System' in original_log and b'Driver: OpenAL' in original_log,
