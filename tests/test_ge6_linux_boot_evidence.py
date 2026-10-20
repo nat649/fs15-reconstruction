@@ -47,6 +47,15 @@ class BootEvidenceTests(unittest.TestCase):
         self.assertFalse(result['audible_audio_verified'])
         self.assertFalse(result['full_engine_initialization_verified'])
 
+    def test_console_registration_is_not_callback_execution(self):
+        result = self.parse('local-platform', 'GE6_CONSOLE_REGISTER entry=0x1404009d8 event=0 tid=12\n')
+        self.assertEqual(result['original_console_handlers_registered'], ['0x1404009d8'])
+        self.assertEqual(result['original_console_callback_returns'], [])
+        result = self.parse('local-platform', 'GE6_CONSOLE_REGISTER entry=0x1404009d8 event=0 tid=12\nGE6_CONSOLE_CALL entry=0x1404009d8 event=0 tid=13\nGE6_CONSOLE_HANDLED entry=0x1404009d8 event=0 tid=13\n')
+        self.assertEqual(result['original_console_callback_returns'], [dict(entry='0x1404009d8', event=0, linux_tid=13, handled=True)])
+        with self.assertRaisesRegex(ValueError, 'matching registered'):
+            self.parse('local-platform', 'GE6_CONSOLE_HANDLED entry=0x1404009d8 event=0 tid=13\n')
+
     def test_worker_execution_requires_matching_image_entry(self):
         result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\nGE6_NATIVE_THREAD_FIRST_OS name=SetEvent entry=0x140043620 tid=12\n')
         self.assertEqual(result['original_workers_with_os_calls'], [dict(entry='0x140043620', linux_tid=12, first_os_call='SetEvent')])

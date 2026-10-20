@@ -34,7 +34,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
         raise ValueError('Missing local-platform image provenance')
     commit = subprocess.check_output(['git', 'rev-parse', source_commit + '^{commit}'], cwd=ROOT, text=True).strip()
     sources = ('src/ge6_linux/main.cpp', 'src/ge6_linux/ansi_reference.h', 'src/ge6_linux/CMakeLists.txt',
-               'tests/check_ge6_linux_boot.py', 'scripts/check_ge6_linux_vm.py')
+               'tests/check_ge6_linux_boot.py', 'scripts/check_ge6_linux_vm.py',
+               'scripts/verify_ge6_linux_boot.py', 'tests/test_ge6_linux_boot_evidence.py')
     if image_kind == 'local-platform':
         sources += ('src/ge6_linux/local_platform.h', 'src/ge6_linux/file_services.h',
                     'scripts/ge6_linux_images.py', 'scripts/prepare_local_engine.py')
@@ -52,6 +53,14 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
         workers.append(dict(entry=entry, linux_tid=int(tid), first_os_call=api))
     resources = [dict(path=path, sha256=digest, size=int(size)) for path, digest, size in
                  re.findall(r'^GE6_VM_RESOURCE path=(\S+) sha256=([0-9a-f]{64}) size=(\d+)', text, re.MULTILINE)]
+    console_handlers = re.findall(r'^GE6_CONSOLE_REGISTER entry=(0x[0-9a-f]+) event=0 tid=\d+', text, re.MULTILINE)
+    if any(not 0x140000000 <= int(entry, 16) < 0x140480000 for entry in console_handlers):
+        raise ValueError('Console registration is outside the original image')
+    console_returns = []
+    for outcome, entry, event, tid in re.findall(r'^GE6_CONSOLE_(HANDLED|DECLINED) entry=(0x[0-9a-f]+) event=([01]) tid=(\d+)', text, re.MULTILINE):
+        if entry not in console_handlers or f'GE6_CONSOLE_CALL entry={entry} event={event} tid={tid}' not in text:
+            raise ValueError('Console return has no matching registered callback/call')
+        console_returns.append(dict(entry=entry, event=int(event), linux_tid=int(tid), handled=outcome=='HANDLED'))
     return dict(scope='Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port',
                 source_commit=commit, committed_source_sha256=pins,
                 ci_run=f'https://github.com/nat649/fs15-reconstruction/actions/runs/{int(run_id)}',
@@ -69,6 +78,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 original_core_startup_log_observed=b'GIANTS Engine Runtime 6.0.2 64bit' in original_log,
                 captured_original_log_sha256=hashlib.sha256(original_log).hexdigest() if journal else None,
                 original_workers_with_os_calls=workers,
+                original_console_handlers_registered=list(dict.fromkeys(console_handlers)),
+                original_console_callback_returns=console_returns,
                 original_worker_shutdown_verified=False,
                 original_physics_startup_log_observed=b'Physics System' in original_log,
                 original_audio_startup_log_observed=b'Sound System' in original_log and b'Driver: OpenAL' in original_log,

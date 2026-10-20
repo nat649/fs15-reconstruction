@@ -41,9 +41,9 @@ struct Service {
         struct sigaction action{};action.sa_handler=receive;action.sa_flags=SA_RESTART;sigemptyset(&action.sa_mask);
         signal_fd.store(pipe[1]);
         if(sigaction(SIGINT,&action,&previous[0])){signal_fd.store(-1);close(pipe[0]);close(pipe[1]);pipe[0]=pipe[1]=-1;return false;}
-        if(sigaction(SIGQUIT,&action,&previous[1])){signal_fd.store(-1);sigaction(SIGINT,&previous[0],nullptr);close(pipe[0]);close(pipe[1]);pipe[0]=pipe[1]=-1;return false;}
+        if(sigaction(SIGQUIT,&action,&previous[1])){signal_fd.store(-1);sigaction(SIGINT,&previous[0],nullptr);stopping=true;return false;}
         try{dispatcher=std::thread([this](){run();});}
-        catch(...){signal_fd.store(-1);sigaction(SIGINT,&previous[0],nullptr);sigaction(SIGQUIT,&previous[1],nullptr);close(pipe[0]);close(pipe[1]);pipe[0]=pipe[1]=-1;return false;}
+        catch(...){signal_fd.store(-1);sigaction(SIGINT,&previous[0],nullptr);sigaction(SIGQUIT,&previous[1],nullptr);stopping=true;return false;}
         started=true;return true;
     }
     void run(){
@@ -56,7 +56,7 @@ struct Service {
             // queued notifications, but give each one a fresh GS/TLS/FLS context.
             try{std::thread worker([snapshot,code](){
                 try{ge6_native::Context context;bool handled=false;
-                    for(auto it=snapshot.rbegin();it!=snapshot.rend();++it){record("CALL",reinterpret_cast<uintptr_t>(*it),code-1);if((*it)(code-1)){handled=true;break;}}
+                    for(auto it=snapshot.rbegin();it!=snapshot.rend();++it){auto entry=reinterpret_cast<uintptr_t>(*it);record("CALL",entry,code-1);auto result=(*it)(code-1);record(result?"HANDLED":"DECLINED",entry,code-1);if(result){handled=true;break;}}
                     ge6_slots::cleanup();
                     if(!handled)std::_Exit(128+(code==1?SIGINT:SIGQUIT)); // Linux exit status, not Windows status parity.
                 }catch(...){std::_Exit(125);}
