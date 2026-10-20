@@ -73,6 +73,11 @@ cd /game
 /ge6-boot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile'
 result=$?
 echo GE6_LINUX_VM_RESULT=$result
+if [ -f /profile/log.txt ]; then
+    echo GE6_ORIGINAL_LOG_BEGIN
+    /usr/bin/busybox cat /profile/log.txt
+    echo GE6_ORIGINAL_LOG_END
+fi
 /usr/bin/busybox poweroff -f
 '''
     init = init.replace(b'echo GE6_LINUX_VM_STARTED', b'echo GE6_LINUX_VM_STARTED\necho GE6_VM_IMAGE_KIND=' + kind.encode())

@@ -7,6 +7,7 @@
 #include "file_services.h"
 #include "network_services.h"
 #include "startup_services.h"
+#include "system_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -101,6 +102,7 @@ MS int set_slot(uint32_t i,void* p){require(i<slots.size(),"Invalid TLS slot");s
 MS void* get_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");last_error=0;return slots[i];}
 MS int free_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");slots[i]=nullptr;return 1;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;std::string text;while(*name&&text.size()<128)text.push_back(char(*name++));std::transform(text.begin(),text.end(),text.begin(),[](unsigned char c){return char(std::tolower(c));});require(text=="kernel32.dll","Unimplemented module lookup");return kernel_token;}
+MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");if(!name)return base;if(ge6_system::lower(name)=="kernel32.dll")return kernel_token;last_error=126;return 0;}
 uintptr_t resolve(const std::string& library,const std::string& name);
 MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");require(module==kernel_token&&reinterpret_cast<uintptr_t>(name)>65535,"Unimplemented module/procedure lookup");auto result=resolve("KERNEL32.dll",name);if(!result)std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
@@ -177,6 +179,12 @@ MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/s
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 
 uintptr_t resolve(const std::string& library,const std::string& name){
+    if(library=="ADVAPI32.dll"){
+        if(name=="RegOpenKeyExA")return reinterpret_cast<uintptr_t>(&ge6_system::open_key);
+        if(name=="RegQueryValueExA")return reinterpret_cast<uintptr_t>(&ge6_system::query_key);
+        if(name=="RegCloseKey")return reinterpret_cast<uintptr_t>(&ge6_system::close_key);
+        return 0;
+    }
     if(library=="WINMM.dll"){
         if(name=="timeBeginPeriod")return reinterpret_cast<uintptr_t>(&ge6_startup::begin);
         if(name=="timeEndPeriod")return reinterpret_cast<uintptr_t>(&ge6_startup::end);
@@ -204,6 +212,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("CreateMutexA",create_singleton);BIND("CloseHandle",close_handle);BIND("IsDebuggerPresent",debugger_present);
     BIND("GetModuleFileNameW",module_filename_w);
     BIND("GetVersionExA",version_ex_a);
+    BIND("GetModuleHandleA",get_module_a);BIND("GlobalMemoryStatusEx",ge6_system::memory);BIND("GetSystemInfo",ge6_system::information);BIND("GetNativeSystemInfo",ge6_system::information);
     BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
 #undef BIND
     return 0;
@@ -272,6 +281,11 @@ int main(int argc,char** argv){
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
+        ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-system"){
+            using namespace ge6_system;uintptr_t key=0;require(open_key(0x80000002u,"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",0,0x20019,&key)==0&&key,"Linux CPU view missing");uint32_t size=0,type=0;require(query_key(key,"ProcessorNameString",nullptr,&type,nullptr,&size)==0&&type==1&&size>1,"CPU value size/type differs");std::vector<char> model(size+1,char(0x5a));uint32_t small=1;require(query_key(key,"ProcessorNameString",nullptr,&type,model.data(),&small)==234&&small==size&&model[0]==0x5a,"Small registry buffer contract differs");require(query_key(key,"ProcessorNameString",nullptr,nullptr,model.data(),&size)==0&&std::string(model.data())==cpu_name()&&model[size]==0x5a,"CPU value/source or bounds differ");require(close_key(key)==0&&close_key(key)==6&&query_key(key,"ProcessorNameString",nullptr,nullptr,nullptr,&size)==6,"Registry handle lifetime differs");require(open_key(0x80000002u,"SOFTWARE\\MissingFixture",0,0x20019,&key)==2&&key==0,"Unavailable registry key synthesized");
+            MemoryStatus mem{};mem.size=64;require(memory(&mem)&&mem.physical>0&&mem.available<=mem.physical&&mem.load<=100&&mem.available_pagefile<=mem.pagefile&&mem.virtual_available<=mem.virtual_total,"Linux memory values differ");mem.size=0;require(!memory(&mem)&&last_error==87,"Invalid memory status size accepted");SystemInfo sys{};information(&sys);require(sys.architecture==9&&sys.page_size==uint32_t(sysconf(_SC_PAGESIZE))&&sys.processors>0&&sys.minimum<sys.maximum,"System info fields differ");require(get_module_a("KERNEL32.DLL")==kernel_token&&get_proc(kernel_token,"GetNativeSystemInfo")!=0&&get_module_a("absent-fixture.dll")==0&&last_error==126,"Optional module resolution differs");std::cout<<"GE6 live Linux CPU/memory/system-query and read-only registry-view fixtures passed; complete registry/Windows memory parity is not claimed\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-startup"){
             using namespace ge6_startup;auto slack=prctl(PR_GET_TIMERSLACK);require(slack>=0&&begin(0)==97&&end(1)==97,"Invalid timer period accepted");require(begin(1)==0&&begin(1)==0&&begin(2)==0&&periods[1]==2,"Nested timer lease differs");require(end(1)==0&&periods[1]==1&&end(2)==0&&end(1)==0&&periods.empty()&&prctl(PR_GET_TIMERSLACK)==slack,"Timer lease did not restore slack");auto start=ge6_startup::ticks();usleep(3000);require(uint32_t(ge6_startup::ticks()-start)>=2,"Multimedia clock did not advance");
             require(capture_affinity(),"Cannot query fixture CPU mask");uintptr_t original=0;bool wide=false;for(int i=0;i<CPU_SETSIZE;++i)if(CPU_ISSET(i,&allowed)){if(i>=64)wide=true;else original|=uintptr_t(1)<<i;}
