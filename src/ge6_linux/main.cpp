@@ -15,6 +15,9 @@
 #include "audio_check.h"
 #include "console_check.h"
 #include "window_resource_check.h"
+#include "display_services.h"
+#include "window_services.h"
+#include "gl_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -72,6 +75,9 @@ constexpr uintptr_t kernel_token=0x47453601;
 constexpr uintptr_t nt_token=0x47453602;
 constexpr uintptr_t winmm_token=0x47453603;
 constexpr uintptr_t user_token=0x47453604;
+#ifdef GE6_X11
+constexpr uintptr_t gl_token=0x47453605;
+#endif
 std::map<uintptr_t,uint32_t> explicit_module_refs;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
@@ -123,7 +129,11 @@ std::shared_ptr<std::recursive_mutex> lock_record(void* p){std::lock_guard<std::
 MS void enter_lock(void* p){lock_record(p)->lock();}
 MS void leave_lock(void* p){lock_record(p)->unlock();}
 MS void delete_lock(void* p){std::lock_guard<std::mutex> guard(locks_mutex);require(locks.erase(p)==1,"Uninitialized critical section deletion");}
-uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;if(lower=="user32.dll")return user_token;last_error=126;return 0;}
+uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;if(lower=="user32.dll")return user_token;
+#ifdef GE6_X11
+if(lower=="opengl32.dll")return gl_token;
+#endif
+last_error=126;return 0;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
 uintptr_t acquire_module(const std::string& name){auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
@@ -136,7 +146,11 @@ MS uintptr_t load_library_w(const uint16_t* name){
 }
 MS int free_library(uintptr_t handle){trace("FreeLibrary");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
-MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==user_token)result=resolve("USER32.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==user_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
+MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;bool known=module==kernel_token||module==nt_token||module==winmm_token||module==user_token||module==base;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==user_token)result=resolve("USER32.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);
+#ifdef GE6_X11
+else if(module==gl_token){known=true;result=resolve("OPENGL32.dll",name);}
+#endif
+if(!result){last_error=known?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){return ge6_fs::type(handle);}
@@ -242,6 +256,11 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     }
     if(library=="WS2_32.dll")return ge6_net::resolve(name);
     if(library=="OpenAL32.dll")return ge6_audio::resolve(name);
+    if(auto display=ge6_display::resolve(library,name))return display;
+#ifdef GE6_X11
+    if(auto window=ge6_windows::resolve(library,name))return window;
+    if(auto gl=ge6_gl::resolve(library,name))return gl;
+#endif
     if(library=="USER32.dll"){
         if(name=="LoadImageW")return reinterpret_cast<uintptr_t>(&ge6_images::load);
         if(name=="DestroyIcon")return reinterpret_cast<uintptr_t>(&ge6_images::destroy);
@@ -341,6 +360,7 @@ int main(int argc,char** argv){
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
         ge6_audio::trace=trace;
+        ge6_display::trace=trace;ge6_display::set_error=[](uint32_t value){last_error=value;};ge6_display::stop=api_unsupported;
         ge6_images::trace=trace;ge6_images::set_error=[](uint32_t value){last_error=value;};ge6_images::stop=window_unsupported;
         ge6_images::record=[](const char* event,uint32_t first,uint32_t second){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_IMAGE_RESOURCE_"<<event<<" first="<<first<<" second="<<second<<'\n';};
         ge6_classes::trace=trace;ge6_classes::set_error=[](uint32_t value){last_error=value;};ge6_classes::stop=window_unsupported;
