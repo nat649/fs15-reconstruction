@@ -116,7 +116,9 @@ MS void delete_lock(void* p){std::lock_guard<std::mutex> guard(locks_mutex);requ
 uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;last_error=126;return 0;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
-MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
+uintptr_t acquire_module(const std::string& name){auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
+MS uintptr_t load_library_a(const char* name){trace("LoadLibraryA");if(!name){last_error=87;return 0;}return acquire_module(name);}
+MS uintptr_t load_library_w(const uint16_t* name){trace("LoadLibraryW");if(!name){last_error=87;return 0;}size_t size=0;while(size<32768&&name[size])++size;if(size==32768){last_error=206;return 0;}try{return acquire_module(ge6_fs::utf8(name,size));}catch(const std::range_error&){last_error=1113;return 0;}}
 MS int free_library(uintptr_t handle){trace("FreeLibrary");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
 MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
@@ -263,6 +265,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("WaitForSingleObjectEx",wait_handle_ex);
     BIND("VirtualFree",ge6_vm::free);BIND("VirtualQuery",ge6_vm::query);
     BIND("LoadLibraryA",load_library_a);BIND("FreeLibrary",free_library);
+    BIND("LoadLibraryW",load_library_w);
 #undef BIND
     return 0;
 }
@@ -334,6 +337,7 @@ int main(int argc,char** argv){
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
+        if(argc==2&&std::string(argv[1])=="--check-modules"){auto first=load_library_w(reinterpret_cast<const uint16_t*>(u"KERNEL32.DLL"));auto second=load_library_a("kernel32.dll");require(first==kernel_token&&second==first&&explicit_module_refs.at(first)==2,"Unicode/ANSI module references differ");require(get_proc(first,"GetCurrentThreadId")!=0&&free_library(first)&&free_library(second)&&!free_library(second)&&last_error==6,"Module procedure/reference cleanup differs");require(!load_library_w(nullptr)&&last_error==87,"Null module name accepted");const uint16_t bad[]{0xd800,0};require(!load_library_w(bad)&&last_error==1113,"Malformed UTF16 module name accepted");require(!load_library_w(reinterpret_cast<const uint16_t*>(u"authored-absent-\u00e9.dll"))&&last_error==126,"Unavailable Unicode DLL did not fail");std::cout<<"GE6 Unicode/ANSI authored-module lookup, Microsoft ABI procedures and reference cleanup passed; no Windows DLL loader\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check(last_error);std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}

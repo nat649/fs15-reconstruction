@@ -44,7 +44,7 @@ struct Table {
         directory=child(directory&0x7fffffffu,key,1814);need(directory&0x80000000u);directory&=0x7fffffffu;
         // Deterministic first available language. Full Windows language fallback
         // is not supplied; original icon names have one language in this image.
-        auto n=uint32_t(field<uint16_t>(bytes,size_t(directory)+12))+field<uint16_t>(bytes,size_t(directory)+14);need(n>0,1815);
+        auto n=uint32_t(field<uint16_t>(bytes,size_t(directory)+12))+field<uint16_t>(bytes,size_t(directory)+14);need(n>0,1815);need(n<=4096&&size_t(directory)+16<=bytes.size()&&size_t(n)*8<=bytes.size()-directory-16);
         auto data=field<uint32_t>(bytes,size_t(directory)+20);need(!(data&0x80000000u));
         uint32_t address=field<uint32_t>(bytes,data),size=field<uint32_t>(bytes,size_t(data)+4);need(address>=rva);
         size_t offset=address-rva;need(offset<=bytes.size()&&size<=bytes.size()-offset);
