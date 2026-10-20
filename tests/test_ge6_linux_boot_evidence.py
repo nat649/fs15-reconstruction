@@ -19,6 +19,7 @@ class BootEvidenceTests(unittest.TestCase):
         self.assertFalse(result['linux_loader_patches_instructions'])
         self.assertFalse(result['menu_verified'])
         self.assertEqual(result['stopped_at']['symbol'], 'ordinal:115')
+        self.assertIn('src/ge6_linux/network_services.h', result['committed_source_sha256'])
 
     def test_local_input_cannot_be_reported_as_reference(self):
         with self.assertRaisesRegex(ValueError, 'provenance'):
@@ -43,6 +44,8 @@ class BootEvidenceTests(unittest.TestCase):
                            'GE6_BLOCKED_IMPORT WS2_32.dll!ordinal:115 caller=0x1400011cc os_calls=160\n'
                            'GE6_LINUX_VM_RESULT=78\n' + extra)
             def git_output(args, **kwargs):
+                if args[1] == 'ls-tree':
+                    return b'src/ge6_linux/network_services.h\n'
                 return 'a' * 40 if args[1] == 'rev-parse' else b'authored source fixture'
             with patch('verify_ge6_linux_boot.subprocess.check_output', side_effect=git_output):
                 result = verify(log, executable, 'HEAD', 1, kind)

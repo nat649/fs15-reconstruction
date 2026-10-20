@@ -42,6 +42,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
     sources += tuple(name for name in component_files if name.startswith('src/ge6_linux/') and name not in sources)
     pins = {name: hashlib.sha256(subprocess.check_output(['git', 'show', commit + ':' + name], cwd=ROOT)).hexdigest()
             for name in sources}
+    journal = re.search(r'^GE6_ORIGINAL_LOG_BEGIN\r?\n(.*?)^GE6_ORIGINAL_LOG_END', text, re.MULTILINE | re.DOTALL)
+    original_log = journal[1].encode() if journal else b''
     return dict(scope='Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port',
                 source_commit=commit, committed_source_sha256=pins,
                 ci_run=f'https://github.com/nat649/fs15-reconstruction/actions/runs/{int(run_id)}',
@@ -56,6 +58,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
                 stop_trampoline_names=int(mapped[4]),
                 observed_os_calls=list(dict.fromkeys(re.findall(r'^GE6_OS ([^\r\n]+)', text, re.MULTILINE))),
                 com_initialization_reported_unavailable='GE6_COM_UNAVAILABLE' in text,
+                original_core_startup_log_observed=b'GIANTS Engine Runtime 6.0.2 64bit' in original_log,
+                original_engine_log_sha256=hashlib.sha256(original_log).hexdigest() if journal else None,
                 stopped_at=dict(library=blocked[1], symbol=blocked[2], caller=blocked[3], traced_os_calls=int(blocked[4])),
                 full_engine_initialization_verified=False, original_renderer_initialized=False,
                 menu_verified=False, playable_linux_game_verified=False, recompiled_engine=False,

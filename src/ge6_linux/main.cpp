@@ -9,6 +9,7 @@
 #include "startup_services.h"
 #include "system_services.h"
 #include "event_services.h"
+#include "virtual_memory.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -62,6 +63,7 @@ std::vector<void*> slots;
 std::map<void*,std::unique_ptr<std::recursive_mutex>> locks;
 int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
+constexpr uintptr_t nt_token=0x47453602;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
 void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';}
@@ -105,10 +107,11 @@ MS uint32_t tls_alloc(){return alloc_slot(nullptr);}
 MS int set_slot(uint32_t i,void* p){require(i<slots.size(),"Invalid TLS slot");slots[i]=p;return 1;}
 MS void* get_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");last_error=0;return slots[i];}
 MS int free_slot(uint32_t i){require(i<slots.size(),"Invalid TLS slot");slots[i]=nullptr;return 1;}
-MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;std::string text;while(*name&&text.size()<128)text.push_back(char(*name++));std::transform(text.begin(),text.end(),text.begin(),[](unsigned char c){return char(std::tolower(c));});require(text=="kernel32.dll","Unimplemented module lookup");return kernel_token;}
-MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");if(!name)return base;if(ge6_system::lower(name)=="kernel32.dll")return kernel_token;last_error=126;return 0;}
+uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;last_error=126;return 0;}
+MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
+MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
 uintptr_t resolve(const std::string& library,const std::string& name);
-MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");require(module==kernel_token&&reinterpret_cast<uintptr_t>(name)>65535,"Unimplemented module/procedure lookup");auto result=resolve("KERNEL32.dll",name);if(!result)std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';return result;}
+MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){return ge6_fs::type(handle);}
@@ -219,6 +222,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetModuleHandleA",get_module_a);BIND("GlobalMemoryStatusEx",ge6_system::memory);BIND("GetSystemInfo",ge6_system::information);BIND("GetNativeSystemInfo",ge6_system::information);
     BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
     BIND("CreateEventA",ge6_events::create);BIND("SetEvent",ge6_events::set);BIND("ResetEvent",ge6_events::reset);BIND("WaitForSingleObject",ge6_events::wait);
+    BIND("VirtualFree",ge6_vm::free);BIND("VirtualQuery",ge6_vm::query);
 #undef BIND
     return 0;
 }
@@ -288,6 +292,14 @@ int main(int argc,char** argv){
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
         ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
+        ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-virtual-memory"){
+            auto denied=[](void* memory){pid_t child=fork();require(child>=0,"Cannot fork page-protection fixture");if(!child){signal(SIGSEGV,+[](int){_exit(33);});*static_cast<volatile uint8_t*>(memory)=1;_exit(1);}int status=0;require(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==33,"Linux page protection did not reject write");};
+            void* memory=nullptr;size_t bytes=3*ge6_vm::page();require(ge6_vm::allocate(~uintptr_t(0),&memory,1,&bytes,0x2000,4)==0&&reinterpret_cast<uintptr_t>(memory)<0x80000000,"Cannot reserve low Lua memory");denied(memory);ge6_vm::Information info{};require(ge6_vm::query(memory,&info,48)==48&&info.state==0x2000&&info.size==bytes,"Reserved region query differs");
+            auto committed=memory;size_t count=ge6_vm::page();require(ge6_vm::allocate(~uintptr_t(0),&committed,1,&count,0x1000,4)==0,"Cannot commit Lua memory");auto* data=static_cast<uint8_t*>(memory);require(data[0]==0,"New committed page not zero");data[0]=0x5a;require(ge6_vm::allocate(~uintptr_t(0),&committed,1,&count,0x1000,4)==0&&data[0]==0x5a,"Repeated commit discarded data");require(ge6_vm::query(memory,&info,48)==48&&info.state==0x1000&&info.size==count,"Committed region query differs");
+            require(ge6_vm::free(memory,count,0x4000)==1,"Cannot decommit Lua memory");denied(memory);require(ge6_vm::allocate(~uintptr_t(0),&committed,1,&count,0x1000,2)==0&&data[0]==0,"Recommitted page retained data");denied(memory);require(!ge6_vm::free(data+ge6_vm::page(),0,0x8000)&&ge6_vm::free(memory,0,0x8000)&&ge6_vm::regions.empty(),"Reservation release/lifetime differs");require(!ge6_vm::query(memory,&info,48)&&last_error==487,"Released mapping retained state");
+            memory=nullptr;count=1;require(ge6_vm::allocate(~uintptr_t(0),&memory,1,&count,0x3000,4)==0&&count==ge6_vm::page()&&ge6_vm::free(memory,0,0x8000),"Combined reserve/commit rounding differs");require(ge6_vm::allocate(0,&memory,0,&count,0x2000,4)==int32_t(0xc0000008u),"Foreign process handle accepted");require(get_proc(get_module_a("ntdll.dll"),"NtAllocateVirtualMemory")!=0&&get_proc(0,"invalid-module")==0&&last_error==126,"NT module/procedure transport differs");std::cout<<"GE6 original Lua allocator OS contracts: reserve/commit/decommit/release, actual page faults and bounded query fixtures passed; general NT/JIT parity is not claimed\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-events"){
             auto automatic=ge6_events::create(nullptr,0,0,nullptr);require(automatic&&ge6_events::wait(automatic,0)==258,"Unsignaled event did not time out");std::atomic<uint32_t> result{999};std::thread waiter([&](){result=ge6_events::wait(automatic,1000);});require(ge6_events::set(automatic)==1,"Cannot signal waiting event");waiter.join();require(result==0&&ge6_events::wait(automatic,0)==258,"Auto-reset event signal was not consumed");require(ge6_events::set(automatic)&&ge6_events::set(automatic)&&ge6_events::wait(automatic,0)==0&&ge6_events::wait(automatic,0)==258,"Auto-reset signals incorrectly accumulated");
             auto manual=ge6_events::create(nullptr,1,1,nullptr);require(manual&&ge6_events::wait(manual,0)==0&&ge6_events::wait(manual,0)==0,"Manual event did not remain signaled");require(ge6_events::reset(manual)&&ge6_events::wait(manual,3)==258,"Manual reset/timeout differs");require(close_handle(automatic)&&close_handle(manual)&&!close_handle(manual)&&last_error==6,"Event handle lifetime differs");require(ge6_events::wait(manual,0)==0xffffffffu&&last_error==6&&ge6_events::create(nullptr,0,0,"unsupported-name")==0&&last_error==50,"Unknown/named event accepted");std::cout<<"GE6 unnamed auto/manual event waits, actual worker wakeup and lifetime fixtures passed; native PE threads and named events remain unsupported\n";return 0;
