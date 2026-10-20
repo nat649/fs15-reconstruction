@@ -40,6 +40,13 @@ class BootEvidenceTests(unittest.TestCase):
         result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\n')
         self.assertEqual(result['original_workers_with_os_calls'], [])
 
+    def test_null_audio_startup_log_does_not_establish_audible_sound(self):
+        result = self.parse('local-platform', 'GE6_VM_AUDIO_BACKEND=null\nGE6_ORIGINAL_LOG_BEGIN\nSound System\n  Driver: OpenAL\nGE6_ORIGINAL_LOG_END\n')
+        self.assertTrue(result['original_audio_startup_log_observed'])
+        self.assertEqual(result['vm_audio_backend'], 'null')
+        self.assertFalse(result['audible_audio_verified'])
+        self.assertFalse(result['full_engine_initialization_verified'])
+
     def test_worker_execution_requires_matching_image_entry(self):
         result = self.parse('local-platform', 'GE6_NATIVE_THREAD_ENTER entry=0x140043620 tid=12 code=0\nGE6_NATIVE_THREAD_FIRST_OS name=SetEvent entry=0x140043620 tid=12\n')
         self.assertEqual(result['original_workers_with_os_calls'], [dict(entry='0x140043620', linux_tid=12, first_os_call='SetEvent')])
