@@ -94,6 +94,8 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     rejected = subprocess.run([str(exe.resolve()), '--check-unknown-exception'], capture_output=True, text=True, timeout=15)
     assert rejected.returncode == 78 and 'KERNEL32.dll!RaiseException' in rejected.stderr and 'exception=0xdeadbeef' in rejected.stderr, rejected
+    rejected = subprocess.run([str(exe.resolve()), '--check-alertable-wait'], capture_output=True, text=True, timeout=15)
+    assert rejected.returncode == 78 and 'KERNEL32.dll!WaitForSingleObjectEx' in rejected.stderr and 'alertable=1' in rejected.stderr, rejected
     with tempfile.TemporaryDirectory(dir=workdir) as directory:
         subprocess.run([str(exe.resolve()), '--check-files', directory], check=True, timeout=15)
     path = workdir / 'authored.exe'
