@@ -8,6 +8,7 @@
 #include "network_services.h"
 #include "startup_services.h"
 #include "system_services.h"
+#include "event_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -22,6 +23,7 @@
 #include <signal.h>
 #include <ucontext.h>
 #include <array>
+#include <atomic>
 #include <algorithm>
 #include <cerrno>
 #include <cstdint>
@@ -37,6 +39,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #define MS __attribute__((ms_abi))
@@ -48,7 +51,8 @@ std::string image_kind="fixture";
 void require(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
 template<class T>T read(const std::vector<uint8_t>& bytes,size_t offset){require(offset<=bytes.size()&&sizeof(T)<=bytes.size()-offset,"Truncated PE field");T out;std::memcpy(&out,bytes.data()+offset,sizeof(T));return out;}
 std::vector<std::string> imports;
-uint64_t calls=0;
+std::atomic<uint64_t> calls{0};
+std::mutex trace_mutex;
 uintptr_t registered_filter=0;
 bool main_reached=false;
 struct Singleton {int fd;};
@@ -60,7 +64,7 @@ int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
-void trace(const char* name){++calls;std::cout<<"GE6_OS "<<name<<'\n';}
+void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';}
 [[noreturn]] MS void missing(uint32_t id){
     std::cerr<<"GE6_BLOCKED_IMPORT "<<(id<imports.size()?imports[id]:"invalid-index")
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
@@ -174,7 +178,7 @@ MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
     bool exists=false;if(flock(fd,LOCK_EX|LOCK_NB)){if(errno==EWOULDBLOCK)exists=true;else{close(fd);last_error=5;return 0;}}
     auto record=std::make_unique<Singleton>();record->fd=fd;auto handle=reinterpret_cast<uintptr_t>(record.get());singleton_handles.emplace(handle,std::move(record));last_error=exists?183:0;return handle;
 }// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
-MS int close_handle(uintptr_t handle){auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
+MS int close_handle(uintptr_t handle){if(ge6_events::owns(handle))return ge6_events::close(handle);auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 
@@ -214,6 +218,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("GetVersionExA",version_ex_a);
     BIND("GetModuleHandleA",get_module_a);BIND("GlobalMemoryStatusEx",ge6_system::memory);BIND("GetSystemInfo",ge6_system::information);BIND("GetNativeSystemInfo",ge6_system::information);
     BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
+    BIND("CreateEventA",ge6_events::create);BIND("SetEvent",ge6_events::set);BIND("ResetEvent",ge6_events::reset);BIND("WaitForSingleObject",ge6_events::wait);
 #undef BIND
     return 0;
 }
@@ -282,6 +287,11 @@ int main(int argc,char** argv){
         ge6_net::trace=trace;
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
+        ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-events"){
+            auto automatic=ge6_events::create(nullptr,0,0,nullptr);require(automatic&&ge6_events::wait(automatic,0)==258,"Unsignaled event did not time out");std::atomic<uint32_t> result{999};std::thread waiter([&](){result=ge6_events::wait(automatic,1000);});require(ge6_events::set(automatic)==1,"Cannot signal waiting event");waiter.join();require(result==0&&ge6_events::wait(automatic,0)==258,"Auto-reset event signal was not consumed");require(ge6_events::set(automatic)&&ge6_events::set(automatic)&&ge6_events::wait(automatic,0)==0&&ge6_events::wait(automatic,0)==258,"Auto-reset signals incorrectly accumulated");
+            auto manual=ge6_events::create(nullptr,1,1,nullptr);require(manual&&ge6_events::wait(manual,0)==0&&ge6_events::wait(manual,0)==0,"Manual event did not remain signaled");require(ge6_events::reset(manual)&&ge6_events::wait(manual,3)==258,"Manual reset/timeout differs");require(close_handle(automatic)&&close_handle(manual)&&!close_handle(manual)&&last_error==6,"Event handle lifetime differs");require(ge6_events::wait(manual,0)==0xffffffffu&&last_error==6&&ge6_events::create(nullptr,0,0,"unsupported-name")==0&&last_error==50,"Unknown/named event accepted");std::cout<<"GE6 unnamed auto/manual event waits, actual worker wakeup and lifetime fixtures passed; native PE threads and named events remain unsupported\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-system"){
             using namespace ge6_system;uintptr_t key=0;require(open_key(0x80000002u,"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",0,0x20019,&key)==0&&key,"Linux CPU view missing");uint32_t size=0,type=0;require(query_key(key,"ProcessorNameString",nullptr,&type,nullptr,&size)==0&&type==1&&size>1,"CPU value size/type differs");std::vector<char> model(size+1,char(0x5a));uint32_t small=1;require(query_key(key,"ProcessorNameString",nullptr,&type,model.data(),&small)==234&&small==size&&model[0]==0x5a,"Small registry buffer contract differs");require(query_key(key,"ProcessorNameString",nullptr,nullptr,model.data(),&size)==0&&std::string(model.data())==cpu_name()&&model[size]==0x5a,"CPU value/source or bounds differ");require(close_key(key)==0&&close_key(key)==6&&query_key(key,"ProcessorNameString",nullptr,nullptr,nullptr,&size)==6,"Registry handle lifetime differs");require(open_key(0x80000002u,"SOFTWARE\\MissingFixture",0,0x20019,&key)==2&&key==0,"Unavailable registry key synthesized");
             MemoryStatus mem{};mem.size=64;require(memory(&mem)&&mem.physical>0&&mem.available<=mem.physical&&mem.load<=100&&mem.available_pagefile<=mem.pagefile&&mem.virtual_available<=mem.virtual_total,"Linux memory values differ");mem.size=0;require(!memory(&mem)&&last_error==87,"Invalid memory status size accepted");SystemInfo sys{};information(&sys);require(sys.architecture==9&&sys.page_size==uint32_t(sysconf(_SC_PAGESIZE))&&sys.processors>0&&sys.minimum<sys.maximum,"System info fields differ");require(get_module_a("KERNEL32.DLL")==kernel_token&&get_proc(kernel_token,"GetNativeSystemInfo")!=0&&get_module_a("absent-fixture.dll")==0&&last_error==126,"Optional module resolution differs");std::cout<<"GE6 live Linux CPU/memory/system-query and read-only registry-view fixtures passed; complete registry/Windows memory parity is not claimed\n";return 0;
