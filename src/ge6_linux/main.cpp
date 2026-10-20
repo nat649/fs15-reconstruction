@@ -71,6 +71,7 @@ int heap_token=0;
 constexpr uintptr_t kernel_token=0x47453601;
 constexpr uintptr_t nt_token=0x47453602;
 constexpr uintptr_t winmm_token=0x47453603;
+constexpr uintptr_t user_token=0x47453604;
 std::map<uintptr_t,uint32_t> explicit_module_refs;
 std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
@@ -113,7 +114,7 @@ std::shared_ptr<std::recursive_mutex> lock_record(void* p){std::lock_guard<std::
 MS void enter_lock(void* p){lock_record(p)->lock();}
 MS void leave_lock(void* p){lock_record(p)->unlock();}
 MS void delete_lock(void* p){std::lock_guard<std::mutex> guard(locks_mutex);require(locks.erase(p)==1,"Uninitialized critical section deletion");}
-uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;last_error=126;return 0;}
+uintptr_t module(const std::string& name){auto lower=ge6_system::lower(name);if(lower=="kernel32.dll")return kernel_token;if(lower=="ntdll.dll")return nt_token;if(lower=="winmm.dll")return winmm_token;if(lower=="user32.dll")return user_token;last_error=126;return 0;}
 MS uintptr_t get_module_w(const uint16_t* name){trace("GetModuleHandleW");if(!name)return base;return module(ge6_fs::path(name));}
 MS uintptr_t get_module_a(const char* name){trace("GetModuleHandleA");return name?module(name):base;}
 uintptr_t acquire_module(const std::string& name){auto handle=module(name);if(handle){std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);++explicit_module_refs[handle];}else std::cerr<<"GE6_MODULE_UNAVAILABLE "<<name<<'\n';return handle;}// Known authored API modules only; no Windows DLL code is loaded.
@@ -126,7 +127,7 @@ MS uintptr_t load_library_w(const uint16_t* name){
 }
 MS int free_library(uintptr_t handle){trace("FreeLibrary");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);auto found=explicit_module_refs.find(handle);if(found==explicit_module_refs.end()){last_error=6;return 0;}if(--found->second==0)explicit_module_refs.erase(found);return 1;}// Releases explicit references; imported ABI transport remains resident.
 uintptr_t resolve(const std::string& library,const std::string& name);
-MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
+MS uintptr_t get_proc(uintptr_t module,const char* name){trace("GetProcAddress");if(reinterpret_cast<uintptr_t>(name)<=65535){last_error=127;return 0;}uintptr_t result=0;if(module==kernel_token)result=resolve("KERNEL32.dll",name);else if(module==winmm_token)result=resolve("WINMM.dll",name);else if(module==user_token)result=resolve("USER32.dll",name);else if(module==nt_token&&std::string(name)=="NtAllocateVirtualMemory")result=reinterpret_cast<uintptr_t>(&ge6_vm::allocate);if(!result){last_error=module==kernel_token||module==nt_token||module==winmm_token||module==user_token||module==base?127:126;std::cerr<<"GE6_OPTIONAL_PROC_UNAVAILABLE "<<name<<'\n';}return result;}
 MS char* get_command(){trace("GetCommandLineA");return command_line.data();}
 MS uintptr_t standard_handle(int32_t id){require(id>=-12&&id<=-10,"Unknown standard handle");return uintptr_t(0x100+(-10-id));}
 MS uint32_t file_type(uintptr_t handle){return ge6_fs::type(handle);}
@@ -343,6 +344,7 @@ int main(int argc,char** argv){
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
         if(argc==2&&std::string(argv[1])=="--check-modules"){auto first=load_library_w(reinterpret_cast<const uint16_t*>(u"KERNEL32.DLL"));auto second=load_library_a("kernel32.dll");require(first==kernel_token&&second==first&&explicit_module_refs.at(first)==2,"Unicode/ANSI module references differ");require(get_proc(first,"GetCurrentThreadId")!=0&&free_library(first)&&free_library(second)&&!free_library(second)&&last_error==6,"Module procedure/reference cleanup differs");require(!load_library_w(nullptr)&&last_error==87,"Null module name accepted");const uint16_t bad[]{0xd800,0};require(!load_library_w(bad)&&last_error==1113,"Malformed UTF16 module name accepted");require(!load_library_w(reinterpret_cast<const uint16_t*>(u"authored-absent-\u00e9.dll"))&&last_error==126,"Unavailable Unicode DLL did not fail");std::cout<<"GE6 Unicode/ANSI authored-module lookup, Microsoft ABI procedures and reference cleanup passed; no Windows DLL loader\n";return 0;}
+        if(argc==2&&std::string(argv[1])=="--check-user-module"){auto user=load_library_w(reinterpret_cast<const uint16_t*>(u"USER32.DLL"));require(user==user_token&&get_module_a("user32.dll")==user&&get_proc(user,"LoadImageW")==reinterpret_cast<uintptr_t>(&ge6_images::load)&&get_proc(user,"RegisterClassW")==reinterpret_cast<uintptr_t>(&ge6_classes::add),"Dynamic USER32 lookup did not preserve Microsoft ABI adapters");require(get_proc(user,"UnsupportedAuthoredWindowAPI")==0&&last_error==127&&free_library(user)&&explicit_module_refs.empty(),"Partial USER32 export/reference behavior differs");std::cout<<"GE6 dynamic USER32 module resolves only implemented Microsoft-ABI image/class exports; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-window-resources"){ge6_window_test::check(last_error);std::cout<<"GE6 authored PE icon name/ID lookup, actual PNG/DIB pixels and class registration/lifetime fixtures passed; no window created\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}

@@ -236,6 +236,7 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-window-resources'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-modules'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-user-module'], check=True, timeout=15)
     window_path = workdir / 'authored-window-resources.exe'
     window_path.write_bytes(window_resource_fixture())
     window = subprocess.run([str(exe.resolve()), '--fixture', str(window_path)], capture_output=True, text=True, timeout=15)
