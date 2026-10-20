@@ -38,6 +38,8 @@ def verify(log, executable, source_commit, run_id, image_kind='reference'):
     if image_kind == 'local-platform':
         sources += ('src/ge6_linux/local_platform.h', 'src/ge6_linux/file_services.h',
                     'scripts/ge6_linux_images.py', 'scripts/prepare_local_engine.py')
+    component_files = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', commit, 'src/ge6_linux'], cwd=ROOT).decode().splitlines()
+    sources += tuple(name for name in component_files if name.startswith('src/ge6_linux/') and name not in sources)
     pins = {name: hashlib.sha256(subprocess.check_output(['git', 'show', commit + ':' + name], cwd=ROOT)).hexdigest()
             for name in sources}
     return dict(scope='Original GE6 instructions executed in a local x64 Linux VM through authored OS/ABI transport; not a complete engine port',

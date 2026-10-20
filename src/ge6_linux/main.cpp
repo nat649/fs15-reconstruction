@@ -6,6 +6,7 @@
 #include "local_platform.h"
 #include "file_services.h"
 #include "network_services.h"
+#include "startup_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -176,6 +177,12 @@ MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/s
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 
 uintptr_t resolve(const std::string& library,const std::string& name){
+    if(library=="WINMM.dll"){
+        if(name=="timeBeginPeriod")return reinterpret_cast<uintptr_t>(&ge6_startup::begin);
+        if(name=="timeEndPeriod")return reinterpret_cast<uintptr_t>(&ge6_startup::end);
+        if(name=="timeGetTime")return reinterpret_cast<uintptr_t>(&ge6_startup::ticks);
+        return 0;
+    }
     if(library=="WS2_32.dll")return ge6_net::resolve(name);
     if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
     if(library=="ole32.dll"&&name=="CoInitializeEx")return reinterpret_cast<uintptr_t>(&com_initialize);
@@ -197,6 +204,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("CreateMutexA",create_singleton);BIND("CloseHandle",close_handle);BIND("IsDebuggerPresent",debugger_present);
     BIND("GetModuleFileNameW",module_filename_w);
     BIND("GetVersionExA",version_ex_a);
+    BIND("GetCurrentThread",ge6_startup::current_thread);BIND("SetThreadAffinityMask",ge6_startup::affinity);
 #undef BIND
     return 0;
 }
@@ -263,6 +271,14 @@ int main(int argc,char** argv){
     try{
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
+        ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
+        if(argc==2&&std::string(argv[1])=="--check-startup"){
+            using namespace ge6_startup;auto slack=prctl(PR_GET_TIMERSLACK);require(slack>=0&&begin(0)==97&&end(1)==97,"Invalid timer period accepted");require(begin(1)==0&&begin(1)==0&&begin(2)==0&&periods[1]==2,"Nested timer lease differs");require(end(1)==0&&periods[1]==1&&end(2)==0&&end(1)==0&&periods.empty()&&prctl(PR_GET_TIMERSLACK)==slack,"Timer lease did not restore slack");auto start=ge6_startup::ticks();usleep(3000);require(uint32_t(ge6_startup::ticks()-start)>=2,"Multimedia clock did not advance");
+            require(capture_affinity(),"Cannot query fixture CPU mask");uintptr_t original=0;bool wide=false;for(int i=0;i<CPU_SETSIZE;++i)if(CPU_ISSET(i,&allowed)){if(i>=64)wide=true;else original|=uintptr_t(1)<<i;}
+            require(affinity(0,1)==0&&last_error==6&&affinity(current_thread(),0)==0&&last_error==87,"Invalid thread/mask accepted");
+            if(!wide){auto one=original&(~original+1);require(one&&affinity(current_thread(),one)==original,"Previous affinity mask differs");cpu_set_t actual{};require(pthread_getaffinity_np(pthread_self(),sizeof(actual),&actual)==0&&CPU_COUNT(&actual)==1,"OS affinity did not change");require(affinity(current_thread(),original)==one,"Affinity restore differs");}else require(affinity(current_thread(),1)==0&&last_error==50,"Unsupported wide CPU group accepted");
+            std::cout<<"GE6 main-thread timer slack/lifetime and actual CPU affinity fixtures passed; full WinMM/thread parity is not claimed\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-network"){
             using namespace ge6_net;StartupData info{};require(startup(0,&info)==10092&&references==0&&startup(0x202,nullptr)==10014,"Invalid startup accepted");require(create(2,2,0)==~uintptr_t(0)&&ge6_net::get_error()==10093,"Socket used before startup");
             require(startup(0x202,&info)==0&&info.version==0x202&&info.highest==0x202&&info.vendor==0,"Socket version/ABI differs");require(startup(0x101,&info)==0&&references==2&&info.version==0x101,"Nested startup/version negotiation differs");
