@@ -31,14 +31,19 @@ log sections and initializes OpenAL audio through Linux OpenAL Soft (512 sources
 in the isolated VM). The VM uses an explicit silent backend; audible gameplay
 is unverified. Original SDL/CRT console-handler registration, optional icon
 lookup, class registration and dynamic USER32 export probes now continue.
-Startup reaches display enumeration and stops at `USER32!EnumDisplayDevicesW`,
-before a window or graphics context exists.
-These logs do not establish playable physics or working input/rendering.
+The X11/RandR transport now enumerates actual displays and modes. Original SDL
+creates and shows its **1280 x 720 main window**, and its original context
+creation code activates a native **OpenGL 4.5 compatibility context** through
+GLX/Mesa llvmpipe. The surface remains black: startup stops explicitly at
+`GDI32!GetDeviceGammaRamp` before a game frame or menu is rendered.
+This is a first original-engine graphics startup result, not a playable build.
 That input retains its
 previous Windows platform-bootstrap modification; the Linux loader adds no
-instruction patches. Original core renderer/window initialization remains open;
+instruction patches. Complete original renderer initialization remains open;
 this is not a playable Linux game.
 See [the exact evidence and current boundary](docs/GE6_LINUX_NATIVE_BOOT.md#existing-local-ge6-input-on-linux-2026-10-20).
+See [the visible-window/context milestone](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-window-and-gl-context-2026-10-20)
+and its [source-pinned evidence](analysis/ge6-linux-x11-validation.json).
 
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;

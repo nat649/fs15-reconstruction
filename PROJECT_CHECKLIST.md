@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-19**. Checked items have supporting local build, analysis
+Updated: **2026-10-20**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Exclusive active focus:** original GE6 startup on Linux. The
@@ -170,7 +170,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Connect original SDL/CRT console-handler registration to Linux SIGINT/SIGQUIT dispatch; verify real signals, handler order/ignore/removal, fresh callback threads/GS/TLS/FLS and a separate authored PE callback fixture.
 - [x] Read the original PE resource directory, preserve the missing optional SDL icon result and register its original window procedure/class metadata; verify PNG/DIB pixels, resource errors/lifetimes and six-argument PE ABI with authored fixtures.
 - [x] Connect Unicode module lookup and dynamic USER32 image/class exports; keep optional touch exports unavailable and let original SDL format their errors through a bounded UTF-16 message adapter.
-- [ ] Enumerate actual Linux displays/modes for original SDL (`EnumDisplayDevicesW` is the current stop), then connect original window/context/renderer startup.
+- [x] Enumerate actual Linux displays/modes for original SDL through X11/RandR, including current-mode fullscreen requests validated against the server.
+- [x] Create and show the original GE6 main window on X11 at 1280 x 720, retaining its native procedure at `0x14037cf00`; verify actual server map state.
+- [x] Create and activate the original main-window OpenGL context through GLX/Mesa; distinguish it from the two hidden 10 x 10 probe contexts. See [bounded evidence](analysis/ge6-linux-x11-validation.json).
+- [x] Verify authored X11 window lifetime, MS-ABI callbacks/stack arguments, real GL pixel readback and unavailable display-mode rejection in CI, without game files.
+- [ ] Connect `GetDeviceGammaRamp` and subsequent original renderer dependencies; the first mapped startup surface is black and has no game frame/menu yet.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.

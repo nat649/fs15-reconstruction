@@ -1,0 +1,124 @@
+{
+  "scope": "Original GE6 main window and GL context on Linux; blank startup surface, not a playable game",
+  "kernel": "Linux (none) 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 x86_64 Linux",
+  "image_kind": "local-platform",
+  "original_image_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+  "existing_local_platform_bootstrap_modified": true,
+  "linux_loader_patches_instructions": false,
+  "wine_or_proton_used": false,
+  "replacement_engine_linked": false,
+  "original_main_window": {
+    "handle": "0x75000002",
+    "xid": "0x200005",
+    "width": 1280,
+    "height": 720,
+    "procedure": "0x14037cf00",
+    "viewable": true
+  },
+  "original_main_window_gl_context": {
+    "handle": "0x7500000a",
+    "dc": "0x75000003",
+    "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+    "version": "4.5 (Compatibility Profile) Mesa 25.2.8-0ubuntu0.24.04.4"
+  },
+  "captured_root_dimensions": [
+    1280,
+    720
+  ],
+  "bound_import_names": 208,
+  "stop_trampoline_names": 216,
+  "stopped_at": {
+    "library": "GDI32.dll",
+    "symbol": "GetDeviceGammaRamp",
+    "caller": "0x140382f02",
+    "os_calls": 2058
+  },
+  "original_frame_rendered": false,
+  "original_renderer_initialized": false,
+  "menu_verified": false,
+  "full_engine_initialization_verified": false,
+  "playable_game_verified": false,
+  "vm_audio_backend": "null",
+  "audible_audio_verified": false,
+  "source_commit": "ea4796c9294c8618485974d18ac9e2b1157df34a",
+  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39494670722",
+  "committed_source_sha256": {
+    "src/ge6_linux/AUDIO_DEPENDENCY.md": "40d22a37ad606c4b4329af629435d7c02f0fadd1ce993b298be2e0f336fe7a06",
+    "src/ge6_linux/CMakeLists.txt": "7c4148772c9c23464945d0a06c2600cd95903bb3712937f8aadbf0c2074e2477",
+    "src/ge6_linux/ansi_reference.h": "8490e210cf1d5be613bded042b455f21968357c77f3950b74eedc9427b02bdde",
+    "src/ge6_linux/audio_check.h": "eb8cddaae31ca26308840682b59e4a9c24d872ce282c74630095e8cdbd632f00",
+    "src/ge6_linux/audio_services.h": "f765ccc276b243310dd4fa9446d329ceff048efe049b275be55bef8efeb8ea6f",
+    "src/ge6_linux/console_check.h": "1c2cbf483fb1f9e4ee9d25ef6f13d23ebbd57254a7f092fc945281672cfc2e94",
+    "src/ge6_linux/console_services.h": "cf94410bd5dff7b4b264f73f2a1e06d60d1424f65185cbc7ede2acd8c08b046a",
+    "src/ge6_linux/display_services.h": "28b282846289a21d6819de0ae59d0aa6d2f2bd785a79cb80b3890fa5b801f2c7",
+    "src/ge6_linux/event_services.h": "c327700570a311a87417c69e7ba616ee337266f3a2a272a8133d0d90d2b8a20b",
+    "src/ge6_linux/file_services.h": "f3b2a0013c2ba24824d2b7e25ab97a661215cca53529890e45db779d9a35d787",
+    "src/ge6_linux/gl_services.h": "bb7aea4fbfac2b076bef9692be7726569270d621ccce7b300be7e841dad625c3",
+    "src/ge6_linux/image_resources.h": "c7e393e334b59259960a706a2bd3ca3ea006e8560171c6cd92d9134e09bd1df4",
+    "src/ge6_linux/local_platform.h": "2af930d4f584da3d6af7f00ac492646ddd1d64f5139e59211b26382455ca7f03",
+    "src/ge6_linux/main.cpp": "f9fb4eabd1212530dfdda915280c6610d54021a87d194fc995b0c0aa9873ec31",
+    "src/ge6_linux/native_thread.h": "b0830f06dbbcafc09da14acfdce23dac022754421aeb99b44c6465fd997883b5",
+    "src/ge6_linux/network_services.h": "8061d9613b5835d6a5bc9e2a1d8f100ced576b05761d9fbfe1923a6a5b9fd8de",
+    "src/ge6_linux/relink.sh": "0a991b3dd7ffb8fcaa1f13350bc156f88ba6f9dcc908184303051b4ddf4d9bed",
+    "src/ge6_linux/startup_services.h": "2e23540b3cd7020dc09af8f8ec21517308131611daa9a6cc58a48ddc7f027458",
+    "src/ge6_linux/system_services.h": "39dd70017bc46e99d7e35d7158cb78f0ac53349ceac9f0831e7409a029fb0604",
+    "src/ge6_linux/thread_services.h": "0d07571e0bb59a90deaf3ab8186abaa841333d65980524d9fc0383b08ee6094e",
+    "src/ge6_linux/thread_slots.h": "271ea4029fe0e1fd8d45942ba9ec24d0e0d0fc5afadfcbfc8234a04edb223f82",
+    "src/ge6_linux/virtual_memory.h": "5f2e61343d459e4dcc45f9e4de160b7c9c58901ef62e59e327d61da759c015a9",
+    "src/ge6_linux/window_classes.h": "8f7baca4572ce0f87aec686cfdb2f266d099c8521724e6ac28521026a6eeee54",
+    "src/ge6_linux/window_resource_check.h": "bdca6ef1b862416aa07ab9e291ec2fe5dad24f8ab833fe73e964d32112f96b73",
+    "src/ge6_linux/window_services.h": "7cd764d1083bbc70ed772ae0d9a645dfc87bd527830a342b7975677b956d1fa1",
+    "scripts/ge6_graphics_vm.py": "913411e338beb05764229614802d8c3b4f76cc7b352085431418f712d1a92cf9",
+    "scripts/setup_ge6_graphics_vm.py": "3052e0a08e5e130c6ccc44288040177e5d353c443efc56ded816b67191bd2321",
+    "scripts/verify_ge6_x11_boot.py": "2cf8a53b31abd9ef15db6ab26d8b2cc81783244e0d6e71500b63ae7610fd7373",
+    "tests/check_ge6_x11.cpp": "d0f637200b59ae9b08ca6fb0065b58a1763c04fe75ea1524b1e23e5b57593108",
+    "tests/test_ge6_x11_evidence.py": "fbdeedbc71aec2c0299e156ce0863e8014d1fa52d47f8ad4a98426374eac7497",
+    ".github/workflows/ge6-linux-native-boot.yml": "a9a4be4d2acd29a6a10d481d887647eef6cb5053cf7799727cd1e4e7ea1ef61a"
+  },
+  "linux_elf_sha256": "cf93601e697a00fde85c4d95dc204aee1c519889cbd902b298cae33a4f013d5d",
+  "private_boot_log_sha256": "ac53a218738a2f3bbbb0e0996c8bf2f39f82dc53cf6eb3fa3cca6f245bac50eb",
+  "private_original_journal_sha256": "551c1a2383b2a5c1ab582db3dc09e1eabaaaf33135e193892b022cf4dee4b4ab",
+  "captured_root_png_sha256": "d7c8c397c22a61551fa045f5af94676b3b60a9ace0dfe08189d18d52ad932694",
+  "private_staged_inputs": {
+    "x64/FarmingSimulator2015Game.exe": {
+      "sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+      "size": 6613272
+    },
+    "game.xml": {
+      "sha256": "200b54156b11eb978b8a62395d9d95f3e9617be8b28ee704bac7f8d7782f62d8",
+      "size": 1181
+    },
+    "FarmingSimulator2015.xml": {
+      "sha256": "b362df0e420304f4f6e76ae9e7484c93c7024f2aa96965ca92d9872fd56a9f1b",
+      "size": 161
+    },
+    "VERSION": {
+      "sha256": "1d9a70a747f501fcedc9a74ff7268acd6c386387041cbc6b59516b1345af632f",
+      "size": 7
+    },
+    "steamdata.dat": {
+      "sha256": "a6f99156e8f02ffdc4ca71df4820c7e86eb419444e111791c0c2c7a184cdc285",
+      "size": 29
+    },
+    "dataS.gar": {
+      "sha256": "a39d2226a0a3c5e53d3acf5b82ce898c007a2595fc4f688a56807bb917fbed18",
+      "size": 10725376
+    },
+    "dataS2.gar": {
+      "sha256": "64348d90a4c4b288696469faab646d45812d8a114965b70482f51cb4ce061abd",
+      "size": 132797952
+    },
+    "crc_files.xml": {
+      "sha256": "6b7c3e6eb82f5c90f24ba4ceedae6a6abc829158a095d729afcac5013402e6e7",
+      "size": 218
+    },
+    "data/maps/map01.i3d": {
+      "sha256": "c10d4094b69b139142ab5860d58312c3cdf472e51fbcb5dfde9b7e4fa5c0e949",
+      "size": 55498627
+    },
+    "data/maps/map01/map01_dem.png": {
+      "sha256": "60ee62c655ffc12d466f932fb0bf04d202ae5c541ce51efe4e7e3c564fd2b8e7",
+      "size": 1341248
+    }
+  }
+}

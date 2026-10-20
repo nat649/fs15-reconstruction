@@ -23,7 +23,7 @@ image described below. Original instructions are not distributed.
 On Linux x86_64:
 
 ```sh
-sudo apt-get install g++ cmake libssl-dev libasound2-dev libpulse-dev libpng-dev
+sudo apt-get install g++ cmake libssl-dev libasound2-dev libpulse-dev libpng-dev libx11-dev libxrandr-dev libgl-dev
 cmake -S src/ge6_linux -B build/ge6-linux-boot -DCMAKE_BUILD_TYPE=Release
 cmake --build build/ge6-linux-boot --parallel 2
 build/ge6-linux-boot/FS15GE6LinuxBoot \
@@ -35,6 +35,80 @@ workflow artifacts include `bin/FS15GE6LinuxBoot`; this remains a diagnostic,
 not a playable GE6 build. OpenSSL checks the original-image SHA-256. CMake
 downloads a SHA-256-pinned OpenAL Soft source release for Linux audio; it does
 not download original game files. See [dependency and relinking materials](../src/ge6_linux/AUDIO_DEPENDENCY.md).
+
+The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
+and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
+headless diagnostic with X11 disabled. Neither build includes original files.
+
+## First original main window and GL context (2026-10-20)
+
+The private Local GE6 image now creates and **shows its original 1280 x 720
+main window** under Linux. X11 confirms that the actual window is viewable;
+original SDL supplies its window procedure at `0x14037cf00`. Original context
+creation subsequently creates and activates the main window's native GLX
+context. The server reports **OpenGL 4.5 Compatibility Profile, Mesa llvmpipe**.
+This is distinct from the two hidden 10 x 10 probe windows/contexts, which the
+original engine creates and destroys first.
+
+The surface is currently **black**. Startup stops at
+`GDI32.dll!GetDeviceGammaRamp`, caller `0x140382f02`. No original game frame,
+menu, map, playable physics or working gameplay input is established by this
+milestone. The next work is gamma queries and the remaining renderer imports.
+
+The [source-pinned X11 evidence](../analysis/ge6-linux-x11-validation.json)
+records the executed ELF/private log hashes, original image/resource hashes,
+main-window ownership of the GL DC, original callers, actual map state and
+next stop. The [raw X11 capture](screenshots/ge6-linux-native-window-2026-10-20.png)
+is the blank startup surface, captured at that stop. It contains no menu or
+rendered game content. Original code/resources, private VM and SSH keys stay
+outside Git.
+
+This run uses a private local QEMU VM with Linux `6.18.52-0-virt`, Ubuntu 24.04
+libraries and Xvfb at 1280 x 720. Xvfb is a real X server with Mesa software
+OpenGL; physical GPU drivers and a tester's interactive desktop remain untested.
+Networking is restricted to a host-loopback SSH forward. No Wine, Proton,
+ReFarm renderer or replacement engine is linked or run. The Local GE6 input
+retains the documented pre-existing Windows bootstrap modification below;
+the Linux loader adds no native instruction patches.
+
+The authored OS/ABI code maps display queries to RandR and GDI query
+resources to actual X11 GCs/pixmaps. Windows styles/properties and callbacks
+are bounded host metadata; native GE6 instructions still control startup.
+Window geometry currently uses X11 client dimensions with decorations left to
+the host window manager. Keyboard setup covers the tested default US mapping;
+complete keyboard layout/input, nonclient behavior, file drops and WGL extension
+parity remain open. The host double-click default is 500 ms unless its X resource
+overrides it. No unavailable display mode, refresh rate or GPU identity is
+invented. OpenGL exports use typed Microsoft-ABI adapters, rather than exposing
+System V pointers to original Windows calls.
+
+Dedicated CI builds both diagnostic variants. Its authored-only Xvfb fixture
+checks real window creation/show/destruction, class ownership, stack arguments
+and callbacks, display-mode rejection, GL float arguments and pixel readback.
+These fixture pixels are separate from the blank original-engine surface.
+Every executable artifact includes OpenAL source/object/relink materials and
+dependency notices. Public CI never runs original game code.
+
+The validated artifact is from [CI run 39494670722](https://github.com/nat649/fs15-reconstruction/actions/runs/39494670722),
+source `ea4796c9294c8618485974d18ac9e2b1157df34a`. Both X11 and static jobs
+passed, including relinking and the existing loader/ABI checks. The repository
+also passes 91 Python tests (two optional checks skipped). The exact downloaded
+X11 ELF was executed privately and its SHA-256 verified inside the VM.
+The same ELF preserves the reference image's original Steam restart boundary
+at `0x14000c8b4` with 129 OS calls.
+
+Final validation used a fresh isolated VM profile, with its previous test
+profile retained separately. Restaging newer default configuration files over
+an existing profile can enter the original settings-update confirmation path;
+its `ShowCursor`/`MessageBoxW` adapters remain incomplete. No confirmation
+response is synthesized.
+
+Private graphics test helpers are `scripts/setup_ge6_graphics_vm.py` and
+`scripts/ge6_graphics_vm.py`. They assemble ignored local Ubuntu package inputs
+with SHA-256 checks, stage only the named private startup resources, and support
+compile/deploy/run/capture. `scripts/verify_ge6_x11_boot.py` checks captured
+observations and emits the bounded report; it rejects probe-only contexts,
+hidden windows, unrelated DCs and faulted/wrong-provenance runs.
 
 ## Observed original-code Linux result (2026-10-19)
 
@@ -113,7 +187,7 @@ continues: the named optional icon is absent (resource error 1814), and the clas
 record retains original procedure `0x14037cf00` with atom 49152. No substitute
 icon or OS window is fabricated. Dynamic USER32 lookup succeeds for the authored
 API view; the three optional touch exports remain unavailable, and original SDL
-formats those errors and continues. The next explicit stop is
+formats those errors and continues. The earlier headless checkpoint's stop was
 `USER32.dll!EnumDisplayDevicesW`, caller `0x140380ae4`, in actual display
 enumeration. Neither a window nor a graphics context has been created. The
 pinned run binds 153 imported names and records 1,667 OS/audio calls before
