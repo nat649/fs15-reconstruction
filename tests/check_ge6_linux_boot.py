@@ -1,10 +1,13 @@
 """Exercise the native-code loader with authored PE instructions, never game code."""
 import argparse
 import os
+import select
+import signal
 from pathlib import Path
 import struct
 import subprocess
 import tempfile
+import time
 
 
 def fixture(blocked=False):
@@ -128,6 +131,46 @@ def audio_fixture():
     return data
 
 
+def console_fixture():
+    """A PE callback receives a real SIGINT on another native ABI thread."""
+    data = fixture()
+    data[0x680:0x700] = bytes(0x80)
+    data[0x700:0x780] = bytes(0x80)
+    data[0xc00:0xc40] = bytes(0x40)
+    for index, name in enumerate((b'SetConsoleCtrlHandler', b'Sleep', b'GetCurrentThreadId')):
+        for table in (0x680, 0x700):
+            struct.pack_into('<Q', data, table + index * 8, 0x2200 + index * 64)
+        at = 0x802 + index * 64
+        data[at:at + len(name) + 1] = name + b'\0'
+    code = bytearray(b'\x48\x83\xec\x28')
+    def call(index, start=0x1000):
+        code.extend(b'\xff\x15' + struct.pack('<i', 0x2100 + index * 8 - (start + len(code) + 6)))
+    call(2)
+    code += b'\xa3' + struct.pack('<Q', 0x140003014)
+    code += b'\x48\xb9' + struct.pack('<Q', 0x140001100) + b'\xba\x01\x00\x00\x00'
+    call(0)
+    code += b'\x85\xc0\x75\x02\x0f\x0b'
+    loop = len(code)
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003000) + b'\x83\x38\x01\x74\x0d\xb9\x05\x00\x00\x00'
+    call(1)
+    code += b'\xeb' + struct.pack('<b', loop - (len(code) + 2))
+    # Compare the callback's Linux TID against the PE main thread's TID.
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003010) + b'\x8b\x08\x3b\x48\x04\x75\x02\x0f\x0b'
+    code += b'\x48\xb9' + struct.pack('<Q', 0x140001100) + b'\x31\xd2'
+    call(0)
+    code += b'\x48\x83\xc4\x28\xc3'
+    assert len(code) <= 0x100
+    data[0x400:0x500] = code.ljust(0x100, b'\0')
+    code = bytearray(b'\x48\x83\xec\x28\x85\xc9\x74\x02\x0f\x0b')
+    code += b'\x65\x48\x8b\x04\x25\x30\x00\x00\x00\x48\x3b\x40\x30\x74\x02\x0f\x0b'
+    call(2, 0x1100)
+    code += b'\xa3' + struct.pack('<Q', 0x140003010)
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003000) + b'\xc7\x00\x01\x00\x00\x00'
+    code += b'\xb8\x01\x00\x00\x00\x48\x83\xc4\x28\xc3'
+    data[0x500:0x600] = code.ljust(0x100, b'\0')
+    return data
+
+
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
@@ -139,6 +182,29 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-console'], check=True, timeout=15, stdout=subprocess.PIPE)
+    unhandled = subprocess.run([str(exe.resolve()), '--check-console-default'], capture_output=True, text=True, timeout=15)
+    assert unhandled.returncode == 130 and 'GE6_CONSOLE_CALL' in unhandled.stdout, unhandled
+    console_path = workdir / 'authored-console-abi.exe'
+    console_path.write_bytes(console_fixture())
+    process = subprocess.Popen([str(exe.resolve()), '--fixture', str(console_path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    prefix = b''
+    try:
+        deadline = time.monotonic() + 5
+        while b'GE6_CONSOLE_REGISTER entry=0x140001100' not in prefix:
+            remaining = deadline - time.monotonic()
+            assert remaining > 0 and select.select([process.stdout], [], [], remaining)[0], prefix
+            chunk = os.read(process.stdout.fileno(), 65536)
+            assert chunk, prefix
+            prefix += chunk
+        process.send_signal(signal.SIGINT)
+        output, error = process.communicate(timeout=10)
+        output = prefix + output
+        assert process.returncode == 0 and b'GE6_CONSOLE_CALL entry=0x140001100' in output and b'GE6_AUTHORED_FIXTURE_RETURN' in output, output + error
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.communicate()
     audio_env = dict(os.environ, ALSOFT_DRIVERS='null')
     subprocess.run([str(exe.resolve()), '--check-audio'], check=True, timeout=15, env=audio_env)
     audio_path = workdir / 'authored-openal-abi.exe'

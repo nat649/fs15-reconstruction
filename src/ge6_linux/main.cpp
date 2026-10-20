@@ -13,6 +13,7 @@
 #include "thread_services.h"
 #include "audio_services.h"
 #include "audio_check.h"
+#include "console_check.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -230,6 +231,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
 #define BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     BIND("GetSystemTimeAsFileTime",file_time);BIND("GetCurrentProcessId",process_id);BIND("GetCurrentThreadId",thread_id);
     BIND("GetTickCount",ticks);BIND("QueryPerformanceCounter",counter);BIND("QueryPerformanceFrequency",frequency);
+    BIND("SetConsoleCtrlHandler",ge6_console::set_handler);
     BIND("GetLastError",get_error);BIND("SetLastError",set_error);BIND("EncodePointer",encode);BIND("DecodePointer",encode);
     BIND("HeapCreate",heap_create);BIND("GetProcessHeap",process_heap);BIND("HeapAlloc",heap_alloc);BIND("HeapFree",heap_free);BIND("GetVersion",version);BIND("HeapSetInformation",heap_info);
     BIND("HeapSize",heap_size);BIND("HeapReAlloc",heap_realloc);
@@ -308,12 +310,16 @@ int main(int argc,char** argv){
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
         ge6_net::trace=trace;
         ge6_audio::trace=trace;
+        ge6_console::trace=trace;ge6_console::set_error=[](uint32_t value){last_error=value;};
+        ge6_console::record=[](const char* action,uintptr_t entry,uint32_t event){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_CONSOLE_"<<action<<" entry=0x"<<std::hex<<entry<<std::dec<<" event="<<event<<" tid="<<syscall(SYS_gettid)<<'\n';};
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
         ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}
+        if(argc==2&&std::string(argv[1])=="--check-console"){ge6_console_test::check();std::cout<<"GE6 actual Linux console signals, reverse handler order, ignore/remove, fresh MS-ABI threads/GS/TLS/FLS passed\n";return 0;}
+        if(argc==2&&std::string(argv[1])=="--check-console-default"){ge6_console::set_handler(ge6_console_test::decline,1);kill(getpid(),SIGINT);for(;;)pause();}
         if(argc==2&&std::string(argv[1])=="--check-audio"){ge6_audio::check();std::cout<<"GE6 Linux OpenAL Soft actual device/context, PCM loopback energy, source queue/play/pause/stop and errors passed\n";return 0;}
         if(argc==2&&std::string(argv[1])=="--check-environment"){
             const char* name="FS15_GE6_AUTHORED_ENV_FIXTURE";unsetenv(name);char out[16]{};require(environment_a(name,out,16)==0&&last_error==203,"Missing environment variable differs");require(setenv(name,"GE6-Linux",1)==0&&environment_a(name,nullptr,0)==10&&environment_a(name,out,4)==10&&environment_a(name,out,16)==9&&std::string(out)=="GE6-Linux","Environment count/copy differs");require(environment_a(nullptr,out,16)==0&&last_error==87&&environment_a(name,nullptr,16)==0&&last_error==87,"Invalid environment buffer accepted");unsetenv(name);std::cout<<"GE6 actual ASCII Linux environment query/capacity/error fixtures passed\n";return 0;
@@ -391,6 +397,6 @@ int main(int argc,char** argv){
         if(!fixture)image_path="Z:"+image_path;
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
-        Image image;image.load(raw,fixture);image.run();if(ge6_threads::running!=0){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR native entry returned with active workers\n";std::_Exit(78);}return 0;
+        Image image;ge6_console::Lifetime console_lifetime;image.load(raw,fixture);image.run();if(ge6_threads::running!=0){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR native entry returned with active workers\n";std::_Exit(78);}return 0;
     }catch(const std::exception& error){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR "<<error.what()<<'\n';return 1;}
 }
