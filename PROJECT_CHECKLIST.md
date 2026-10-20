@@ -168,7 +168,9 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [ ] Validate audible original game audio on a Linux desktop; the VM explicitly uses OpenAL Soft's silent backend.
 - [x] Preserve the optional original D3D9 adapter probe's unavailable/failure path and let native startup continue without a synthetic GPU.
 - [x] Connect original SDL/CRT console-handler registration to Linux SIGINT/SIGQUIT dispatch; verify real signals, handler order/ignore/removal, fresh callback threads/GS/TLS/FLS and a separate authored PE callback fixture.
-- [ ] Connect original SDL application-class image resources (`LoadImageW` is the current stop), then original window/context/renderer startup.
+- [x] Read the original PE resource directory, preserve the missing optional SDL icon result and register its original window procedure/class metadata; verify PNG/DIB pixels, resource errors/lifetimes and six-argument PE ABI with authored fixtures.
+- [x] Connect Unicode module lookup and dynamic USER32 image/class exports; keep optional touch exports unavailable and let original SDL format their errors through a bounded UTF-16 message adapter.
+- [ ] Enumerate actual Linux displays/modes for original SDL (`EnumDisplayDevicesW` is the current stop), then connect original window/context/renderer startup.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.

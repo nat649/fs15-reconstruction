@@ -29,9 +29,10 @@ threads with separate stacks and TLS/FLS state. With unchanged integrity inputs
 and GAR archives staged privately, startup reaches the original physics/input
 log sections and initializes OpenAL audio through Linux OpenAL Soft (512 sources
 in the isolated VM). The VM uses an explicit silent backend; audible gameplay
-is unverified. Original SDL/CRT console-handler registration now succeeds
-through Linux signals. Startup reaches SDL application-class preparation and
-stops at `USER32!LoadImageW`, before a window or graphics context exists.
+is unverified. Original SDL/CRT console-handler registration, optional icon
+lookup, class registration and dynamic USER32 export probes now continue.
+Startup reaches display enumeration and stops at `USER32!EnumDisplayDevicesW`,
+before a window or graphics context exists.
 These logs do not establish playable physics or working input/rendering.
 That input retains its
 previous Windows platform-bootstrap modification; the Linux loader adds no

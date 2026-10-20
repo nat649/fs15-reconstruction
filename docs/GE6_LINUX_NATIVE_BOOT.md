@@ -23,7 +23,7 @@ image described below. Original instructions are not distributed.
 On Linux x86_64:
 
 ```sh
-sudo apt-get install g++ cmake libssl-dev libasound2-dev libpulse-dev
+sudo apt-get install g++ cmake libssl-dev libasound2-dev libpulse-dev libpng-dev
 cmake -S src/ge6_linux -B build/ge6-linux-boot -DCMAKE_BUILD_TYPE=Release
 cmake --build build/ge6-linux-boot --parallel 2
 build/ge6-linux-boot/FS15GE6LinuxBoot \
@@ -107,13 +107,17 @@ silent `null` backend; audible desktop/game audio is not verified. The next
 observed dependency after audio was `d3d9.dll!Direct3DCreate9`, caller
 `0x140049a26`, in the original adapter probe. Its documented unavailable result
 now lets original startup continue. The original SDL/CRT signal initialization
-registers its native control handler at `0x1404009d8`. Startup reaches the
-original SDL application-class preparation routine at `0x14037deb0`, then
-stops explicitly at `USER32.dll!LoadImageW`, caller `0x14037dfa1`. This call
-requests the application-class icon before `RegisterClassW`; neither a window
-nor a graphics context has been created. The pinned run binds 147 imported
-names and records 1,655 OS/audio calls before stopping; scheduling may change
-the number of worker timer calls. Import totals are not completion
+registers its native control handler at `0x1404009d8`. The
+original SDL application-class preparation routine at `0x14037deb0` now
+continues: the named optional icon is absent (resource error 1814), and the class
+record retains original procedure `0x14037cf00` with atom 49152. No substitute
+icon or OS window is fabricated. Dynamic USER32 lookup succeeds for the authored
+API view; the three optional touch exports remain unavailable, and original SDL
+formats those errors and continues. The next explicit stop is
+`USER32.dll!EnumDisplayDevicesW`, caller `0x140380ae4`, in actual display
+enumeration. Neither a window nor a graphics context has been created. The
+pinned run binds 153 imported names and records 1,667 OS/audio calls before
+stopping; scheduling may change the number of worker timer calls. Import totals are not completion
 percentages. These startup log sections do not
 demonstrate a simulated game world, delivered input, a rendered window or
 playable physics.
@@ -127,7 +131,7 @@ Other drives and drive-relative paths are rejected.
 The [separate local-image evidence](../analysis/ge6-linux-local-boot-validation.json)
 records the input/source/ELF/log hashes and the current stop; it does not replace
 the reference-image evidence above. Dedicated
-[Linux CI run 39457537661](https://github.com/nat649/fs15-reconstruction/actions/runs/39457537661)
+[Linux CI run 39467694877](https://github.com/nat649/fs15-reconstruction/actions/runs/39467694877)
 passes authored ABI, Unicode, file lifecycle/search/copy/timestamp, drive mapping,
 compatibility-version and unavailable-platform contracts for that source,
 plus real UDP loopback, timer-slack/affinity, CPU/memory/registry queries,
@@ -136,6 +140,12 @@ actual pthread callback/TLS/FLS lifecycle tests, plus OpenAL PCM mixing and
 Microsoft float ABI checks and actual console-signal callbacks. An authored PE fixture also
 creates and waits for PE worker instructions through a six-argument Microsoft
 ABI import, checks the child's GS stack/self metadata and verifies isolated TLS.
+Resource/class tests additionally check real PNG/DIB pixels, copied class
+metadata and retained icon ownership. Dedicated PE fixtures verify six-argument
+image loading/WNDCLASSW layout and seven-argument UTF-16 error-message output.
+Unicode/ANSI module-reference tests verify implemented exports, unavailable
+exports, invalid UTF-16 rejection and released references. Class registration
+is recorded separately from OS-window/render/menu initialization.
 Public CI does not contain the original game. The missing optional
 `preloadMemory.pak` produces an ordinary file-not-found result and the original
 engine continues to configuration loading; no cache contents are synthesized.
@@ -176,6 +186,44 @@ serial output on timeout. It attaches no network device. Generated image archive
 and full logs embed or describe private input and remain under ignored `build/`.
 
 ## OS transport and remaining work
+
+The loader privately copies the validated readable PE resource directory into
+bounded host storage. `LoadImageW` resolves group-icon names or integer IDs,
+then decodes the first original frame for the observed zero-size/default-color
+request. PNG frames use Linux libpng/zlib; uncompressed 8/24/32-bit DIB frames
+use an authored palette/BGRA/orientation/AND-mask adapter. This is Windows image
+resource transport, not recovered engine image-loading code. Authored fixtures
+verify pixels, alpha/masks, IDs/names, shared/nonshared lifetime, missing-resource
+errors and malformed directory/data bounds. A separate PE fixture loads an
+authored icon through the six-argument IAT call and supplies a native WNDCLASSW.
+
+`RegisterClassW` stores a copied ASCII class name, the original Microsoft-ABI
+procedure, style/extra-byte counts and a retained icon reference. It returns an
+atom for that actual process-local record and rejects duplicate registrations.
+Unregistering releases the record and checks window references. This is class
+metadata for subsequent window creation; it does not create an OS window or
+call the procedure. Menus, cursors, brushes, global/DLL class namespaces and
+full Unicode class-name comparison remain open. Unsupported image types,
+file/system images, resizing/other LoadImage flags and unsupported class
+parameters stop explicitly; missing named resources return their actual error.
+The [Windows image API](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-loadimagew)
+and [class registration API](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassw)
+define the transported boundary.
+
+`LoadLibraryW` transcodes validated UTF-16 into the same bounded authored-module
+lookup/reference tracking used by `LoadLibraryA`. Null, malformed and missing
+names retain failure/error behavior. This does not load arbitrary Windows DLL
+instructions or provide a full Windows search path/dependency loader. Optional
+unavailable modules remain unavailable. The authored USER32 module view exposes
+the same implemented Microsoft-ABI image/class functions through GetProcAddress;
+unimplemented exports return unavailable, never a System V pointer.
+SDL's optional export probes format their failures with `FormatMessageW` before
+continuing. Its observed FROM_SYSTEM call now supplies bounded English text for
+module/procedure-not-found errors (126/127), preserving UTF-16 counts, caller
+buffers and LastError on success. A seven-argument authored PE fixture checks
+the output and its untouched guard. This is not a complete localized Windows
+message catalogue: unsupported standard message IDs/formatting flags stop;
+absent high IDs and unsupported languages return failure.
 
 All 32 statically imported OpenAL functions have typed Microsoft-x64 wrappers
 which call the actual Linux OpenAL Soft 1.24.3 implementation. Device/context
