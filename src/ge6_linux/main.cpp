@@ -72,6 +72,7 @@ std::string command_line="FarmingSimulator2015Game.exe";
 std::string image_path;
 void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++calls;std::cout<<"GE6_OS "<<name<<'\n';if(ge6_threads::active_entry&&!ge6_threads::traced_import){ge6_threads::traced_import=true;std::cout<<"GE6_NATIVE_THREAD_FIRST_OS name="<<name<<" entry=0x"<<std::hex<<ge6_threads::active_entry<<std::dec<<" tid="<<syscall(SYS_gettid)<<'\n';}}
 [[noreturn]] MS void missing(uint32_t id){
+    std::lock_guard<std::mutex> guard(trace_mutex);
     std::cerr<<"GE6_BLOCKED_IMPORT "<<(id<imports.size()?imports[id]:"invalid-index")
              <<" caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))
              <<std::dec<<" os_calls="<<calls<<'\n';std::_Exit(78);
@@ -172,7 +173,7 @@ MS uint32_t module_filename(uintptr_t module,char* out,uint32_t capacity){
 MS uint32_t module_filename_w(uintptr_t module,uint16_t* out,uint32_t capacity){trace("GetModuleFileNameW");require(module==0||module==base,"Unimplemented module filename");if(!capacity){last_error=122;return 0;}auto name=ge6_fs::utf16(image_path);auto count=std::min(name.size(),size_t(capacity-1));std::memcpy(out,name.data(),count*2);out[count]=0;if(name.size()>=capacity){last_error=122;return capacity;}return uint32_t(count);}
 MS void startup_info(void* raw){trace("GetStartupInfoW/A");auto* out=static_cast<uint8_t*>(raw);std::memset(out,0,104);uint32_t size=104;std::memcpy(out,&size,4);}
 MS void sleep_ms(uint32_t ms){trace("Sleep");usleep(uint64_t(ms)*1000);}
-MS void terminate(uint32_t code){std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::_Exit(int(code));}
+MS void terminate(uint32_t code){std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_NATIVE_EXIT code="<<code<<'\n';std::_Exit(int(code));}
 MS uintptr_t set_exception_filter(uintptr_t callback){trace("SetUnhandledExceptionFilter");return registered_filter.exchange(callback);}// Registration only; original Windows exception dispatch remains unimplemented.
 MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
     trace("CreateMutexA");std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);require(!attributes&&!owner&&name,"Unimplemented general mutex creation");std::string label=name;
@@ -279,7 +280,7 @@ struct Image {
         auto found=std::find_if(sections.begin(),sections.end(),[&](const Section& s){return !s.skip&&(s.flags&0x20000000)&&entry>=s.rva&&uint64_t(entry)<uint64_t(s.rva)+s.length;});require(found!=sections.end(),"CRT entry is not in executable code");
         std::cout<<"GE6_IMAGE_MAPPED base=0x"<<std::hex<<base<<" entry=0x"<<base+entry<<std::dec<<" supported_imports="<<supported<<" blocked_imports="<<imports.size()<<'\n';
     }
-    void run(){ge6_native::Context thread;std::cout<<"GE6_NATIVE_NT_TIB_READY\n";using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
+    void run(){ge6_native::Context thread;std::cout<<"GE6_NATIVE_NT_TIB_READY\n";using Entry=void(MS*)();auto entrypoint=reinterpret_cast<Entry>(mapped+entry);auto prefix=authored_fixture?"GE6_AUTHORED_FIXTURE":"GE6_ORIGINAL_CRT";std::cout<<prefix<<"_ENTER\n";entrypoint();ge6_slots::cleanup();std::cout<<prefix<<"_RETURN os_calls="<<calls<<'\n';}
 };
 }
 int main(int argc,char** argv){
@@ -366,6 +367,6 @@ int main(int argc,char** argv){
         if(!fixture)image_path="Z:"+image_path;
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
         struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
-        Image image;image.load(raw,fixture);image.run();require(ge6_threads::running==0,"Native entry returned with active worker threads");return 0;
+        Image image;image.load(raw,fixture);image.run();if(ge6_threads::running!=0){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR native entry returned with active workers\n";std::_Exit(78);}return 0;
     }catch(const std::exception& error){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR "<<error.what()<<'\n';return 1;}
 }
