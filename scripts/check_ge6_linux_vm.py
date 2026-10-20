@@ -27,7 +27,7 @@ def archive_entries(raw):
         yield name.lstrip('./'), content
 
 
-def build_initramfs(alpine, executable, image, resources=None, archives=False):
+def build_initramfs(alpine, executable, image, resources=None, archives=False, integrity=False):
     original = image.read_bytes()
     kind = image_kind(original)
     source = dict(archive_entries(alpine.read_bytes()))
@@ -44,8 +44,10 @@ def build_initramfs(alpine, executable, image, resources=None, archives=False):
         out.extend(b'\0' * (-len(out) % 4))
         out.extend(data)
         out.extend(b'\0' * (-len(out) % 4))
+    directories = set()
     for name in ('usr', 'usr/bin', 'usr/lib', 'dev', 'proc', 'tmp', 'game', 'game/x64', 'profile'):
         add(name, mode=0o40755)
+        directories.add(name)
     add('bin', b'usr/bin', 0o120777)
     add('lib', b'usr/lib', 0o120777)
     add('usr/bin/sh', b'busybox', 0o120777)
@@ -60,11 +62,22 @@ def build_initramfs(alpine, executable, image, resources=None, archives=False):
         names = ('game.xml', 'FarmingSimulator2015.xml', 'VERSION', 'steamdata.dat')
         if archives:
             names += ('dataS.gar', 'dataS2.gar')
+        if integrity:
+            # Original CRC manifest and the two original files it checks in the
+            # pinned version. Do not rewrite checksums or skip native checks.
+            names += ('crc_files.xml', 'data/maps/map01.i3d', 'data/maps/map01/map01_dem.png')
         for name in names:
             source_file = resources / name
             if source_file.is_symlink() or not source_file.is_file():
                 raise ValueError('Missing regular startup resource: ' + name)
-            add('game/' + name, source_file.read_bytes())
+            target = 'game/' + name
+            parent = Path(target).parent
+            for item in reversed((parent, *parent.parents)):
+                directory = item.as_posix()
+                if directory != '.' and directory not in directories:
+                    add(directory, mode=0o40755)
+                    directories.add(directory)
+            add(target, source_file.read_bytes())
     init = b'''#!/bin/sh
 /usr/bin/busybox mount -t proc proc /proc
 echo GE6_LINUX_VM_STARTED
@@ -95,11 +108,14 @@ def main():
     parser.add_argument('--image', type=Path, default=DEFAULT_IMAGE)
     parser.add_argument('--resources', type=Path, help='Optional local GE6 directory; stages only named startup files')
     parser.add_argument('--archives', action='store_true', help='Also stage the two original GAR archives locally')
+    parser.add_argument('--integrity-resources', action='store_true', help='Also stage the unchanged original CRC manifest and its two checked map files')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     initramfs = args.output / 'private-ge6-initramfs.gz'
-    initramfs.write_bytes(build_initramfs(args.alpine_initramfs, args.exe, args.image, args.resources, args.archives))
+    if (args.archives or args.integrity_resources) and args.resources is None:
+        parser.error('--archives/--integrity-resources require --resources')
+    initramfs.write_bytes(build_initramfs(args.alpine_initramfs, args.exe, args.image, args.resources, args.archives, args.integrity_resources))
     command = [str(args.qemu), '-machine', 'q35', '-accel', 'tcg', '-m', '768',
                '-kernel', str(args.kernel), '-initrd', str(initramfs),
                '-append', 'console=ttyS0 rdinit=/init panic=-1 quiet',
