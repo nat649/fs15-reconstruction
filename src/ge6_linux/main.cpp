@@ -5,6 +5,7 @@
 #include "ansi_reference.h"
 #include "local_platform.h"
 #include "file_services.h"
+#include "network_services.h"
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -175,6 +176,7 @@ MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/s
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 
 uintptr_t resolve(const std::string& library,const std::string& name){
+    if(library=="WS2_32.dll")return ge6_net::resolve(name);
     if(library=="fs15_local.dll"&&(image_kind=="local-platform"||image_kind=="fixture"))return ge6_local::resolve(name.c_str());
     if(library=="ole32.dll"&&name=="CoInitializeEx")return reinterpret_cast<uintptr_t>(&com_initialize);
     if(library!="KERNEL32.dll")return 0;
@@ -260,6 +262,17 @@ int main(int argc,char** argv){
     std::cout.setf(std::ios::unitbuf);std::cerr.setf(std::ios::unitbuf);
     try{
         ge6_fs::trace=trace;ge6_fs::set_error=[](uint32_t value){last_error=value;};
+        ge6_net::trace=trace;
+        if(argc==2&&std::string(argv[1])=="--check-network"){
+            using namespace ge6_net;StartupData info{};require(startup(0,&info)==10092&&references==0&&startup(0x202,nullptr)==10014,"Invalid startup accepted");require(create(2,2,0)==~uintptr_t(0)&&ge6_net::get_error()==10093,"Socket used before startup");
+            require(startup(0x202,&info)==0&&info.version==0x202&&info.highest==0x202&&info.vendor==0,"Socket version/ABI differs");require(startup(0x101,&info)==0&&references==2&&info.version==0x101,"Nested startup/version negotiation differs");
+            auto receiver=create(2,2,17),sender=create(2,2,0);require(receiver!=~uintptr_t(0)&&sender!=~uintptr_t(0),"Cannot create UDP fixture sockets");
+            sockaddr_in target{};target.sin_family=AF_INET;target.sin_addr.s_addr=htonl(INADDR_LOOPBACK);require(ge6_net::bind(receiver,&target,16)==0,"Cannot bind loopback fixture");int address_size=16;require(name(receiver,&target,&address_size)==0&&target.sin_port!=0,"Ephemeral loopback address missing");
+            const char payload[]{'G','E','6','-',char(0xc3),char(0xa9)};require(send_to(sender,payload,6,0,&target,16)==6,"Loopback UDP send differs");char readback[16]{};sockaddr_in peer{};address_size=16;require(receive_from(receiver,readback,16,0,&peer,&address_size)==6&&!std::memcmp(payload,readback,6)&&peer.sin_addr.s_addr==htonl(INADDR_LOOPBACK),"Loopback UDP receive differs");
+            require(send_to(sender,payload,6,0,&target,16)==6&&receive_from(receiver,readback,2,0,nullptr,nullptr)==-1&&ge6_net::get_error()==10040,"Truncated UDP datagram not reported");
+            require(ge6_net::close(sender)==0&&ge6_net::close(sender)==-1&&ge6_net::get_error()==10038,"Socket lifetime differs");require(cleanup()==0&&references==1&&name(receiver,&peer,&address_size)==0,"Nested cleanup closed live sockets");require(cleanup()==0&&sockets.empty()&&cleanup()==-1&&ge6_net::get_error()==10093,"Final cleanup differs");
+            require(startup(0x202,&info)==0&&ge6_net::close(receiver)==-1&&ge6_net::get_error()==10038&&cleanup()==0,"Stale socket survived cleanup");std::cout<<"GE6 real IPv4 UDP loopback, Winsock startup/cleanup/error and handle lifetime fixtures passed; full network parity is not claimed\n";return 0;
+        }
         if(argc==2&&std::string(argv[1])=="--check-version"){
             require(com_initialize(nullptr,0)==int32_t(0x80004001u)&&com_initialize(&heap_token,0)==int32_t(0x80070057u),"Unavailable COM reported success");
             for(uint32_t size:{148u,156u}){std::array<uint8_t,164> info;info.fill(0xa5);std::memcpy(info.data(),&size,4);require(version_ex_a(info.data())==1,"Compatibility version query failed");uint32_t major=0,platform=0;std::memcpy(&major,info.data()+4,4);std::memcpy(&platform,info.data()+16,4);require(major==(version()&255)&&platform==2&&info[20]==0&&info[size]==0xa5,"Version fields or output bounds differ");if(size==156)require(info[154]==1,"Compatibility product type differs");}
