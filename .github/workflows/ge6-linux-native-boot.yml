@@ -7,22 +7,22 @@ permissions:
 jobs:
   native-boot:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Install SHA-256 build dependency if missing
+      - name: Install SHA-256 and Linux audio build dependencies
         run: |
-          if [ ! -f /usr/include/openssl/sha.h ]; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends libssl-dev
-          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libssl-dev libasound2-dev libpulse-dev
       - name: Build only the original-instruction Linux boot transport
         run: |
           cmake -S src/ge6_linux -B build/ge6-linux-native -DCMAKE_BUILD_TYPE=Release -DFS15_GE6_BOOT_STATIC=ON
           cmake --build build/ge6-linux-native --parallel 2
       - name: Verify loader and ABI with authored PE fixtures
+        env:
+          ALSOFT_DRIVERS: 'null'
         run: python3 tests/check_ge6_linux_boot.py --exe build/ge6-linux-native/FS15GE6LinuxBoot --workdir build/ge6-native-fixtures
       - name: Collect binary and dependency notices without original payloads
         run: |
@@ -31,7 +31,10 @@ jobs:
           cp /usr/share/doc/libssl-dev/copyright build/ge6-linux-boot-artifact/licenses/OpenSSL-copyright.txt
           cp /usr/share/doc/libc6/copyright build/ge6-linux-boot-artifact/licenses/glibc-copyright.txt
           cp /usr/share/doc/libstdc++6/copyright build/ge6-linux-boot-artifact/licenses/libstdc++-copyright.txt
-          cp build/ge6-linux-native/CMakeFiles/FS15GE6LinuxBoot.dir/main.cpp.o build/ge6-linux-boot-artifact/
+          cmake --install build/ge6-linux-native --prefix build/ge6-linux-installed
+          cp -r build/ge6-linux-installed/share/fs15-reconstruction/ge6-audio-relink build/ge6-linux-boot-artifact/
+          sh build/ge6-linux-boot-artifact/ge6-audio-relink/relink.sh
+          ALSOFT_DRIVERS=null build/ge6-linux-boot-artifact/ge6-audio-relink/FS15GE6LinuxBoot-relinked --check-audio
           cd build/ge6-linux-boot-artifact
           sha256sum FS15GE6LinuxBoot > FS15GE6LinuxBoot.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

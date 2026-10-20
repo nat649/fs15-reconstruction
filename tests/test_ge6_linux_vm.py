@@ -39,6 +39,8 @@ class VmPackagingTests(unittest.TestCase):
             self.assertIn('game/data/maps/map01', unpacked)
             self.assertNotIn('game/dataS.gar', unpacked)
             self.assertIn(b'-profile Z:/profile', unpacked['init'])
+            self.assertIn(b'export ALSOFT_DRIVERS=null', unpacked['init'])
+            self.assertIn(b'GE6_VM_AUDIO_BACKEND=null', unpacked['init'])
 
 
 if __name__ == '__main__':

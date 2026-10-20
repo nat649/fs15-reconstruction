@@ -31,13 +31,15 @@ jobs:
       - name: Install Linux script/XML development dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth libssl-dev
+          sudo apt-get install -y --no-install-recommends libluajit-5.1-dev libexpat1-dev pkg-config libsdl2-dev libsdl2-image-dev libgl-dev libgl1-mesa-dri xvfb xauth libssl-dev libasound2-dev libpulse-dev
       - name: Build and test recovered portable components without Windows or original resources
         run: |
           cmake -S . -B build/ci-portable-core -DFS15_PORTABLE_CORE_ONLY=ON -DFS15_BUILD_PORTABLE_HOST=ON -DFS15_BUILD_PORTABLE_SCRIPTS=ON -DFS15_BUILD_LINUX_MENU=ON -DFS15_BUILD_GL_CHECK=ON -DFS15_BUILD_GE6_PHYSICS=ON -DFS15_BUILD_GE6_OBJECTS=ON -DFS15_BUILD_GE6_LINUX_BOOT=ON -DFS15_GE6_BOOT_STATIC=ON -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-portable-core --parallel 2
           ctest --test-dir build/ci-portable-core --output-on-failure
       - name: Check original-instruction Linux boot transport with authored PE fixtures
+        env:
+          ALSOFT_DRIVERS: 'null'
         run: python tests/check_ge6_linux_boot.py --exe build/ci-portable-core/src/ge6_linux/FS15GE6LinuxBoot --workdir build/ge6-native-boot-fixtures
       - name: Check recovered buffers on actual Linux OpenGL (Mesa software rasterizer)
         env:

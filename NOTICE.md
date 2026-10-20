@@ -29,6 +29,7 @@ to their respective material and are preserved separately.
 | [SDL2](https://github.com/libsdl-org/SDL/tree/release-2.30.0) | Window/context/input transport for the GE6 object preview; Linux frontend transport | zlib; official VC archive `COPYING.txt` is copied beside the locally built Windows object executable |
 | [Pillow](https://github.com/python-pillow/Pillow) / [NumPy](https://github.com/numpy/numpy) | Local DDS/DEM object-preview staging tools | Upstream HPND/Pillow notices and BSD-3-Clause, respectively; installed separately, not vendored |
 | [OpenSSL](https://openssl-library.org/) | SHA-256 verification of the private original image in the Linux native-code boot diagnostic | OpenSSL 3 Apache-2.0; the Linux workflow archive includes the distribution copyright notices |
+| [OpenAL Soft 1.24.3](https://openal-soft.org/) | Linux audio middleware called by original GE6 instructions through authored ABI adapters | LGPL-2.0-or-later with upstream exceptions/per-file notices; complete unmodified source, license, static library and relink object/script accompany the boot artifact; see [audio dependency details](src/ge6_linux/AUDIO_DEPENDENCY.md) |
 
 The setup scripts pin dependency revisions; see
 [analysis/lua-toolchain.json](analysis/lua-toolchain.json) and

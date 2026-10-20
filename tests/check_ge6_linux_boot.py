@@ -1,5 +1,6 @@
 """Exercise the native-code loader with authored PE instructions, never game code."""
 import argparse
+import os
 from pathlib import Path
 import struct
 import subprocess
@@ -82,6 +83,51 @@ def fixture(blocked=False):
     return data
 
 
+def audio_fixture():
+    """Authored Windows x64 instructions call real Linux OpenAL via the IAT."""
+    data = fixture()
+    data[0x640:0x650] = b'OpenAL32.dll\0'.ljust(16, b'\0')
+    names = ('alcOpenDevice', 'alcCreateContext', 'alcMakeContextCurrent',
+             'alListenerf', 'alGetListenerf', 'alGetError', 'alcDestroyContext', 'alcCloseDevice')
+    data[0x680:0x700] = bytes(0x80)
+    data[0x700:0x780] = bytes(0x80)
+    for index, name in enumerate(names):
+        for table in (0x680, 0x700):
+            struct.pack_into('<Q', data, table + index * 8, 0x2200 + index * 64)
+        at = 0x802 + index * 64
+        encoded = name.encode() + b'\0'
+        data[at:at + len(encoded)] = encoded
+    code = bytearray(b'\x48\x83\xec\x28')
+    def call(index):
+        code.extend(b'\xff\x15' + struct.pack('<i', 0x2100 + index * 8 - (0x1000 + len(code) + 6)))
+    def load_rcx(address):
+        code.extend(b'\x48\xb9' + struct.pack('<Q', address) + b'\x48\x8b\x09')
+    def save_rax(address):
+        code.extend(b'\x48\xa3' + struct.pack('<Q', address))
+    def nonnull():
+        code.extend(b'\x48\x85\xc0\x75\x02\x0f\x0b')
+    code += b'\x31\xc9'  # Linux default selected explicitly by test environment.
+    call(0); nonnull(); save_rax(0x140003000)
+    load_rcx(0x140003000); code += b'\x31\xd2'
+    call(1); nonnull(); save_rax(0x140003008)
+    load_rcx(0x140003008); call(2)
+    code += b'\x3c\x01\x74\x02\x0f\x0b'
+    # Microsoft ABI's second argument is XMM1 (not the System V XMM0).
+    code += b'\xb9\x0a\x10\x00\x00\xb8' + struct.pack('<f', 0.375) + b'\x66\x0f\x6e\xc8'
+    call(3)
+    code += b'\xb9\x0a\x10\x00\x00\x48\xba' + struct.pack('<Q', 0x140003010)
+    call(4)
+    code += b'\x48\xb8' + struct.pack('<Q', 0x140003010) + b'\x81\x38' + struct.pack('<f', 0.375) + b'\x74\x02\x0f\x0b'
+    call(5); code += b'\x85\xc0\x74\x02\x0f\x0b'
+    code += b'\x31\xc9'; call(2)
+    load_rcx(0x140003008); call(6)
+    load_rcx(0x140003000); call(7)
+    code += b'\x3c\x01\x74\x02\x0f\x0b\x48\x83\xc4\x28\xc3'
+    assert len(code) <= 0x200
+    data[0x400:0x600] = code.ljust(0x200, b'\0')
+    return data
+
+
 def check(exe, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(exe.resolve()), '--check-singleton'], check=True, timeout=15)
@@ -93,6 +139,12 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)
+    audio_env = dict(os.environ, ALSOFT_DRIVERS='null')
+    subprocess.run([str(exe.resolve()), '--check-audio'], check=True, timeout=15, env=audio_env)
+    audio_path = workdir / 'authored-openal-abi.exe'
+    audio_path.write_bytes(audio_fixture())
+    audio = subprocess.run([str(exe.resolve()), '--fixture', str(audio_path)], capture_output=True, text=True, timeout=15, env=audio_env)
+    assert audio.returncode == 0 and 'GE6_AUTHORED_FIXTURE_RETURN' in audio.stdout, audio.stdout + audio.stderr
     rejected = subprocess.run([str(exe.resolve()), '--check-unknown-exception'], capture_output=True, text=True, timeout=15)
     assert rejected.returncode == 78 and 'KERNEL32.dll!RaiseException' in rejected.stderr and 'exception=0xdeadbeef' in rejected.stderr, rejected
     rejected = subprocess.run([str(exe.resolve()), '--check-alertable-wait'], capture_output=True, text=True, timeout=15)
