@@ -40,7 +40,97 @@ The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
 and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
 headless diagnostic with X11 disabled. Neither build includes original files.
 
+## First original loading screen (2026-10-21)
+
+The original Local GE6 runtime now **renders FS15's own loading screen at
+1280 x 720 under Linux**, using Xorg's dummy display and Mesa llvmpipe. The image
+below is the actual X11 framebuffer capture. No replacement menu, game renderer or ReFarm
+code is linked into this executable.
+
+![Original FS15 loading frame drawn by GE6 on Linux](screenshots/ge6-linux-native-loading-2026-10-21.png)
+
+Original GE6 reads its private `shared/shader.gar`, generates/compiles its shader
+programs, creates framebuffer/renderbuffer objects, uploads compressed textures
+and vertex/index buffers, sets uniforms, draws and swaps the main GLX window.
+The observed draw callers include `0x14006560d` / `0x1400655df`; buffer swaps
+come from `0x14000922e`. The original journal reports **OpenGL initialization
+successful**, then continues into FS15 script startup and **Game vehicle types
+loaded**. These are startup observations, not evidence of a rendered 3D map or
+working vehicles.
+
+The [current evidence report](../analysis/ge6-linux-x11-validation.json) records
+the exact source commit, CI artifact SHA-256, executed-ELF hash, original GL
+callers/context, draw/swap observations, capture hash, private input hashes and
+the observed stop boundary. The separate visual-confirmation flag is
+set only after inspecting the actual PNG; draw logs alone do not validate pixels.
+`original_opengl_initialization_reported` reflects GE6's own journal. Complete
+renderer initialization/parity, menu interaction, full engine boot and playable
+simulation remain **unverified**.
+
+The latest run proceeds beyond loading into an original FOCUS introduction
+frame, but does not reach the menu within 90 seconds. A private read-only debugger snapshot locates the main
+thread's wait inside Mesa/GLX buffer swapping; Theora workers are also waiting.
+This does not establish a deadlock in the decoder. The private controller ends
+the test after 90 seconds and records a controlled timeout; this is not a
+successful boot, a normal game exit or a missing-import stop. A still image does
+not establish continuing video playback or a permanent decoder deadlock.
+
+![Original FOCUS introduction frame before the startup wait](screenshots/ge6-linux-native-intro-2026-10-21.png)
+
+The earlier Xvfb display reported **0 Hz**. The original video timing calculation
+then divided by zero at `0x14029c8a8`. The test environment now uses the authored
+[`ge6_xorg_dummy.conf`](../scripts/ge6_xorg_dummy.conf) monitor configuration:
+RandR confirms an actual configured virtual **1280 x 720 / 60 Hz** mode. Original
+GE6 instructions and their video timing calculation are unchanged; arithmetic
+faults remain fatal and are diagnosed, never swallowed. This resolves that
+zero-Hz fault, while the subsequent startup wait remains open.
+
+New authored OS transport connects real RandR gamma reads/writes, original PE
+icons and X11 cursor resources, actual counting semaphores, and the observed
+drive-relative `Z:` cache path to the Linux working directory. OpenGL calls
+cross typed Microsoft-ABI adapters; callback APIs without safe callback/lifecycle
+translation remain unavailable. Numeric IPv4/IPv6 and hostname resolution use
+POSIX `getaddrinfo` with owned Windows-layout results. The isolated VM's real
+DNS failures are returned to original code; no network response is synthesized.
+TCP/HTTP transport remains incomplete.
+
+The original entropy initializer uses an actual OpenSSL random-provider context,
+Linux account/host queries and process/system CPU counters. Windows-only
+hardware-profile, registry-quota and adapter-inventory requests report their
+unavailable result. No identity, Windows registry inventory or entitlement is
+invented. X11 exposure rectangles are tracked and validated for the original
+window procedure; full input, focus, background painting and Windows event
+semantics remain incomplete.
+
+Private staging includes the original shader/splash/font resources, profile
+templates and the initial achievement/store/map-preview resources, retaining
+their bytes and timestamps. Original archives are read by original GE6 code;
+they are not published. The Local GE6 input still has the pre-existing Windows
+platform-bootstrap modification documented below. The Linux loader adds no
+instruction patches, and unavailable Steam services stay false/null.
+
+The VM uses two emulated x64 CPUs, Linux 6.18.52, Ubuntu 24.04 userspace, a real
+Xorg dummy server on `:98` and Mesa 25.2.8/LLVM 20.1.2 software rendering. OpenAL
+uses its explicit silent backend. Physical GPU rendering, audible audio and a
+Linux desktop play session have not been validated.
+
+The exact tested Release executable is from [CI run 39599710639](https://github.com/nat649/fs15-reconstruction/actions/runs/39599710639),
+source `4d62b38e7c451f4041323a224463b2d343872238`. Both native-static and X11
+jobs pass their loader/ABI, shader/draw/readback, resource lifetime, system/crypto
+and screenshot checks. The repository passes 95 Python tests, with two optional
+checks skipped. The original-resource run uses a fresh private profile, including
+cold original shader compilation. Public CI uses authored fixtures and never
+receives original game files.
+
+`ge6_graphics_vm.py run` defaults to the virtual 60 Hz display on `:98` and
+records its real RandR mode list. `--display :99` retains the separate zero-Hz
+Xvfb diagnostic. The bounded runner captures a final live framebuffer and thread
+wait diagnostics before terminating its own test process. The standalone X11
+snapshot utility only reads server pixels; it does not draw or recreate content.
+
 ## First original main window and GL context (2026-10-20)
+
+This historical milestone preceded the loading frame above.
 
 The private Local GE6 image now creates and **shows its original 1280 x 720
 main window** under Linux. X11 confirms that the actual window is viewable;
@@ -50,12 +140,13 @@ context. The server reports **OpenGL 4.5 Compatibility Profile, Mesa llvmpipe**.
 This is distinct from the two hidden 10 x 10 probe windows/contexts, which the
 original engine creates and destroys first.
 
-The surface is currently **black**. Startup stops at
+At this milestone the surface was **black**. Startup stopped at
 `GDI32.dll!GetDeviceGammaRamp`, caller `0x140382f02`. No original game frame,
 menu, map, playable physics or working gameplay input is established by this
-milestone. The next work is gamma queries and the remaining renderer imports.
+milestone. Gamma queries and the first rendered loading frames are now covered
+by the newer result above.
 
-The [source-pinned X11 evidence](../analysis/ge6-linux-x11-validation.json)
+The [historical source-pinned X11 evidence](https://github.com/nat649/fs15-reconstruction/blob/1209503aa89a128880e132306c80e6e6f7f234ec/analysis/ge6-linux-x11-validation.json)
 records the executed ELF/private log hashes, original image/resource hashes,
 main-window ownership of the GL DC, original callers, actual map state and
 next stop. The [raw X11 capture](screenshots/ge6-linux-native-window-2026-10-20.png)
@@ -100,8 +191,8 @@ at `0x14000c8b4` with 129 OS calls.
 Final validation used a fresh isolated VM profile, with its previous test
 profile retained separately. Restaging newer default configuration files over
 an existing profile can enter the original settings-update confirmation path;
-its `ShowCursor`/`MessageBoxW` adapters remain incomplete. No confirmation
-response is synthesized.
+its `MessageBoxW` adapter remains incomplete. Cursor visibility is now connected;
+no confirmation response is synthesized. Staging retains input timestamps.
 
 Private graphics test helpers are `scripts/setup_ge6_graphics_vm.py` and
 `scripts/ge6_graphics_vm.py`. They assemble ignored local Ubuntu package inputs
@@ -424,8 +515,9 @@ large-page/NUMA policies and general NT/JIT contracts remain open.
 kernel/NT/timer ABI modules. Explicit loads/releases track references; this does
 not load Windows DLL code or unload the resident import transport. Missing
 modules/procedures fail. General Windows DLL loading, SEH/unwind and exception
-dispatch, full TEB/PEB/thread behavior, window/OpenGL, audio and Steam services remain
-unimplemented here.
+dispatch and full TEB/PEB/thread behavior remain incomplete. Window/OpenGL/audio
+now have the bounded Linux bindings described above; full parity is unverified.
+Steam services remain unavailable through the local adapter.
 
 Exception-filter registration retains/replaces the native callback and returns
 the previous value; native Windows exception dispatch is not connected. The

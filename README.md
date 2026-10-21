@@ -24,26 +24,29 @@ instruction patches; it stops at the unbound Steam restart API. The separately
 pinned, existing **Local GE6** image now proceeds through original profile/XML
 loading into central engine initialization. It writes its own startup journal,
 reads actual Linux CPU/memory information and reserves/commits memory for its
-original embedded Lua allocator. Two original workers now execute on Linux
+original embedded Lua allocator. Original workers now execute on Linux
 threads with separate stacks and TLS/FLS state. With unchanged integrity inputs
 and GAR archives staged privately, startup reaches the original physics/input
 log sections and initializes OpenAL audio through Linux OpenAL Soft (512 sources
 in the isolated VM). The VM uses an explicit silent backend; audible gameplay
 is unverified. Original SDL/CRT console-handler registration, optional icon
 lookup, class registration and dynamic USER32 export probes now continue.
-The X11/RandR transport now enumerates actual displays and modes. Original SDL
-creates and shows its **1280 x 720 main window**, and its original context
-creation code activates a native **OpenGL 4.5 compatibility context** through
-GLX/Mesa llvmpipe. The surface remains black: startup stops explicitly at
-`GDI32!GetDeviceGammaRamp` before a game frame or menu is rendered.
-This is a first original-engine graphics startup result, not a playable build.
-That input retains its
-previous Windows platform-bootstrap modification; the Linux loader adds no
-instruction patches. Complete original renderer initialization remains open;
-this is not a playable Linux game.
-See [the exact evidence and current boundary](docs/GE6_LINUX_NATIVE_BOOT.md#existing-local-ge6-input-on-linux-2026-10-20).
-See [the visible-window/context milestone](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-window-and-gl-context-2026-10-20)
+
+**The original FS15 loading screen now renders at 1280 x 720 on Linux.**
+GE6 opens its original shader archive, builds shader programs, uploads textures
+and buffers, issues draw calls and swaps its main-window buffers through typed
+Microsoft-ABI bindings to GLX/Mesa llvmpipe. Its own journal reports successful
+OpenGL initialization and loading of the game vehicle types. This is actual
+original-code execution, separate from ReFarm and the recovered frontend host.
+The image retains its previous Windows platform-bootstrap modification; the
+Linux loader adds no instruction patches. Menu interaction, a loaded 3D world,
+complete renderer parity and playable simulation remain unverified.
+An original FOCUS introduction frame is also visible; the 90-second VM test
+then ends with a presentation wait before the menu.
+See [the loading-screen milestone and remaining boundary](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-loading-screen-2026-10-21)
 and its [source-pinned evidence](analysis/ge6-linux-x11-validation.json).
+
+![Original GE6 loading screen rendered in the Linux VM](docs/screenshots/ge6-linux-native-loading-2026-10-21.png)
 
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;
@@ -57,9 +60,10 @@ routines are reused or examined where practical. See the
 **Linux direction:** port the actual GE6/game code to run natively without
 Proton, using the original Windows version as the behavior and resource
 compatibility reference. Matching that version is the target, not a result
-already achieved. The current Linux build runs recovered components and an
-experimental frontend host; complete GE6 startup, native graphics/physics/audio,
-playable worlds and persistent simulation saves remain open. Original-resource
+already achieved. The active Linux transport executes original GE6 instructions
+through its first loading frames. The separate recovered frontend host remains
+available; complete native startup, graphics/physics/audio parity, playable
+worlds and persistent simulation saves remain open. Original-resource
 menu/input validation on a Linux desktop is also pending.
 
 **Runtime target: the actual GIANTS Engine 6.** The Direct3D alpha is an

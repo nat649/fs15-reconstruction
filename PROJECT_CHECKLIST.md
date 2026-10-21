@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-20**. Checked items have supporting local build, analysis
+Updated: **2026-10-21**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Exclusive active focus:** original GE6 startup on Linux. The
@@ -174,7 +174,15 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Create and show the original GE6 main window on X11 at 1280 x 720, retaining its native procedure at `0x14037cf00`; verify actual server map state.
 - [x] Create and activate the original main-window OpenGL context through GLX/Mesa; distinguish it from the two hidden 10 x 10 probe contexts. See [bounded evidence](analysis/ge6-linux-x11-validation.json).
 - [x] Verify authored X11 window lifetime, MS-ABI callbacks/stack arguments, real GL pixel readback and unavailable display-mode rejection in CI, without game files.
-- [ ] Connect `GetDeviceGammaRamp` and subsequent original renderer dependencies; the first mapped startup surface is black and has no game frame/menu yet.
+- [x] Read actual RandR gamma ramps and validate unchanged ramp writes/readback against the X server.
+- [x] Bind original OpenGL resource/shader/buffer/draw operations through typed Microsoft-ABI adapters; test real shader compilation, texture upload, draw pixels and nine-argument calls in CI.
+- [x] Stage the original shader archive, splash and font privately; observe original shader generation/compilation and successful OpenGL initialization in GE6's journal.
+- [x] Render and visually inspect the original 1280 x 720 FS15 loading screen on Linux, with original draw/swap callers and source-pinned executable evidence. See [capture and boundaries](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-loading-screen-2026-10-21).
+- [x] Connect counting semaphores, drive-relative cache paths, actual POSIX address resolution, Linux account queries and OpenSSL random-provider requests; test buffer, error and resource-lifetime contracts.
+- [x] Observe original FS15 startup scripts reporting loaded vehicle types; this does not validate complete scripting, menu interaction or vehicle simulation.
+- [x] Resolve the original introduction timing fault caused by Xvfb's zero-Hz mode using a real configured 60 Hz Xorg virtual display, without changing original GE6 instructions; capture an original FOCUS introduction frame.
+- [ ] Resolve the subsequent original startup wait during introduction playback; the current bounded test is terminated after 90 seconds and does not establish a functional menu.
+- [ ] Complete original window/input event processing and remaining startup dependencies; the loading image does not establish a working menu.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
 - [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
