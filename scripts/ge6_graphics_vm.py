@@ -45,6 +45,8 @@ def upload(client, source, target):
                 except OSError:
                     pass
         sftp.put(str(source), target)
+        metadata=source.stat()
+        sftp.utime(target,(int(metadata.st_atime),int(metadata.st_mtime)))
 
 
 def main():
@@ -89,7 +91,9 @@ def main():
             code,_=command(client,'chmod 755 /work/FS15GE6LinuxBoot; sha256sum /work/FS15GE6LinuxBoot')
         elif args.action=='stage':
             names=('x64/FarmingSimulator2015Game.exe','game.xml','FarmingSimulator2015.xml','VERSION','steamdata.dat',
-                   'dataS.gar','dataS2.gar','crc_files.xml','data/maps/map01.i3d','data/maps/map01/map01_dem.png')
+                   'dataS.gar','dataS2.gar','crc_files.xml','data/maps/map01.i3d','data/maps/map01/map01_dem.png',
+                   'shared/shader.gar','shared/splash.dds','shared/font/defaultFont.xml',
+                   'shared/font/defaultFont.font','shared/font/defaultFont.png')
             for name in names:
                 print('Private VM input: '+name,flush=True)
                 upload(client,args.resources/name,'/game/'+name)

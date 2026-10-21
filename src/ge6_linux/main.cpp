@@ -455,7 +455,8 @@ int main(int argc,char** argv){
             auto absent=root+u"/absent";require(ge6_fs::find_first(wide(absent),found.data())==~uintptr_t(0)&&last_error==2,"Missing-file result differs");
             auto drive=u"Z:"+source;require(ge6_fs::path(wide(drive))==ge6_fs::path(wide(source)),"Linux root drive mapping differs");
             handle=ge6_fs::create(wide(drive),0x80000000u,1,nullptr,3,0x80,0);require(handle!=~uintptr_t(0)&&close_handle(handle),"Mapped drive cannot open original file");
-            for(const auto* invalid:{u"C:/unmapped",u"Z:relative"}){bool rejected=false;try{ge6_fs::path(reinterpret_cast<const uint16_t*>(invalid));}catch(const std::runtime_error&){rejected=true;}require(rejected,"Unsupported drive path accepted");}
+            char* cwd=getcwd(nullptr,0);require(cwd,"Cannot inspect current directory");auto current=std::string(cwd);std::free(cwd);require(ge6_fs::path(reinterpret_cast<const uint16_t*>(u"Z:"))==current&&ge6_fs::path(reinterpret_cast<const uint16_t*>(u"Z:relative"))==current+"/relative","Drive-relative current directory differs");
+            const auto* invalid=reinterpret_cast<const uint16_t*>(u"C:/unmapped");require(!ge6_fs::directory(invalid,nullptr)&&last_error==15&&ge6_fs::find_first(invalid,output)==~uintptr_t(0)&&last_error==15&&ge6_fs::create(invalid,0x80000000u,1,nullptr,3,0x80,0)==~uintptr_t(0)&&last_error==15,"Unavailable drive crossed ABI as an exception/success");
             const unsigned char tractor[]{0xf0,0x9f,0x9a,0x9c,0};uint16_t utf[8]{};char roundtrip[16]{};require(widen(65001,0,tractor,-1,utf,8)==3&&utf[0]==0xd83d&&utf[1]==0xde9c,"UTF8 surrogate conversion differs");require(narrow(65001,0,utf,-1,roundtrip,16,nullptr,nullptr)==5&&!std::memcmp(roundtrip,tractor,5),"UTF8 byte count/roundtrip differs");
             std::cout<<"GE6 synchronous file and UTF8 fixtures passed; full Windows sharing/namespace parity is not claimed\n";return 0;
         }

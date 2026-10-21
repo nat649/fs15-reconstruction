@@ -39,7 +39,7 @@ int main(){try{
     require(ge6_windows::send_a(hwnd,0x80,1,1234)==0&&ge6_windows::send_a(hwnd,0x7f,1,0)==1234,"Icon message round trip failed");
     Atom actual_type=0;int actual_format=0;unsigned long count=0,remaining=0;unsigned char* property=nullptr;
     require(XGetWindowProperty(display,ge6_windows::windows.at(hwnd).xid,XInternAtom(display,"_NET_WM_ICON",False),0,3,False,XA_CARDINAL,&actual_type,&actual_format,&count,&remaining,&property)==Success&&actual_format==32&&count==3,"Real X11 icon property missing");
-    auto* values=reinterpret_cast<unsigned long*>(property);require(values[0]==1&&values[1]==1&&values[2]==0xff0c2238,"X11 icon pixels differ from original RGBA data");XFree(property);
+    auto* values=reinterpret_cast<unsigned long*>(property);require(actual_type==XA_CARDINAL&&values[0]==1&&values[1]==1&&uint32_t(values[2])==0xff0c2238u,"X11 icon pixels differ from original RGBA data");XFree(property);
     require(ge6_windows::set_property(hwnd,reinterpret_cast<const uint16_t*>(u"Test"),42)&&ge6_windows::get_property(hwnd,reinterpret_cast<const uint16_t*>(u"Test"))==42,"Window property round trip failed");
     require(!ge6_classes::remove(klass.name,klass.instance)&&error==1412,"Live window did not retain class");
     auto dc=ge6_windows::get_dc(hwnd);require(dc,"Window DC unavailable");
