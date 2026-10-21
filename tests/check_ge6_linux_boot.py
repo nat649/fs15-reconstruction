@@ -315,6 +315,10 @@ def check(exe, workdir):
     assert result.returncode == 78 and 'KERNEL32.dll!UnsupportedFixtureAPI' in result.stderr and 'caller=0x140001' in result.stderr, result
     result = run(fixture(), '--image')
     assert result.returncode == 1 and 'hash differs' in result.stderr, result
+    arithmetic = fixture()
+    arithmetic[0x400:0x408] = b'\x31\xc0\x31\xd2\x31\xc9\xf7\xf1'  # Authored div ecx with zero divisor.
+    result = run(arithmetic)
+    assert result.returncode == 136 and 'GE6_NATIVE_FAULT signal=8 rip=0x140001006' in result.stderr and 'rcx=0x0' in result.stderr, result
     threaded = fixture()
     thread_names = (b'CreateThread', b'WaitForSingleObject', b'CloseHandle', b'GetCurrentThreadId', b'TlsGetValue', b'TlsSetValue', b'TlsAlloc', b'TlsFree')
     for i, name in enumerate(thread_names):

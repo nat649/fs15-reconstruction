@@ -105,9 +105,10 @@ void trace(const char* name){std::lock_guard<std::mutex> guard(trace_mutex);++ca
     std::_Exit(78);}
 [[noreturn]] void window_unsupported(const char* name,uintptr_t caller){api_unsupported("USER32.dll",name,caller);}
 void fault(int signal,siginfo_t* info,void* raw){
-    auto* context=static_cast<ucontext_t*>(raw);char message[192];
-    int count=std::snprintf(message,sizeof(message),"GE6_NATIVE_FAULT signal=%d rip=0x%llx address=0x%llx\n",signal,
-        static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RIP]),static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(info->si_addr)));
+    auto* context=static_cast<ucontext_t*>(raw);char message[256];
+    int count=std::snprintf(message,sizeof(message),"GE6_NATIVE_FAULT signal=%d rip=0x%llx address=0x%llx rax=0x%llx rcx=0x%llx rdx=0x%llx\n",signal,
+        static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RIP]),static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(info->si_addr)),
+        static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RAX]),static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RCX]),static_cast<unsigned long long>(context->uc_mcontext.gregs[REG_RDX]));
     if(count>0){auto written=write(STDERR_FILENO,message,std::min(size_t(count),sizeof(message)-1));(void)written;}
     _exit(128+signal);
 }
@@ -492,7 +493,7 @@ int main(int argc,char** argv){
         std::cout<<"GE6_IMAGE_KIND="<<image_kind<<'\n';
         if(!fixture)image_path="Z:"+image_path;
         if(argc>3){require(argc==5&&std::string(argv[3])=="--command-line","Unknown argument");command_line=argv[4];}
-        struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT})sigaction(signal,&action,nullptr);
+        struct sigaction action{};action.sa_sigaction=fault;action.sa_flags=SA_SIGINFO;sigemptyset(&action.sa_mask);for(int signal:{SIGSEGV,SIGILL,SIGBUS,SIGABRT,SIGFPE})sigaction(signal,&action,nullptr);
         Image image;ge6_console::Lifetime console_lifetime;image.load(raw,fixture);image.run();if(ge6_threads::running!=0){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR native entry returned with active workers\n";std::_Exit(78);}return 0;
     }catch(const std::exception& error){std::cerr<<"GE6_BOOT_TRANSPORT_ERROR "<<error.what()<<'\n';return 1;}
 }
