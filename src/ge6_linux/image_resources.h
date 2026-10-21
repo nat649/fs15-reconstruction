@@ -84,14 +84,16 @@ inline void install(uintptr_t instance,uint32_t rva,std::vector<uint8_t> bytes){
 inline std::shared_ptr<Icon> get(uintptr_t handle){std::lock_guard<std::mutex> lock(mutex);auto found=icons.find(handle);return found==icons.end()?nullptr:found->second;}
 inline GE6_IMAGE_MS uintptr_t load(uintptr_t instance,const uint16_t* raw,uint32_t type,int cx,int cy,uint32_t flags){
     trace("LoadImageW");
-    if(type!=1||(flags&~0x8000u)||cx||cy){stop("LoadImageW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}
+    if(type!=1||(flags&~0x8040u)||cx||cy){stop("LoadImageW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}
     try{auto key=name(raw);std::lock_guard<std::mutex> lock(mutex);need(instance&&instance==module,126);
         auto group=table.find(14,key);auto count=field<uint16_t>(group,4);need(field<uint16_t>(group,0)==0&&field<uint16_t>(group,2)==1&&count>0&&size_t(count)*14+6<=group.size());
-        auto cache=std::make_tuple(key.integer?key.id:0,key.integer?std::u16string{}:key.text,cx,cy);
+        int desired=(flags&0x40)?32:0;
+        auto cache=std::make_tuple(key.integer?key.id:0,key.integer?std::u16string{}:key.text,desired,desired);
         if(flags&0x8000){auto previous=shared.find(cache);if(previous!=shared.end())return previous->second;}
-        // cx=cy=0 without DEFAULTSIZE selects the first original group frame.
-        auto id=field<uint16_t>(group,18);auto data=table.find(3,{id,{},true});need(data.size()==field<uint32_t>(group,14));
-        auto icon=std::make_shared<Icon>(decode(data));auto w=group[6]?uint32_t(group[6]):256,h=group[7]?uint32_t(group[7]):256;need(icon->width==w&&icon->height==h);
+        // DEFAULTSIZE accepts an exact 32px original frame; unsupported scaling fails.
+        size_t entry=6;int depth=-1;if(desired){entry=0;for(size_t i=0;i<count;++i){size_t at=6+i*14;if(group[at]==desired&&group[at+1]==desired&&field<uint16_t>(group,at+6)>depth){entry=at;depth=field<uint16_t>(group,at+6);}}need(entry!=0,50);}
+        auto id=field<uint16_t>(group,entry+12);auto data=table.find(3,{id,{},true});need(data.size()==field<uint32_t>(group,entry+8));
+        auto icon=std::make_shared<Icon>(decode(data));auto w=group[entry]?uint32_t(group[entry]):256,h=group[entry+1]?uint32_t(group[entry+1]):256;need(icon->width==w&&icon->height==h);
         icon->shared=(flags&0x8000)!=0;auto handle=next++;icons.emplace(handle,icon);if(icon->shared)shared.emplace(std::move(cache),handle);record("LOADED",icon->width,icon->height);return handle;
     }catch(const Failure& failure){set_error(failure.error);if(failure.error==1813||failure.error==1814)record("ABSENT",failure.error,0);return 0;}
 }

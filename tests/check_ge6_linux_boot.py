@@ -252,6 +252,7 @@ def check(exe, workdir):
     subprocess.run([str(exe.resolve()), '--check-startup'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-system'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-events'], check=True, timeout=15)
+    subprocess.run([str(exe.resolve()), '--check-semaphores'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-virtual-memory'], check=True, timeout=15)
     subprocess.run([str(exe.resolve()), '--check-threads'], check=True, timeout=15, stdout=subprocess.PIPE)
     subprocess.run([str(exe.resolve()), '--check-environment'], check=True, timeout=15)

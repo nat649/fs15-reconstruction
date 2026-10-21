@@ -46,14 +46,29 @@ struct Rect {int32_t left,top,right,bottom;};
 struct Point {int32_t x,y;};
 struct Message {uintptr_t window;uint32_t message,pad;uintptr_t wparam;intptr_t lparam;uint32_t time;Point point;uint32_t pad2;};
 static_assert(sizeof(Message)==48);
-struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;};
+struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;std::map<unsigned,std::pair<uintptr_t,std::shared_ptr<ge6_images::Icon>>> icons;};
 inline std::map<uintptr_t,WindowData> windows;
 inline std::deque<Message> messages;
 inline uintptr_t foreground=0;
+inline Cursor current_cursor=0,blank_cursor=0;
+inline thread_local int cursor_count=0;
+inline void apply_cursor(){
+    if(!blank_cursor){const char empty=0;auto pixmap=XCreateBitmapFromData(display,DefaultRootWindow(display),&empty,1,1);XColor color{};blank_cursor=XCreatePixmapCursor(display,pixmap,pixmap,&color,&color,0,0);XFreePixmap(display,pixmap);}
+    auto selected=current_cursor&&cursor_count>=0?current_cursor:blank_cursor;for(auto& item:windows)XDefineCursor(display,item.second.xid,selected);XFlush(display);
+}
+inline GE6_WIN_MS uintptr_t set_cursor(uintptr_t cursor){trace("SetCursor");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;if(cursor&&std::none_of(cursors.begin(),cursors.end(),[cursor](const auto& item){return item.second==cursor;})){set_error(6);return 0;}auto previous=current_cursor;current_cursor=cursor;apply_cursor();return previous;}
+inline GE6_WIN_MS int show_cursor(int visible){trace("ShowCursor");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return cursor_count;cursor_count+=visible?1:-1;apply_cursor();return cursor_count;}
 inline uint32_t milliseconds(){timespec now{};clock_gettime(CLOCK_MONOTONIC,&now);return uint32_t(uint64_t(now.tv_sec)*1000+uint64_t(now.tv_nsec)/1000000);}
 inline WindowData* window(uintptr_t handle){auto found=windows.find(handle);if(found==windows.end()){set_error(1400);return nullptr;}return &found->second;}
 inline GE6_WIN_MS int adjust(Rect* rect,uint32_t,int menu,uint32_t){trace("AdjustWindowRectEx");if(!rect||menu){set_error(87);return 0;}return 1;} // X11 client geometry; decorations belong to the host WM.
-inline GE6_WIN_MS intptr_t default_proc(uintptr_t,uint32_t message,uintptr_t,intptr_t){trace("DefWindowProcW");return message==0x81?1:0;}
+inline GE6_WIN_MS intptr_t default_proc(uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){
+    trace("DefWindowProcW");if(message==0x81)return 1;
+    if(message==0x80||message==0x7f){std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;auto key=unsigned(wp);auto previous=data->icons.find(key);uintptr_t result=previous==data->icons.end()?0:previous->second.first;if(message==0x7f)return intptr_t(result);if(wp>1){set_error(87);return 0;}
+        auto icon=lp?ge6_images::get(uintptr_t(lp)):nullptr;if(lp&&!icon){set_error(6);return 0;}if(icon)data->icons[key]={uintptr_t(lp),icon};else data->icons.erase(key);
+        std::vector<unsigned long> payload;for(auto& item:data->icons){auto& frame=*item.second.second;payload.push_back(frame.width);payload.push_back(frame.height);for(size_t i=0;i<frame.rgba.size();i+=4)payload.push_back((static_cast<unsigned long>(frame.rgba[i+3])<<24)|(static_cast<unsigned long>(frame.rgba[i])<<16)|(static_cast<unsigned long>(frame.rgba[i+1])<<8)|frame.rgba[i+2]);}
+        auto atom=XInternAtom(display,"_NET_WM_ICON",False);if(payload.empty())XDeleteProperty(display,data->xid,atom);else XChangeProperty(display,data->xid,atom,XA_CARDINAL,32,PropModeReplace,reinterpret_cast<const unsigned char*>(payload.data()),int(payload.size()));XFlush(display);std::fprintf(stderr,"GE6_X11_ICON hwnd=0x%lx size=%u width=%u height=%u\n",handle,key,icon?icon->width:0,icon?icon->height:0);return intptr_t(result);
+    }return 0;
+}
 inline GE6_WIN_MS intptr_t call_proc(ge6_classes::Procedure procedure,uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){trace("CallWindowProcW");if(!procedure){set_error(87);return 0;}return procedure(handle,message,wp,lp);}
 struct Create {uintptr_t parameter,instance,menu,parent;int32_t height,width,y,x;uint32_t style,pad;const uint16_t* name;const uint16_t* klass;uint32_t extended,pad2;};
 static_assert(sizeof(Create)==80);
@@ -67,7 +82,7 @@ inline GE6_WIN_MS uintptr_t create(uint32_t extended,const uint16_t* raw_class,c
     XSelectInput(display,xid,StructureNotifyMask|ExposureMask|FocusChangeMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask);
     auto title_text=wide(title);auto name=ge6_fs::utf8(reinterpret_cast<const uint16_t*>(title_text.data()),title_text.size());XStoreName(display,xid,name.c_str());
     auto protocol=XInternAtom(display,"WM_DELETE_WINDOW",False);XSetWMProtocols(display,xid,&protocol,1);
-    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{}});
+    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{},{}});
     Create info{parameter,instance,menu,parent,height,width,y,x,style,0,title,raw_class,extended,0};
     auto proc=klass->value.procedure;
     if(!proc(handle,0x81,0,reinterpret_cast<intptr_t>(&info))||proc(handle,1,0,reinterpret_cast<intptr_t>(&info))==-1){XDestroyWindow(display,xid);windows.erase(handle);--klass->windows;return 0;}
@@ -112,6 +127,8 @@ inline GE6_WIN_MS int show(uintptr_t handle,int how){trace("ShowWindow");std::lo
 inline GE6_WIN_MS int title(uintptr_t handle,const uint16_t* value){trace("SetWindowTextW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;auto text=wide(value);auto bytes=ge6_fs::utf8(reinterpret_cast<const uint16_t*>(text.data()),text.size());XStoreName(display,data->xid,bytes.c_str());XFlush(display);return 1;}
 inline GE6_WIN_MS int position(uintptr_t handle,uintptr_t after,int x,int y,int width,int height,uint32_t flags){trace("SetWindowPos");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;if((flags&~uint32_t(0x77f))||(after!=0&&after!=1&&after!=uintptr_t(-1)&&after!=uintptr_t(-2))){stop("USER32.dll","SetWindowPos",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}XWindowChanges change{};unsigned mask=0;if(!(flags&2)){change.x=x;change.y=y;mask|=CWX|CWY;}if(!(flags&1)){if(width<=0||height<=0){set_error(87);return 0;}change.width=width;change.height=height;mask|=CWWidth|CWHeight;}if(!(flags&4)){change.stack_mode=after==1?Below:Above;mask|=CWStackMode;}if(mask)XConfigureWindow(display,data->xid,mask,&change);if(flags&0x40)show(handle,5);if(flags&0x80)show(handle,0);XSync(display,False);return 1;}
 inline GE6_WIN_MS intptr_t send(uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){trace("SendMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);return data?data->procedure(handle,message,wp,lp):0;}
+inline GE6_WIN_MS intptr_t send_a(uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){trace("SendMessageA");if(message!=0x80&&message!=0x7f){stop("USER32.dll","SendMessageA",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}return send(handle,message,wp,lp);}
+inline GE6_WIN_MS uintptr_t load_icon_a(uintptr_t instance,const char* name){trace("LoadIconA");if(reinterpret_cast<uintptr_t>(name)>65535){stop("USER32.dll","LoadIconA",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}return ge6_images::load(instance,reinterpret_cast<const uint16_t*>(name),1,0,0,0x8040);}
 inline GE6_WIN_MS void drag_files(uintptr_t handle,int enabled){trace("DragAcceptFiles");if(!window(handle))return;if(enabled)std::fprintf(stderr,"GE6_X11_FILE_DROP unavailable=1 hwnd=0x%lx\n",handle);} // Shell advisory API is void; no file drop support claimed.
 inline void capture_on_stop(){
     const char* path=std::getenv("GE6_X11_CAPTURE");if(!path||!*path||!display)return;
@@ -134,6 +151,8 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("AdjustWindowRectEx",adjust);WINDOW_BIND("CreateWindowExW",create);WINDOW_BIND("DefWindowProcW",default_proc);
     WINDOW_BIND("CallWindowProcW",call_proc);WINDOW_BIND("GetSystemMetrics",metrics);WINDOW_BIND("GetCursorPos",cursor_position);WINDOW_BIND("ScreenToClient",to_client);WINDOW_BIND("SetCursorPos",warp_cursor);WINDOW_BIND("GetForegroundWindow",focus);
     WINDOW_BIND("GetMenu",menu);
+    WINDOW_BIND("SetCursor",set_cursor);WINDOW_BIND("ShowCursor",show_cursor);
+    WINDOW_BIND("LoadIconA",load_icon_a);WINDOW_BIND("SendMessageA",send_a);
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);
     WINDOW_BIND("GetWindowLongPtrW",get_long);WINDOW_BIND("SetWindowLongPtrW",set_long);WINDOW_BIND("GetWindowLongW",get_long32);WINDOW_BIND("SetWindowLongW",set_long32);
     WINDOW_BIND("GetClientRect",client_rect);WINDOW_BIND("GetWindowRect",window_rect);WINDOW_BIND("ClientToScreen",to_screen);WINDOW_BIND("GetDC",get_dc);WINDOW_BIND("ReleaseDC",release_dc);

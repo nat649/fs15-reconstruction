@@ -9,6 +9,8 @@
 #include "startup_services.h"
 #include "system_services.h"
 #include "event_services.h"
+#include "semaphore_services.h"
+#include "semaphore_check.h"
 #include "virtual_memory.h"
 #include "thread_services.h"
 #include "audio_services.h"
@@ -231,12 +233,12 @@ MS uintptr_t create_singleton(void* attributes,int owner,const char* name){
     bool exists=false;if(flock(fd,LOCK_EX|LOCK_NB)){if(errno==EWOULDBLOCK)exists=true;else{close(fd);last_error=5;return 0;}}
     auto record=std::make_unique<Singleton>();record->fd=fd;auto handle=reinterpret_cast<uintptr_t>(record.get());singleton_handles.emplace(handle,std::move(record));last_error=exists?183:0;return handle;
 }// Bounded GE6 singleton existence/lifetime check, not Wait/ReleaseMutex semantics.
-MS int close_handle(uintptr_t handle){if(ge6_threads::owns(handle))return ge6_threads::close(handle);std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);if(ge6_events::owns(handle))return ge6_events::close(handle);auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
+MS int close_handle(uintptr_t handle){if(ge6_threads::owns(handle))return ge6_threads::close(handle);if(ge6_semaphores::owns(handle))return ge6_semaphores::close(handle);std::lock_guard<std::recursive_mutex> guard(runtime_registry_mutex);if(ge6_events::owns(handle))return ge6_events::close(handle);auto found=singleton_handles.find(handle);if(found==singleton_handles.end())return ge6_fs::close(handle);trace("CloseHandle");int result=close(found->second->fd);singleton_handles.erase(found);return result==0;}
 MS int debugger_present(){trace("IsDebuggerPresent");std::ifstream file("/proc/self/status");require(bool(file),"Cannot inspect Linux debugger state");std::string key;while(file>>key){if(key=="TracerPid:"){uint32_t pid=0;file>>pid;return pid!=0;}std::string rest;std::getline(file,rest);}throw std::runtime_error("Linux debugger field unavailable");}
 MS int32_t com_initialize(void* reserved,uint32_t){trace("CoInitializeEx");std::cout<<"GE6_COM_UNAVAILABLE\n";return int32_t(reserved?0x80070057u:0x80004001u);}// HRESULT failure: no COM apartment or service exists in this transport.
 MS void* direct3d9_unavailable(uint32_t){trace("Direct3DCreate9 unavailable on Linux");return nullptr;}// Documented factory failure; no Direct3D object/driver is fabricated. Original optional adapter probe may continue.
 
-MS uint32_t wait_handle(uintptr_t handle,uint32_t milliseconds){return ge6_threads::owns(handle)?ge6_threads::wait(handle,milliseconds):ge6_events::wait(handle,milliseconds);}
+MS uint32_t wait_handle(uintptr_t handle,uint32_t milliseconds){if(ge6_semaphores::owns(handle))return ge6_semaphores::wait(handle,milliseconds);return ge6_threads::owns(handle)?ge6_threads::wait(handle,milliseconds):ge6_events::wait(handle,milliseconds);}
 MS uint32_t wait_handle_ex(uintptr_t handle,uint32_t milliseconds,int alertable){if(!alertable)return wait_handle(handle,milliseconds);std::lock_guard<std::mutex> guard(trace_mutex);std::cerr<<"GE6_BLOCKED_IMPORT KERNEL32.dll!WaitForSingleObjectEx caller=0x"<<std::hex<<reinterpret_cast<uintptr_t>(__builtin_return_address(0))<<std::dec<<" os_calls="<<calls<<" alertable=1\n";std::_Exit(78);}// APC/alertable waits remain unsupported.
 struct ThreadNameInfo {uint32_t type,padding;const char* name;uint32_t tid,flags;};
 static_assert(sizeof(ThreadNameInfo)==24);
@@ -308,6 +310,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     BIND("RaiseException",raise_exception);
     BIND("GetEnvironmentVariableA",environment_a);
     BIND("WaitForSingleObjectEx",wait_handle_ex);
+    BIND("CreateSemaphoreA",ge6_semaphores::create);BIND("ReleaseSemaphore",ge6_semaphores::release);
     BIND("VirtualFree",ge6_vm::free);BIND("VirtualQuery",ge6_vm::query);
     BIND("LoadLibraryA",load_library_a);BIND("FreeLibrary",free_library);
     BIND("LoadLibraryW",load_library_w);
@@ -380,6 +383,9 @@ int main(int argc,char** argv){
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
         ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
+        ge6_semaphores::trace=trace;ge6_semaphores::set_error=[](uint32_t value){last_error=value;};
+        ge6_semaphores::record=[](const char* event,uintptr_t handle,int32_t initial,int32_t maximum,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_SEMAPHORE_"<<event<<" handle=0x"<<std::hex<<handle<<std::dec<<" initial="<<initial<<" maximum="<<maximum<<" caller=0x"<<std::hex<<caller<<std::dec<<'\n';};
+        if(argc==2&&std::string(argv[1])=="--check-semaphores"){ge6_semaphore_test::check(last_error);std::cout<<"GE6 actual counting semaphore contention, consumption, maximum/overflow, timeout and lifetime fixtures passed\n";return 0;}
         ge6_vm::trace=trace;ge6_vm::set_error=[](uint32_t value){last_error=value;};
         if(argc==2&&std::string(argv[1])=="--check-unknown-exception"){raise_exception(0xdeadbeefu,0,0,nullptr);}
         if(argc==2&&std::string(argv[1])=="--check-alertable-wait"){wait_handle_ex(0,0,1);}

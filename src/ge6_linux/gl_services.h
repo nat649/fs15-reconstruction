@@ -2,6 +2,8 @@
 // Authored WGL ABI to native GLX; rendering remains in the supplied GE6 image.
 #include "window_services.h"
 #ifdef GE6_X11
+#include <atomic>
+#define GL_GLEXT_PROTOTYPES 1
 #include <GL/gl.h>
 #include <GL/glx.h>
 namespace ge6_gl {
@@ -26,16 +28,18 @@ inline GE6_GL_MS int share(uintptr_t,uintptr_t){trace("wglShareLists");set_error
 inline GE6_GL_MS const char* extensions(uintptr_t){trace("wglGetExtensionsStringARB");return "";} // No WGL extension adapter is advertised yet.
 inline GE6_GL_MS int swap(uintptr_t dc){trace("SwapBuffers");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(dc);if(found==dcs.end()||!current){set_error(6);return 0;}glXSwapBuffers(display,found->second.drawable);return 1;}
 inline uintptr_t resolve(const std::string&,const std::string&);
-inline GE6_GL_MS uintptr_t procedure(const char* name){trace("wglGetProcAddress");return name?resolve("OPENGL32.dll",name):0;}
+inline GE6_GL_MS uintptr_t procedure(const char* name){trace("wglGetProcAddress");auto address=name?resolve("OPENGL32.dll",name):0;if(!address&&name)std::fprintf(stderr,"GE6_GL_PROC_UNAVAILABLE name=%s caller=0x%lx\n",name,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return address;}
 template<auto Function>struct Bridge;
-template<class R,class... A,R(*Function)(A...)>struct Bridge<Function>{static GE6_GL_MS R call(A... args){return Function(args...);}};
+template<class R,class... A,R(*Function)(A...)>struct Bridge<Function>{inline static const char* name="unnamed";inline static std::atomic<uint64_t> calls{0};static __attribute__((noinline)) GE6_GL_MS R call(A... args){auto count=++calls;if(count==1)std::fprintf(stderr,"GE6_NATIVE_GL_CALL name=%s caller=0x%lx context=0x%lx\n",name,reinterpret_cast<uintptr_t>(__builtin_return_address(0)),current);return Function(args...);}};
 inline uintptr_t resolve(const std::string& library,const std::string& name){
 #define GL_BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     if(library=="GDI32.dll"){GL_BIND("ChoosePixelFormat",choose);GL_BIND("DescribePixelFormat",describe);GL_BIND("SetPixelFormat",set_pixel);GL_BIND("GetPixelFormat",get_pixel);GL_BIND("SwapBuffers",swap);}
     if(library=="OPENGL32.dll"){
         GL_BIND("wglCreateContext",create);GL_BIND("wglMakeCurrent",make_current);GL_BIND("wglDeleteContext",remove);GL_BIND("wglShareLists",share);GL_BIND("wglGetProcAddress",procedure);GL_BIND("wglGetExtensionsStringARB",extensions);
-#define CORE_GL(n) if(name==#n)return reinterpret_cast<uintptr_t>(&Bridge<&n>::call)
+#define CORE_GL(n) if(name==#n){Bridge<&n>::name=#n;return reinterpret_cast<uintptr_t>(&Bridge<&n>::call);}
         CORE_GL(glGetString);CORE_GL(glGetIntegerv);CORE_GL(glGetError);CORE_GL(glClear);CORE_GL(glClearColor);CORE_GL(glViewport);CORE_GL(glFlush);CORE_GL(glFinish);CORE_GL(glReadPixels);
+        CORE_GL(glTexParameterf);CORE_GL(glDeleteTextures);CORE_GL(glPixelStorei);CORE_GL(glCullFace);CORE_GL(glCopyTexSubImage2D);CORE_GL(glReadBuffer);CORE_GL(glGetTexImage);CORE_GL(glTexSubImage2D);CORE_GL(glTexParameterfv);CORE_GL(glTexImage2D);CORE_GL(glTexImage1D);CORE_GL(glTexParameteri);CORE_GL(glBindTexture);CORE_GL(glGenTextures);CORE_GL(glGetFloatv);CORE_GL(glFrontFace);CORE_GL(glHint);CORE_GL(glLineWidth);CORE_GL(glDrawBuffer);CORE_GL(glClearDepth);CORE_GL(glDrawArrays);CORE_GL(glDrawElements);CORE_GL(glPointSize);CORE_GL(glClipPlane);CORE_GL(glScissor);CORE_GL(glBlendFunc);CORE_GL(glColorMask);CORE_GL(glDepthFunc);CORE_GL(glTexSubImage1D);CORE_GL(glDepthMask);CORE_GL(glDisable);CORE_GL(glEnable);CORE_GL(glPolygonOffset);CORE_GL(glPolygonMode);
+#include "gl_entrypoints.h"
 #undef CORE_GL
     }
 #undef GL_BIND

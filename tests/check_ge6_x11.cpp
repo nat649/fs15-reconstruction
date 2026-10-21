@@ -22,10 +22,24 @@ int main(){try{
     require(change_settings(adapter.name,settings_buffer.data(),0,4,nullptr)==0,"Already current real RandR mode rejected");
     store<uint32_t>(settings_buffer.data(),172,12345);require(change_settings(adapter.name,settings_buffer.data(),0,2,nullptr)==-2,"Absent display mode reported supported");
     require(change_settings(adapter.name,nullptr,0,0x80000000,nullptr)==-4,"Unsupported display flags accepted");
+    const uint16_t ends[]{0,65535};require(ramp_sample(ends,2,1,3)==32768&&ramp_sample(ends,2,2,3)==65535&&ramp_sample(ends,2,0,1)==0,"Gamma resampling endpoints differ");
+    std::array<uint16_t,770> gamma{};gamma.front()=0x1234;gamma.back()=0xabcd;auto display_dc=create_dc(adapter.name,nullptr,nullptr,nullptr);
+    auto crtc=gamma_crtc(display_dc);auto* server_gamma=crtc?XRRGetCrtcGamma(display,crtc):nullptr;
+    if(server_gamma&&server_gamma->size>0){require(get_gamma(display_dc,gamma.data()+1),"Actual RandR gamma read failed");for(size_t i=0;i<256;++i)require(gamma[i+1]==ramp_sample(server_gamma->red,size_t(server_gamma->size),i,256),"Gamma values differ from real server");require(set_gamma(display_dc,gamma.data()+1),"Actual unchanged gamma write/readback failed");}
+    else require(!get_gamma(display_dc,gamma.data()+1)&&error==50,"Unavailable gamma reported supported");
+    if(server_gamma)XRRFreeGamma(server_gamma);
+    require(gamma.front()==0x1234&&gamma.back()==0xabcd&&!get_gamma(display_dc,nullptr)&&error==87&&!get_gamma(0,gamma.data()+1)&&error==6,"Gamma guards/invalid inputs differ");
+    require(delete_dc(display_dc),"Display gamma DC leaked");
     ge6_classes::ClassW klass{};klass.procedure=procedure;klass.instance=ge6_images::module;klass.name=reinterpret_cast<const uint16_t*>(u"AuthoredX11Fixture");
     auto atom=ge6_classes::add(&klass);require(atom!=0,"Fixture class registration failed");
     auto hwnd=ge6_windows::create(0,klass.name,reinterpret_cast<const uint16_t*>(u"Authored X11 fixture"),0,40,40,320,180,0,0,klass.instance,1234);
     require(hwnd&&created==1,"Native MS ABI creation/callback failed");
+    auto cursor=ge6_windows::load_cursor(0,reinterpret_cast<const uint16_t*>(32512));require(cursor&&ge6_windows::set_cursor(cursor)==0&&ge6_windows::show_cursor(0)==-1&&ge6_windows::show_cursor(1)==0&&ge6_windows::set_cursor(0)==cursor,"Actual X11 cursor/count lifetime differs");
+    auto icon=std::make_shared<ge6_images::Icon>();icon->width=1;icon->height=1;icon->rgba={12,34,56,255};ge6_images::icons[1234]=icon;
+    require(ge6_windows::send_a(hwnd,0x80,1,1234)==0&&ge6_windows::send_a(hwnd,0x7f,1,0)==1234,"Icon message round trip failed");
+    Atom actual_type=0;int actual_format=0;unsigned long count=0,remaining=0;unsigned char* property=nullptr;
+    require(XGetWindowProperty(display,ge6_windows::windows.at(hwnd).xid,XInternAtom(display,"_NET_WM_ICON",False),0,3,False,XA_CARDINAL,&actual_type,&actual_format,&count,&remaining,&property)==Success&&actual_format==32&&count==3,"Real X11 icon property missing");
+    auto* values=reinterpret_cast<unsigned long*>(property);require(values[0]==1&&values[1]==1&&values[2]==0xff0c2238,"X11 icon pixels differ from original RGBA data");XFree(property);
     require(ge6_windows::set_property(hwnd,reinterpret_cast<const uint16_t*>(u"Test"),42)&&ge6_windows::get_property(hwnd,reinterpret_cast<const uint16_t*>(u"Test"))==42,"Window property round trip failed");
     require(!ge6_classes::remove(klass.name,klass.instance)&&error==1412,"Live window did not retain class");
     auto dc=ge6_windows::get_dc(hwnd);require(dc,"Window DC unavailable");
@@ -36,6 +50,23 @@ int main(){try{
     require(clear,"Typed MS ABI GL export unavailable");clear(0.25f,0.5f,0.75f,1.0f);ge6_gl::Bridge<&glClear>::call(GL_COLOR_BUFFER_BIT);
     uint8_t pixel[4]{};ge6_gl::Bridge<&glReadPixels>::call(0,0,1,1,GL_RGBA,GL_UNSIGNED_BYTE,pixel);
     require(pixel[0]>=63&&pixel[0]<=65&&pixel[1]>=127&&pixel[1]<=129&&pixel[2]>=190&&pixel[2]<=192,"GL floating point ABI or actual pixel readback differs");
+    GLuint texture=0;ge6_gl::Bridge<&glGenTextures>::call(1,&texture);ge6_gl::Bridge<&glBindTexture>::call(GL_TEXTURE_2D,texture);
+    const uint8_t texture_pixels[]{1,2,3,4,11,22,33,44,55,66,77,88,99,111,222,255};uint8_t copied[16]{};
+    auto upload=reinterpret_cast<void(__attribute__((ms_abi))*)(GLenum,GLint,GLint,GLsizei,GLsizei,GLint,GLenum,GLenum,const void*)>(ge6_gl::procedure("glTexImage2D"));require(upload,"Texture ABI adapter absent");upload(GL_TEXTURE_2D,0,GL_RGBA8,2,2,0,GL_RGBA,GL_UNSIGNED_BYTE,texture_pixels);
+    ge6_gl::Bridge<&glGetTexImage>::call(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,copied);require(std::memcmp(copied,texture_pixels,16)==0,"Nine-argument texture ABI/readback differs");ge6_gl::Bridge<&glDeleteTextures>::call(1,&texture);
+    auto vertex=ge6_gl::Bridge<&glCreateShader>::call(GL_VERTEX_SHADER);auto fragment=ge6_gl::Bridge<&glCreateShader>::call(GL_FRAGMENT_SHADER);
+    const char* vs="#version 120\nattribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}";
+    const char* fs="#version 120\nuniform vec4 color;void main(){gl_FragColor=color;}";
+    ge6_gl::Bridge<&glShaderSource>::call(vertex,1,&vs,nullptr);ge6_gl::Bridge<&glShaderSource>::call(fragment,1,&fs,nullptr);ge6_gl::Bridge<&glCompileShader>::call(vertex);ge6_gl::Bridge<&glCompileShader>::call(fragment);
+    GLint status=0;for(auto shader:{vertex,fragment}){ge6_gl::Bridge<&glGetShaderiv>::call(shader,GL_COMPILE_STATUS,&status);require(status,"Actual shader compile failed");}
+    auto program=ge6_gl::Bridge<&glCreateProgram>::call();ge6_gl::Bridge<&glAttachShader>::call(program,vertex);ge6_gl::Bridge<&glAttachShader>::call(program,fragment);ge6_gl::Bridge<&glBindAttribLocation>::call(program,0,"position");ge6_gl::Bridge<&glLinkProgram>::call(program);ge6_gl::Bridge<&glGetProgramiv>::call(program,GL_LINK_STATUS,&status);require(status,"Actual shader link failed");ge6_gl::Bridge<&glUseProgram>::call(program);
+    auto uniform=ge6_gl::Bridge<&glGetUniformLocation>::call(program,"color");require(uniform>=0,"Actual uniform missing");
+    auto set_color=reinterpret_cast<void(__attribute__((ms_abi))*)(GLint,GLfloat,GLfloat,GLfloat,GLfloat)>(ge6_gl::procedure("glUniform4f"));require(set_color,"Mixed float/integer ABI adapter absent");set_color(uniform,0.25f,0.5f,0.75f,1.0f);
+    GLuint buffer=0;const float positions[]{-1,-1,3,-1,-1,3};ge6_gl::Bridge<&glGenBuffersARB>::call(1,&buffer);ge6_gl::Bridge<&glBindBufferARB>::call(GL_ARRAY_BUFFER_ARB,buffer);ge6_gl::Bridge<&glBufferDataARB>::call(GL_ARRAY_BUFFER_ARB,sizeof(positions),positions,GL_STATIC_DRAW_ARB);
+    ge6_gl::Bridge<&glEnableVertexAttribArray>::call(0);ge6_gl::Bridge<&glVertexAttribPointer>::call(0,2,GL_FLOAT,GL_FALSE,0,nullptr);clear(0,0,0,1);ge6_gl::Bridge<&glClear>::call(GL_COLOR_BUFFER_BIT);ge6_gl::Bridge<&glDrawArrays>::call(GL_TRIANGLES,0,3);
+    ge6_gl::Bridge<&glReadPixels>::call(0,0,1,1,GL_RGBA,GL_UNSIGNED_BYTE,pixel);require(pixel[0]>=63&&pixel[0]<=65&&pixel[1]>=127&&pixel[1]<=129&&pixel[2]>=190&&pixel[2]<=192&&ge6_gl::Bridge<&glGetError>::call()==GL_NO_ERROR,"Native shader/buffer/draw ABI pixel differs");
+    ge6_gl::Bridge<&glDisableVertexAttribArray>::call(0);ge6_gl::Bridge<&glBindBufferARB>::call(GL_ARRAY_BUFFER_ARB,0);ge6_gl::Bridge<&glDeleteBuffersARB>::call(1,&buffer);ge6_gl::Bridge<&glUseProgram>::call(0);ge6_gl::Bridge<&glDeleteProgram>::call(program);ge6_gl::Bridge<&glDeleteShader>::call(vertex);ge6_gl::Bridge<&glDeleteShader>::call(fragment);
+    require(!ge6_gl::procedure("glDebugMessageCallbackARB")&&!ge6_gl::procedure("AuthoredAbsentGLFunction"),"Unsafe/unavailable GL callback exposed");
     ge6_windows::show(hwnd,5);XWindowAttributes attributes{};require(XGetWindowAttributes(display,ge6_windows::windows.at(hwnd).xid,&attributes)&&attributes.map_state==IsViewable,"Host window is not actually mapped");
     require(ge6_gl::make_current(0,0)&&ge6_gl::remove(context)&&ge6_windows::release_dc(hwnd,dc)&&ge6_windows::destroy(hwnd)&&ge6_classes::remove(klass.name,klass.instance),"Resource cleanup failed");
     require(ge6_windows::windows.empty()&&ge6_gl::contexts.empty(),"Native host resources leaked");

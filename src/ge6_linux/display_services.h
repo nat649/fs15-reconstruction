@@ -11,6 +11,7 @@
 #ifdef GE6_X11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
@@ -95,12 +96,39 @@ inline GE6_DISPLAY_MS int settings(const uint16_t* name,uint32_t index,void* res
 #endif
 }
 #ifdef GE6_X11
-struct DC {Window drawable;GC gc;int width,height,mm_width,mm_height;uintptr_t window=0;};
+struct DC {Window drawable;GC gc;int width,height,mm_width,mm_height;uintptr_t window=0;unsigned long output=0;};
 struct Bitmap {Pixmap drawable;int width,height;};
 inline uintptr_t next=0x75000000;
 inline std::map<uintptr_t,DC> dcs;
 inline std::map<uintptr_t,Bitmap> bitmaps;
-inline GE6_DISPLAY_MS uintptr_t create_dc(const uint16_t* driver,const uint16_t*,const uint16_t*,const void*){trace("CreateDCW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* value=output(driver);if(!value)return 0;auto root=DefaultRootWindow(display);auto gc=XCreateGC(display,root,0,nullptr);if(!gc){set_error(8);return 0;}auto handle=next++;dcs.emplace(handle,DC{root,gc,value->width,value->height,value->mm_width,value->mm_height});return handle;}
+inline GE6_DISPLAY_MS uintptr_t create_dc(const uint16_t* driver,const uint16_t*,const uint16_t*,const void*){trace("CreateDCW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* value=output(driver);if(!value)return 0;auto root=DefaultRootWindow(display);auto gc=XCreateGC(display,root,0,nullptr);if(!gc){set_error(8);return 0;}auto handle=next++;dcs.emplace(handle,DC{root,gc,value->width,value->height,value->mm_width,value->mm_height,0,value->id});return handle;}
+inline uint16_t ramp_sample(const uint16_t* source,size_t source_size,size_t index,size_t target_size){
+    if(source_size==1||target_size==1)return source[0];
+    auto numerator=uint64_t(index)*(source_size-1);auto denominator=target_size-1;auto low=size_t(numerator/denominator);auto remainder=numerator%denominator;
+    auto high=std::min(low+1,source_size-1);return uint16_t((uint64_t(source[low])*(denominator-remainder)+uint64_t(source[high])*remainder+denominator/2)/denominator);
+}
+inline RRCrtc gamma_crtc(uintptr_t handle){
+    auto found=dcs.find(handle);if(found==dcs.end()){set_error(6);return 0;}
+    if(!refresh())return 0;
+    for(auto& item:outputs)if(item.id==found->second.output)return item.crtc;
+    set_error(50);return 0;
+}
+inline GE6_DISPLAY_MS int get_gamma(uintptr_t handle,uint16_t* result){
+    trace("GetDeviceGammaRamp");if(!result){set_error(87);return 0;}std::lock_guard<std::recursive_mutex> lock(mutex);auto crtc=gamma_crtc(handle);if(!crtc)return 0;
+    int size=XRRGetCrtcGammaSize(display,crtc);if(size<=0){set_error(50);std::fprintf(stderr,"GE6_X11_GAMMA_UNAVAILABLE crtc=%lu\n",crtc);return 0;}
+    auto* gamma=XRRGetCrtcGamma(display,crtc);if(!gamma||gamma->size!=size){if(gamma)XRRFreeGamma(gamma);set_error(50);return 0;}
+    const uint16_t* channels[]{gamma->red,gamma->green,gamma->blue};for(size_t channel=0;channel<3;++channel)for(size_t i=0;i<256;++i)result[channel*256+i]=ramp_sample(channels[channel],size_t(size),i,256);
+    XRRFreeGamma(gamma);std::fprintf(stderr,"GE6_X11_GAMMA_READ dc=0x%lx crtc=%lu server_size=%d caller=0x%lx\n",handle,crtc,size,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 1;
+}
+inline GE6_DISPLAY_MS int set_gamma(uintptr_t handle,const uint16_t* source){
+    trace("SetDeviceGammaRamp");if(!source){set_error(87);return 0;}std::lock_guard<std::recursive_mutex> lock(mutex);auto crtc=gamma_crtc(handle);if(!crtc)return 0;
+    int size=XRRGetCrtcGammaSize(display,crtc);if(size<=0){set_error(50);return 0;}auto* gamma=XRRAllocGamma(size);if(!gamma){set_error(8);return 0;}
+    uint16_t* channels[]{gamma->red,gamma->green,gamma->blue};for(size_t channel=0;channel<3;++channel)for(int i=0;i<size;++i)channels[channel][i]=ramp_sample(source+channel*256,256,size_t(i),size_t(size));
+    XRRSetCrtcGamma(display,crtc,gamma);XSync(display,False);auto* actual=XRRGetCrtcGamma(display,crtc);bool matches=actual&&actual->size==size;
+    if(matches)matches=std::memcmp(actual->red,gamma->red,size_t(size)*2)==0&&std::memcmp(actual->green,gamma->green,size_t(size)*2)==0&&std::memcmp(actual->blue,gamma->blue,size_t(size)*2)==0;
+    if(actual)XRRFreeGamma(actual);
+    XRRFreeGamma(gamma);if(!matches){set_error(50);return 0;}std::fprintf(stderr,"GE6_X11_GAMMA_WRITE dc=0x%lx crtc=%lu server_size=%d verified=1 caller=0x%lx\n",handle,crtc,size,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 1;
+}
 inline GE6_DISPLAY_MS int caps(uintptr_t handle,int index){trace("GetDeviceCaps");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(handle);if(found==dcs.end()){set_error(6);return 0;}auto& value=found->second;switch(index){case 8:return value.width;case 10:return value.height;case 12:return bits;case 14:return 1;case 4:return value.mm_width;case 6:return value.mm_height;default:stop("GDI32.dll","GetDeviceCaps",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}}
 inline GE6_DISPLAY_MS int delete_dc(uintptr_t handle){trace("DeleteDC");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(handle);if(found==dcs.end()){set_error(6);return 0;}XFreeGC(display,found->second.gc);dcs.erase(found);return 1;}
 inline GE6_DISPLAY_MS uintptr_t bitmap(uintptr_t handle,int width,int height){trace("CreateCompatibleBitmap");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(handle);if(found==dcs.end()){set_error(6);return 0;}if(width<=0||height<=0||width>4096||height>4096){set_error(87);return 0;}auto pixmap=XCreatePixmap(display,found->second.drawable,unsigned(width),unsigned(height),unsigned(DefaultDepth(display,DefaultScreen(display))));if(!pixmap)return 0;auto token=next++;bitmaps.emplace(token,Bitmap{pixmap,width,height});return token;}
@@ -112,7 +140,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     if(library=="USER32.dll"){DISPLAY_BIND("EnumDisplayDevicesW",devices);DISPLAY_BIND("EnumDisplaySettingsW",settings);}
 #ifdef GE6_X11
     if(library=="USER32.dll"){DISPLAY_BIND("ChangeDisplaySettingsExW",change_settings);}
-    if(library=="GDI32.dll"){DISPLAY_BIND("CreateDCW",create_dc);DISPLAY_BIND("GetDeviceCaps",caps);DISPLAY_BIND("DeleteDC",delete_dc);DISPLAY_BIND("CreateCompatibleBitmap",bitmap);DISPLAY_BIND("GetDIBits",dibits);DISPLAY_BIND("DeleteObject",delete_object);}
+    if(library=="GDI32.dll"){DISPLAY_BIND("CreateDCW",create_dc);DISPLAY_BIND("GetDeviceCaps",caps);DISPLAY_BIND("DeleteDC",delete_dc);DISPLAY_BIND("CreateCompatibleBitmap",bitmap);DISPLAY_BIND("GetDIBits",dibits);DISPLAY_BIND("DeleteObject",delete_object);DISPLAY_BIND("GetDeviceGammaRamp",get_gamma);DISPLAY_BIND("SetDeviceGammaRamp",set_gamma);}
 #endif
 #undef DISPLAY_BIND
     return 0;
