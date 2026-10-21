@@ -23,8 +23,11 @@ def run(timeout, command):
                 pass
         snapshot=Path('/work/FS15GE6X11Snapshot')
         if snapshot.is_file():
-            captured=subprocess.run([str(snapshot),'/work/ge6-native-final-screen.png'],timeout=15)
-            print(f'GE6_GRAPHICS_FINAL_CAPTURE_RESULT={captured.returncode}',flush=True)
+            try:
+                captured=subprocess.run([str(snapshot),'/work/ge6-native-final-screen.png'],timeout=15)
+                print(f'GE6_GRAPHICS_FINAL_CAPTURE_RESULT={captured.returncode}',flush=True)
+            except (OSError,subprocess.TimeoutExpired):
+                print('GE6_GRAPHICS_FINAL_CAPTURE_RESULT=unavailable',flush=True)
         process.terminate()
         try:
             result=process.wait(timeout=5)
