@@ -142,18 +142,18 @@ inline GE6_WIN_MS intptr_t send(uintptr_t handle,uint32_t message,uintptr_t wp,i
 inline GE6_WIN_MS intptr_t send_a(uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){trace("SendMessageA");if(message!=0x80&&message!=0x7f){stop("USER32.dll","SendMessageA",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}return send(handle,message,wp,lp);}
 inline GE6_WIN_MS uintptr_t load_icon_a(uintptr_t instance,const char* name){trace("LoadIconA");if(reinterpret_cast<uintptr_t>(name)>65535){stop("USER32.dll","LoadIconA",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}return ge6_images::load(instance,reinterpret_cast<const uint16_t*>(name),1,0,0,0x8040);}
 inline GE6_WIN_MS void drag_files(uintptr_t handle,int enabled){trace("DragAcceptFiles");if(!window(handle))return;if(enabled)std::fprintf(stderr,"GE6_X11_FILE_DROP unavailable=1 hwnd=0x%lx\n",handle);} // Shell advisory API is void; no file drop support claimed.
-inline void capture_on_stop(){
-    const char* path=std::getenv("GE6_X11_CAPTURE");if(!path||!*path||!display)return;
+inline bool capture_on_stop(){
+    const char* path=std::getenv("GE6_X11_CAPTURE");if(!path||!*path||!display)return false;
     std::lock_guard<std::recursive_mutex> lock(mutex);XSync(display,False);
     for(auto& item:windows){XWindowAttributes attributes{};if(XGetWindowAttributes(display,item.second.xid,&attributes))std::fprintf(stderr,"GE6_X11_WINDOW_SNAPSHOT hwnd=0x%lx xid=0x%lx width=%d height=%d viewable=%d procedure=0x%lx\n",item.first,item.second.xid,attributes.width,attributes.height,int(attributes.map_state==IsViewable),reinterpret_cast<uintptr_t>(item.second.procedure));}
-    int width=DisplayWidth(display,0),height=DisplayHeight(display,0);if(width<=0||height<=0||width>8192||height>8192)return;
-    auto* source=XGetImage(display,DefaultRootWindow(display),0,0,unsigned(width),unsigned(height),AllPlanes,ZPixmap);if(!source)return;
+    int width=DisplayWidth(display,0),height=DisplayHeight(display,0);if(width<=0||height<=0||width>8192||height>8192)return false;
+    auto* source=XGetImage(display,DefaultRootWindow(display),0,0,unsigned(width),unsigned(height),AllPlanes,ZPixmap);if(!source)return false;
     std::vector<uint8_t> pixels(size_t(width)*size_t(height)*4);
     auto channel=[](unsigned long pixel,unsigned long mask){if(!mask)return uint8_t(0);while(!(mask&1)){mask>>=1;pixel>>=1;}return uint8_t(((pixel&mask)*255+mask/2)/mask);};
     for(int y=0;y<height;++y)for(int x=0;x<width;++x){auto value=XGetPixel(source,x,y);auto at=(size_t(y)*size_t(width)+size_t(x))*4;pixels[at]=channel(value,source->red_mask);pixels[at+1]=channel(value,source->green_mask);pixels[at+2]=channel(value,source->blue_mask);pixels[at+3]=255;}
     XDestroyImage(source);png_image image{};image.version=PNG_IMAGE_VERSION;image.width=unsigned(width);image.height=unsigned(height);image.format=PNG_FORMAT_RGBA;
-    if(png_image_write_to_file(&image,path,0,pixels.data(),0,nullptr))std::fprintf(stderr,"GE6_X11_CAPTURE_SAVED width=%d height=%d path=%s\n",width,height,path);
-    png_image_free(&image);
+    bool written=png_image_write_to_file(&image,path,0,pixels.data(),0,nullptr);if(written)std::fprintf(stderr,"GE6_X11_CAPTURE_SAVED width=%d height=%d path=%s\n",width,height,path);
+    png_image_free(&image);return written;
 }
 inline uintptr_t resolve(const std::string& library,const std::string& name){
     if(library=="SHELL32.dll"&&name=="DragAcceptFiles")return reinterpret_cast<uintptr_t>(&drag_files);

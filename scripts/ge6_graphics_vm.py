@@ -59,6 +59,7 @@ def main():
     parser.add_argument('--resources',type=Path,default=ROOT/'build/ge6-local')
     parser.add_argument('--command')
     parser.add_argument('--exe',type=Path)
+    parser.add_argument('--display',default=':98',help='Xorg dummy at 60 Hz; :99 selects the separate Xvfb zero-Hz diagnostic')
     args=parser.parse_args();directory=args.directory
     if args.action=='start':
         if not args.qemu:
@@ -77,7 +78,7 @@ def main():
         return
     with connect(directory,args.port) as client:
         if args.action=='status':
-            code,_=command(client,'/usr/bin/busybox uname -a; DISPLAY=:99 xdpyinfo | head -25; g++ --version | head -1')
+            code,_=command(client,f'/usr/bin/busybox uname -a; DISPLAY={shlex.quote(args.display)} xdpyinfo | head -25; g++ --version | head -1')
         elif args.action=='compile':
             for source in (ROOT/'src/ge6_linux').iterdir():
                 if source.suffix in ('.cpp','.h'):
@@ -88,6 +89,10 @@ def main():
             if not args.exe:
                 parser.error('deploy requires --exe')
             upload(client,args.exe,'/work/FS15GE6LinuxBoot')
+            snapshot=args.exe.with_name('FS15GE6X11Snapshot')
+            if snapshot.is_file():
+                upload(client,snapshot,'/work/FS15GE6X11Snapshot')
+                command(client,'chmod 755 /work/FS15GE6X11Snapshot')
             code,_=command(client,'chmod 755 /work/FS15GE6LinuxBoot; sha256sum /work/FS15GE6LinuxBoot')
         elif args.action=='stage':
             names=('x64/FarmingSimulator2015Game.exe','game.xml','FarmingSimulator2015.xml','VERSION','steamdata.dat',
@@ -108,9 +113,15 @@ def main():
             (directory/'staged-inputs.json').write_text(json.dumps(manifest,indent=2)+'\n')
             code,_=command(client,'/usr/bin/busybox mkdir -p /profile')
         elif args.action=='run':
-            code,_=command(client,"cd /game && { uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; } > /work/boot.log; rm -f /work/ge6-native-screen.png; cd /game && DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/busybox timeout 90 /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; result=$?; echo GE6_GRAPHICS_RESULT=$result >> /work/boot.log; tail -35 /work/boot.log; cat /profile/log.txt",timeout=150)
+            upload(client,ROOT/'scripts/ge6_vm_run.py','/work/ge6_vm_run.py')
+            display=shlex.quote(args.display)
+            code,_=command(client,f"cd /game && {{ uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; DISPLAY={display} xrandr --current; }} > /work/boot.log; rm -f /work/ge6-native-screen.png /work/ge6-native-final-screen.png; cd /game && DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/python3 /work/ge6_vm_run.py --timeout 90 /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; tail -35 /work/boot.log; cat /profile/log.txt",timeout=150)
             with client.open_sftp() as sftp:
                 sftp.get('/work/boot.log',str(directory/'boot.log'))
+                try:
+                    sftp.get('/work/ge6-native-final-screen.png',str(directory/'ge6-native-final-screen.png'))
+                except OSError:
+                    pass
                 try:
                     sftp.get('/work/ge6-native-screen.png',str(directory/'ge6-native-screen.png'))
                 except OSError:

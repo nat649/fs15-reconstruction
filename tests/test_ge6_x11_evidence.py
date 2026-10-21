@@ -25,6 +25,19 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_explicit_x11_display_is_recorded(self):
+        self.assertEqual(observations(LOG.replace('DISPLAY=:99','DISPLAY=:98'))['x11_display'],':98')
+
+    def test_bounded_run_is_not_complete_startup(self):
+        text=LOG.replace('GE6_BLOCKED_IMPORT GDI32.dll!GetDeviceGammaRamp caller=0x140382f02 os_calls=2000\n','').replace('GE6_GRAPHICS_RESULT=78','GE6_GRAPHICS_BOUNDED_TIMEOUT seconds=90 elapsed=90.100\nGE6_GRAPHICS_RESULT=143')
+        result=observations(text)
+        self.assertEqual(result['stopped_at']['kind'],'controlled-test-timeout')
+        self.assertFalse(result['stopped_at']['startup_completion_verified'])
+        self.assertFalse(result['menu_verified'])
+        for bad in (text.replace('elapsed=90.100','elapsed=2.000'),text.replace('GE6_GRAPHICS_BOUNDED_TIMEOUT','absent-marker'),text+'GE6_NATIVE_FAULT signal=8\n'):
+            with self.assertRaises(ValueError):
+                observations(bad)
+
     def test_visible_context_is_not_rendering_or_playability(self):
         result=observations(LOG)
         self.assertTrue(result['original_main_window']['viewable'])

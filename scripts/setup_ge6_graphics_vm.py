@@ -22,7 +22,8 @@ from check_ge6_linux_vm import archive_entries
 
 ROOTS = ('g++', 'make', 'libssl-dev', 'libpng-dev', 'libx11-dev', 'libxrandr-dev',
          'libxcursor-dev', 'libxi-dev', 'libgl-dev', 'libgl1-mesa-dri', 'libglx-mesa0',
-         'xvfb', 'xauth', 'x11-utils', 'x11-xserver-utils', 'xfonts-base',
+         'xvfb', 'xserver-xorg-core', 'xserver-xorg-video-dummy',
+         'xauth', 'x11-utils', 'x11-xserver-utils', 'xfonts-base',
          'openssh-server', 'python3', 'libpython3-stdlib', 'libatomic1')
 BASE = 'https://archive.ubuntu.com/ubuntu/'
 
@@ -183,6 +184,7 @@ def assemble(args):
     entries['etc/hosts'] = (0o100644, b'127.0.0.1 localhost\n')
     entries['etc/nsswitch.conf'] = (0o100644, b'passwd: files\ngroup: files\nhosts: files\n')
     entries['work/libopenal.a'] = (0o100644, args.openal_archive.read_bytes())
+    entries['work/xorg-dummy.conf'] = (0o100644, (Path(__file__).parent/'ge6_xorg_dummy.conf').read_bytes())
     for path in args.openal_include.glob('*.h'):
         entries['work/include/AL/'+path.name] = (0o100644, path.read_bytes())
     entries['init'] = (0o100755, b'''#!/bin/sh
@@ -196,8 +198,9 @@ def assemble(args):
 /usr/bin/busybox ip link set eth0 up
 /usr/bin/busybox ip addr add 10.0.2.15/24 dev eth0
 /usr/bin/busybox ip route add default via 10.0.2.2
-export DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null
+export DISPLAY=:98 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null
 /usr/bin/Xvfb :99 -screen 0 1280x720x24 -nolisten tcp -ac -noreset >/work/xvfb.log 2>&1 &
+/usr/lib/xorg/Xorg :98 -config /work/xorg-dummy.conf -logfile /work/Xorg.98.log -nolisten tcp -ac -noreset -novtswitch -sharevts >/work/xorg-start.log 2>&1 &
 /usr/sbin/sshd -E /work/sshd.log
 /usr/bin/busybox cat /work/sshd.log
 /usr/bin/busybox cat /work/xvfb.log

@@ -23,7 +23,10 @@ jobs:
       - name: Verify actual window resources, GL pixels and Microsoft ABI
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        run: xvfb-run -a -s '-screen 0 1280x720x24' build/ge6-x11/FS15GE6X11Check
+        run: |
+          xvfb-run -a -s '-screen 0 1280x720x24' build/ge6-x11/FS15GE6X11Check
+          xvfb-run -a -s '-screen 0 1280x720x24' build/ge6-x11/FS15GE6X11Snapshot build/ge6-x11/authored-root.png
+          python3 -c 'import struct; from pathlib import Path; data=Path("build/ge6-x11/authored-root.png").read_bytes(); assert data[:8]==b"\x89PNG\r\n\x1a\n" and struct.unpack(">II",data[16:24])==(1280,720)'
       - name: Verify existing original-code loader contracts
         env:
           ALSOFT_DRIVERS: 'null'
@@ -32,6 +35,7 @@ jobs:
         run: |
           mkdir -p build/ge6-x11-artifact/licenses
           cp build/ge6-x11/FS15GE6LinuxBoot build/ge6-x11-artifact/
+          cp build/ge6-x11/FS15GE6X11Snapshot build/ge6-x11-artifact/
           cmake --install build/ge6-x11 --prefix build/ge6-x11-installed
           cp -r build/ge6-x11-installed/share/fs15-reconstruction/ge6-audio-relink build/ge6-x11-artifact/
           for package in libssl-dev libc6 libstdc++6 libpng-dev zlib1g-dev libx11-dev libxrandr-dev libgl1; do

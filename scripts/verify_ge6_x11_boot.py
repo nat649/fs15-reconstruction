@@ -14,10 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def observations(text):
     required=('GE6_IMAGE_KIND=local-platform','GE6_NATIVE_NT_TIB_READY',
-              'GE6_ORIGINAL_CRT_ENTER','GE6_ORIGINAL_MAIN_REACHED',
-              'GE6_GRAPHICS_ENV=X11 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null',
-              'GE6_GRAPHICS_RESULT=78')
-    if any(marker not in text for marker in required) or 'GE6_NATIVE_FAULT' in text:
+              'GE6_ORIGINAL_CRT_ENTER','GE6_ORIGINAL_MAIN_REACHED')
+    environment=re.search(r'GE6_GRAPHICS_ENV=X11 DISPLAY=(:\d+) LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null',text)
+    if any(marker not in text for marker in required) or 'GE6_NATIVE_FAULT' in text or not environment:
         raise ValueError('Incomplete, faulted or wrong-provenance X11 run')
     window=re.search(r'GE6_X11_WINDOW_CREATE hwnd=(0x\w+) xid=(0x\w+) width=(\d+) height=(\d+) mapped=\d procedure=(0x\w+) caller=0x1403833ce\b',text)
     if not window or window[5]!='0x14037cf00':
@@ -36,10 +35,16 @@ def observations(text):
     if not active:
         raise ValueError('Probe contexts do not establish a main-window context')
     blocked=re.search(r'GE6_BLOCKED_IMPORT ([^!\s]+)!([^\s]+) caller=(0x[0-9a-f]+) os_calls=(\d+)',text)
+    bounded=re.search(r'GE6_GRAPHICS_BOUNDED_TIMEOUT seconds=(\d+) elapsed=([\d.]+)',text)
+    boundary=None
+    if blocked and 'GE6_GRAPHICS_RESULT=78' in text:
+        boundary=dict(library=blocked[1],symbol=blocked[2],caller=blocked[3],os_calls=int(blocked[4]))
+    elif not blocked and bounded and 'GE6_GRAPHICS_RESULT=143' in text and int(bounded[1])>=1 and float(bounded[2])>=int(bounded[1]):
+        boundary=dict(kind='controlled-test-timeout',seconds=int(bounded[1]),elapsed_seconds=float(bounded[2]),startup_completion_verified=False)
     mapped=re.search(r'GE6_IMAGE_MAPPED base=0x140000000 entry=0x1403fc96c supported_imports=(\d+) blocked_imports=(\d+)',text)
     kernel=re.search(r'^Linux .+$',text,re.MULTILINE)
     capture=re.search(r'GE6_X11_CAPTURE_SAVED width=(\d+) height=(\d+) path=\S+',text)
-    if not all((blocked,mapped,kernel,capture)):
+    if not all((boundary,mapped,kernel,capture)):
         raise ValueError('Missing capture, kernel, loader or stop boundary')
     native_calls=[]
     for name,caller,context in re.findall(r'GE6_NATIVE_GL_CALL name=(\w+) caller=(0x[0-9a-f]+) context=(0x[0-9a-f]+)',text):
@@ -59,10 +64,11 @@ def observations(text):
                 wine_or_proton_used=False,replacement_engine_linked=False,
                 original_main_window=dict(handle=handle,xid=xid,width=int(width),height=int(height),procedure=procedure,viewable=True),
                 original_main_window_gl_context=active,
+                x11_display=environment[1],
                 original_gl_calls=native_calls,original_buffer_swaps=swaps,
                 captured_root_dimensions=[int(capture[1]),int(capture[2])],
                 bound_import_names=int(mapped[1]),stop_trampoline_names=int(mapped[2]),
-                stopped_at=dict(library=blocked[1],symbol=blocked[2],caller=blocked[3],os_calls=int(blocked[4])),
+                stopped_at=boundary,
                 original_frame_rendered=False,original_renderer_initialized=False,menu_verified=False,
                 full_engine_initialization_verified=False,playable_game_verified=False,
                 vm_audio_backend='null',audible_audio_verified=False)
@@ -89,7 +95,7 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None):
     result['original_vehicle_types_loaded_reported']=b'Game vehicle types loaded' in journal
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
     sources=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'src/ge6_linux'],cwd=ROOT,text=True).splitlines()
-    sources+=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/verify_ge6_x11_boot.py','tests/check_ge6_x11.cpp','tests/test_ge6_x11_evidence.py','.github/workflows/ge6-linux-native-boot.yml']
+    sources+=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/ge6_xorg_dummy.conf','scripts/ge6_vm_run.py','scripts/verify_ge6_x11_boot.py','tests/check_ge6_x11.cpp','tests/test_ge6_x11_evidence.py','.github/workflows/ge6-linux-native-boot.yml']
     result.update(source_commit=commit,ci_run=f'https://github.com/nat649/fs15-reconstruction/actions/runs/{int(run_id)}',
                   committed_source_sha256={name:hashlib.sha256(subprocess.check_output(['git','show',commit+':'+name],cwd=ROOT)).hexdigest() for name in sources},
                   linux_elf_sha256=elf_digest,
