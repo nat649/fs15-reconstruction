@@ -68,6 +68,12 @@ int main(){try{
     ge6_gl::Bridge<&glDisableVertexAttribArray>::call(0);ge6_gl::Bridge<&glBindBufferARB>::call(GL_ARRAY_BUFFER_ARB,0);ge6_gl::Bridge<&glDeleteBuffersARB>::call(1,&buffer);ge6_gl::Bridge<&glUseProgram>::call(0);ge6_gl::Bridge<&glDeleteProgram>::call(program);ge6_gl::Bridge<&glDeleteShader>::call(vertex);ge6_gl::Bridge<&glDeleteShader>::call(fragment);
     require(!ge6_gl::procedure("glDebugMessageCallbackARB")&&!ge6_gl::procedure("AuthoredAbsentGLFunction"),"Unsafe/unavailable GL callback exposed");
     ge6_windows::show(hwnd,5);XWindowAttributes attributes{};require(XGetWindowAttributes(display,ge6_windows::windows.at(hwnd).xid,&attributes)&&attributes.map_state==IsViewable,"Host window is not actually mapped");
+    ge6_windows::Rect damage{};require(ge6_windows::update_rect(hwnd,&damage,0)&&damage.right==320&&damage.bottom==180,"Real initial X11 exposure was lost");
+    require(ge6_windows::validate_rect(hwnd,nullptr)&&!ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==0&&damage.right==0,"Validated exposure retained damage");
+    XClearArea(display,ge6_windows::windows.at(hwnd).xid,10,20,40,30,True);XSync(display,False);
+    require(ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==10&&damage.top==20&&damage.right==50&&damage.bottom==50,"Actual X11 damaged rectangle differs");
+    ge6_windows::Rect partial{10,20,30,50};require(ge6_windows::validate_rect(hwnd,&partial)&&ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==30&&damage.right==50,"Partial validation discarded unpainted area");
+    require(ge6_windows::validate_rect(hwnd,nullptr)&&!ge6_windows::update_rect(hwnd,nullptr,0)&&!ge6_windows::update_rect(0,&damage,0)&&error==1400,"Update rectangle lifetime/invalid handle differs");
     require(ge6_gl::make_current(0,0)&&ge6_gl::remove(context)&&ge6_windows::release_dc(hwnd,dc)&&ge6_windows::destroy(hwnd)&&ge6_classes::remove(klass.name,klass.instance),"Resource cleanup failed");
     require(ge6_windows::windows.empty()&&ge6_gl::contexts.empty(),"Native host resources leaked");
     std::puts("Authored X11/RandR/window/MS-ABI/GLX actual pixel and lifetime fixture passed; no game result claimed");return 0;

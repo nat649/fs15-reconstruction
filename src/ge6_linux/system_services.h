@@ -16,6 +16,7 @@
 #include <pwd.h>
 #include <vector>
 #include "file_services.h"
+#include "ansi_reference.h"
 namespace ge6_system {
 #define GE6_SYS_MS __attribute__((ms_abi))
 inline void(*trace)(const char*)=nullptr;
@@ -32,6 +33,19 @@ inline bool account_name(std::u16string& result){
 inline GE6_SYS_MS int user_name(uint16_t* output,uint32_t* count){
     trace("GetUserNameW");if(!count){set_error(87);return 0;}std::u16string actual;if(!account_name(actual))return 0;auto required=uint32_t(actual.size()+1);auto capacity=*count;*count=required;if(capacity<required){set_error(122);return 0;}if(!output){set_error(87);return 0;}std::memcpy(output,actual.c_str(),required*2);return 1;
 }
+inline GE6_SYS_MS int user_name_a(char* output,uint32_t* count){trace("GetUserNameA");if(!count){set_error(87);return 0;}std::u16string actual;if(!account_name(actual))return 0;std::string bytes;for(auto unit:actual){auto found=std::find(ge6_ansi::unicode.begin(),ge6_ansi::unicode.end(),uint16_t(unit));if(found==ge6_ansi::unicode.end()){set_error(1113);return 0;}bytes.push_back(char(found-ge6_ansi::unicode.begin()));}auto capacity=*count;*count=uint32_t(bytes.size()+1);if(capacity<*count){set_error(122);return 0;}if(!output){set_error(87);return 0;}std::memcpy(output,bytes.c_str(),*count);return 1;}
+inline GE6_SYS_MS int computer_name(char* output,uint32_t* count){trace("GetComputerNameA");if(!count){set_error(87);return 0;}char name[256]{};if(gethostname(name,sizeof(name)-1)){set_error(31);return 0;}auto size=std::strlen(name);if(size>15){set_error(50);return 0;}if(*count<=size){*count=uint32_t(size+1);set_error(111);return 0;}if(!output){set_error(87);return 0;}std::memcpy(output,name,size+1);*count=uint32_t(size);return 1;}
+inline uint64_t cpu_time(const timeval& value){return uint64_t(value.tv_sec)*10000000+uint64_t(value.tv_usec)*10;}
+inline GE6_SYS_MS int process_times(uintptr_t handle,uint64_t* created,uint64_t* exited,uint64_t* kernel,uint64_t* user){
+    trace("GetProcessTimes");if(handle!=~uintptr_t(0)){set_error(6);return 0;}if(!created||!exited||!kernel||!user){set_error(87);return 0;}rusage usage{};if(getrusage(RUSAGE_SELF,&usage)){set_error(31);return 0;}
+    std::ifstream process("/proc/self/stat");std::string line;std::getline(process,line);auto end=line.rfind(')');if(end==std::string::npos){set_error(31);return 0;}std::istringstream fields(line.substr(end+2));uint64_t start=0;std::string item;for(unsigned i=0;i<=19;++i){if(!(fields>>item)){set_error(31);return 0;}if(i==19){std::istringstream value(item);value>>start;}}
+    uint64_t boot=0;std::ifstream stats("/proc/stat");while(std::getline(stats,line)){std::istringstream row(line);if(row>>item&&item=="btime"){row>>boot;break;}}long hz=sysconf(_SC_CLK_TCK);if(!boot||hz<=0){set_error(31);return 0;}
+    *created=(boot+11644473600ull)*10000000+start*10000000/uint64_t(hz);*exited=0;*kernel=cpu_time(usage.ru_stime);*user=cpu_time(usage.ru_utime);return 1;
+}
+inline GE6_SYS_MS int system_times(uint64_t* idle,uint64_t* kernel,uint64_t* user){trace("GetSystemTimes");if(!idle||!kernel||!user){set_error(87);return 0;}std::ifstream file("/proc/stat");std::string cpu;uint64_t usr=0,nice=0,system=0,idling=0,waiting=0,irq=0,soft=0;if(!(file>>cpu>>usr>>nice>>system>>idling>>waiting>>irq>>soft)||cpu!="cpu"){set_error(31);return 0;}long hz=sysconf(_SC_CLK_TCK);if(hz<=0){set_error(31);return 0;}*idle=(idling+waiting)*10000000/uint64_t(hz);*kernel=(system+irq+soft+idling+waiting)*10000000/uint64_t(hz);*user=(usr+nice)*10000000/uint64_t(hz);return 1;}
+inline GE6_SYS_MS int hardware_profile_unavailable(void*){trace("GetCurrentHwProfileA(unavailable)");set_error(50);return 0;}
+inline GE6_SYS_MS int registry_quota_unavailable(uint32_t*,uint32_t*){trace("GetSystemRegistryQuota(unavailable)");set_error(50);return 0;}
+inline GE6_SYS_MS uint32_t adapter_info_unavailable(void*,uint32_t*){trace("GetAdaptersInfo(unavailable)");return 50;}
 inline GE6_SYS_MS int32_t open_key(uintptr_t root,const char* name,uint32_t options,uint32_t access,uintptr_t* out){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegOpenKeyExA");if(!out||!name||options)return 87;if(access&~0x20319u)return 5;*out=0;if(uint32_t(root)!=0x80000002u||lower(name)!="hardware\\description\\system\\centralprocessor\\0")return 2;auto model=cpu_name();if(model.empty())return 2;auto key=next_key++;cpu_keys.emplace(key,std::move(model));*out=key;return 0;}
 inline GE6_SYS_MS int32_t query_key(uintptr_t key,const char* name,uint32_t* reserved,uint32_t* type,void* out,uint32_t* size){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegQueryValueExA");if(reserved||!name||!size)return 87;auto found=cpu_keys.find(key);if(found==cpu_keys.end())return 6;if(lower(name)!="processornamestring")return 2;uint32_t required=uint32_t(found->second.size()+1),capacity=*size;*size=required;if(type)*type=1;if(!out)return 0;if(capacity<required)return 234;std::memcpy(out,found->second.c_str(),required);return 0;}
 inline GE6_SYS_MS int32_t close_key(uintptr_t key){std::lock_guard<std::recursive_mutex> guard(registry_mutex);trace("RegCloseKey");return cpu_keys.erase(key)?0:6;}

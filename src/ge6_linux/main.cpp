@@ -8,6 +8,7 @@
 #include "network_services.h"
 #include "startup_services.h"
 #include "system_services.h"
+#include "crypto_services.h"
 #include "event_services.h"
 #include "semaphore_services.h"
 #include "semaphore_check.h"
@@ -52,6 +53,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "crypto_check.h"
 
 #define MS __attribute__((ms_abi))
 namespace {
@@ -111,6 +113,7 @@ void fault(int signal,siginfo_t* info,void* raw){
 }
 MS void file_time(uint64_t* out){trace("GetSystemTimeAsFileTime");timespec t{};clock_gettime(CLOCK_REALTIME,&t);*out=(uint64_t(t.tv_sec)+11644473600ull)*10000000ull+uint64_t(t.tv_nsec)/100;}
 MS uint32_t process_id(){trace("GetCurrentProcessId");return uint32_t(getpid());}
+MS uintptr_t current_process(){trace("GetCurrentProcess");return ~uintptr_t(0);}
 MS uint32_t thread_id(){trace("GetCurrentThreadId");return uint32_t(syscall(SYS_gettid));}
 MS uint32_t ticks(){trace("GetTickCount");timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);return uint32_t(uint64_t(t.tv_sec)*1000+uint64_t(t.tv_nsec)/1000000);}
 MS int counter(int64_t* out){trace("QueryPerformanceCounter");auto caller=reinterpret_cast<uintptr_t>(__builtin_return_address(0));if(!main_reached&&caller>=base+0xc9a0&&caller<base+0xc9a0+4364){main_reached=true;std::cout<<"GE6_ORIGINAL_MAIN_REACHED caller=0x"<<std::hex<<caller<<std::dec<<'\n';}timespec t{};clock_gettime(CLOCK_MONOTONIC,&t);*out=int64_t(t.tv_sec)*1000000000+t.tv_nsec;return 1;}
@@ -259,6 +262,11 @@ uintptr_t resolve(const std::string& library,const std::string& name){
         if(name=="RegQueryValueExA")return reinterpret_cast<uintptr_t>(&ge6_system::query_key);
         if(name=="RegCloseKey")return reinterpret_cast<uintptr_t>(&ge6_system::close_key);
         if(name=="GetUserNameW")return reinterpret_cast<uintptr_t>(&ge6_system::user_name);
+        if(name=="GetUserNameA")return reinterpret_cast<uintptr_t>(&ge6_system::user_name_a);
+        if(name=="GetCurrentHwProfileA")return reinterpret_cast<uintptr_t>(&ge6_system::hardware_profile_unavailable);
+        if(name=="CryptAcquireContextA")return reinterpret_cast<uintptr_t>(&ge6_crypto::acquire);
+        if(name=="CryptGenRandom")return reinterpret_cast<uintptr_t>(&ge6_crypto::random);
+        if(name=="CryptReleaseContext")return reinterpret_cast<uintptr_t>(&ge6_crypto::release);
         return 0;
     }
     if(library=="WINMM.dll"){
@@ -268,6 +276,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
         return 0;
     }
     if(library=="WS2_32.dll")return ge6_net::resolve(name);
+    if(library=="IPHLPAPI.DLL"&&name=="GetAdaptersInfo")return reinterpret_cast<uintptr_t>(&ge6_system::adapter_info_unavailable);
     if(library=="OpenAL32.dll")return ge6_audio::resolve(name);
     if(auto display=ge6_display::resolve(library,name))return display;
 #ifdef GE6_X11
@@ -288,6 +297,7 @@ uintptr_t resolve(const std::string& library,const std::string& name){
     if(auto file=ge6_fs::resolve(name))return file;
 #define BIND(n,f) if(name==n)return reinterpret_cast<uintptr_t>(&f)
     BIND("GetSystemTimeAsFileTime",file_time);BIND("GetCurrentProcessId",process_id);BIND("GetCurrentThreadId",thread_id);
+    BIND("GetCurrentProcess",current_process);BIND("GetComputerNameA",ge6_system::computer_name);BIND("GetProcessTimes",ge6_system::process_times);BIND("GetSystemTimes",ge6_system::system_times);BIND("GetSystemRegistryQuota",ge6_system::registry_quota_unavailable);
     BIND("GetTickCount",ticks);BIND("QueryPerformanceCounter",counter);BIND("QueryPerformanceFrequency",frequency);
     BIND("SetConsoleCtrlHandler",ge6_console::set_handler);
     BIND("GetLastError",get_error);BIND("SetLastError",set_error);BIND("EncodePointer",encode);BIND("DecodePointer",encode);
@@ -384,6 +394,7 @@ int main(int argc,char** argv){
         ge6_startup::trace=trace;ge6_startup::set_error=[](uint32_t value){last_error=value;};
         ge6_system::trace=trace;ge6_system::set_error=[](uint32_t value){last_error=value;};
         ge6_events::trace=trace;ge6_events::set_error=[](uint32_t value){last_error=value;};
+        ge6_crypto::trace=trace;ge6_crypto::set_error=[](uint32_t value){last_error=value;};
         ge6_semaphores::trace=trace;ge6_semaphores::set_error=[](uint32_t value){last_error=value;};
         ge6_semaphores::record=[](const char* event,uintptr_t handle,int32_t initial,int32_t maximum,uintptr_t caller){std::lock_guard<std::mutex> guard(trace_mutex);std::cout<<"GE6_SEMAPHORE_"<<event<<" handle=0x"<<std::hex<<handle<<std::dec<<" initial="<<initial<<" maximum="<<maximum<<" caller=0x"<<std::hex<<caller<<std::dec<<'\n';};
         if(argc==2&&std::string(argv[1])=="--check-semaphores"){ge6_semaphore_test::check(last_error);std::cout<<"GE6 actual counting semaphore contention, consumption, maximum/overflow, timeout and lifetime fixtures passed\n";return 0;}
@@ -415,6 +426,8 @@ int main(int argc,char** argv){
             auto manual=ge6_events::create(nullptr,1,1,nullptr);require(manual&&ge6_events::wait(manual,0)==0&&ge6_events::wait(manual,0)==0,"Manual event did not remain signaled");require(ge6_events::reset(manual)&&ge6_events::wait(manual,3)==258,"Manual reset/timeout differs");require(close_handle(automatic)&&close_handle(manual)&&!close_handle(manual)&&last_error==6,"Event handle lifetime differs");require(ge6_events::wait(manual,0)==0xffffffffu&&last_error==6&&ge6_events::create(nullptr,0,0,"unsupported-name")==0&&last_error==50,"Unknown/named event accepted");std::cout<<"GE6 unnamed auto/manual event waits, actual worker wakeup and lifetime fixtures passed; named events and full Windows thread parity remain unsupported\n";return 0;
         }
         if(argc==2&&std::string(argv[1])=="--check-system"){
+            require(resolve("ADVAPI32.dll","CryptAcquireContextA")==reinterpret_cast<uintptr_t>(&ge6_crypto::acquire)&&resolve("ADVAPI32.dll","GetUserNameA")==reinterpret_cast<uintptr_t>(&ge6_system::user_name_a)&&resolve("IPHLPAPI.DLL","GetAdaptersInfo")==reinterpret_cast<uintptr_t>(&ge6_system::adapter_info_unavailable),"Entropy service import bindings differ");
+            ge6_entropy_test::check(last_error);
             require(resolve("ADVAPI32.dll","GetUserNameW")==reinterpret_cast<uintptr_t>(&ge6_system::user_name),"Account API not bound through original ADVAPI import module");std::u16string actual_name;require(ge6_system::account_name(actual_name)&&!actual_name.empty(),"Linux account name unavailable");uint32_t needed=0;require(!ge6_system::user_name(nullptr,&needed)&&last_error==122&&needed==actual_name.size()+1,"Account-name required length differs");std::vector<uint16_t> user(needed+1,0xabcd);auto length=needed;require(ge6_system::user_name(user.data(),&length)&&length==needed&&std::memcmp(user.data(),actual_name.c_str(),needed*2)==0&&user[needed]==0xabcd,"Actual Linux account UTF16/name bounds differ");require(!ge6_system::user_name(user.data(),nullptr)&&last_error==87,"Null name length accepted");
             auto mm=load_library_a("winmm.dll");require(mm==winmm_token&&load_library_a("WINMM.DLL")==mm&&get_proc(mm,"timeBeginPeriod")!=0&&get_proc(mm,"timeEndPeriod")!=0,"Known timer module bindings missing");require(free_library(mm)&&free_library(mm)&&!free_library(mm)&&last_error==6,"Explicit module reference lifetime differs");require(!load_library_a("unavailable-fixture.dll")&&last_error==126&&!get_proc(mm,"unsupported-function")&&last_error==127,"Unavailable module/procedure reported present");
             using namespace ge6_system;uintptr_t key=0;require(open_key(0x80000002u,"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",0,0x20019,&key)==0&&key,"Linux CPU view missing");uint32_t size=0,type=0;require(query_key(key,"ProcessorNameString",nullptr,&type,nullptr,&size)==0&&type==1&&size>1,"CPU value size/type differs");std::vector<char> model(size+1,char(0x5a));uint32_t small=1;require(query_key(key,"ProcessorNameString",nullptr,&type,model.data(),&small)==234&&small==size&&model[0]==0x5a,"Small registry buffer contract differs");require(query_key(key,"ProcessorNameString",nullptr,nullptr,model.data(),&size)==0&&std::string(model.data())==cpu_name()&&model[size]==0x5a,"CPU value/source or bounds differ");require(close_key(key)==0&&close_key(key)==6&&query_key(key,"ProcessorNameString",nullptr,nullptr,nullptr,&size)==6,"Registry handle lifetime differs");require(open_key(0x80000002u,"SOFTWARE\\MissingFixture",0,0x20019,&key)==2&&key==0,"Unavailable registry key synthesized");

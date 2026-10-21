@@ -53,7 +53,7 @@ def observations(text):
             raise ValueError('Swap is outside original image or has invalid count')
         if dc==active['dc'] and context==active['handle']:
             swaps.append(dict(frame=int(frame),draw_calls=int(draws),caller=caller))
-    return dict(scope='Original GE6 main window and GL context on Linux; blank startup surface, not a playable game',
+    return dict(scope='Original GE6 main window and GL context on Linux; rendering requires separate visual confirmation, not a playable game',
                 kernel=kernel[0].strip(),image_kind='local-platform',original_image_sha256=LOCAL_IMAGE,
                 existing_local_platform_bootstrap_modified=True,linux_loader_patches_instructions=False,
                 wine_or_proton_used=False,replacement_engine_linked=False,
@@ -86,6 +86,7 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None):
                       scope='Original GE6 loading screen rendered on Linux; native shader/texture/draw/swap path, not a playable game')
     journal=(directory/'original-log.txt').read_bytes()
     result['original_opengl_initialization_reported']=b'OpenGL initialization successful' in journal
+    result['original_vehicle_types_loaded_reported']=b'Game vehicle types loaded' in journal
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
     sources=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'src/ge6_linux'],cwd=ROOT,text=True).splitlines()
     sources+=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/verify_ge6_x11_boot.py','tests/check_ge6_x11.cpp','tests/test_ge6_x11_evidence.py','.github/workflows/ge6-linux-native-boot.yml']

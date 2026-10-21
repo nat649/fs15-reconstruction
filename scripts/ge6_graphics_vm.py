@@ -93,7 +93,14 @@ def main():
             names=('x64/FarmingSimulator2015Game.exe','game.xml','FarmingSimulator2015.xml','VERSION','steamdata.dat',
                    'dataS.gar','dataS2.gar','crc_files.xml','data/maps/map01.i3d','data/maps/map01/map01_dem.png',
                    'shared/shader.gar','shared/splash.dds','shared/font/defaultFont.xml',
-                   'shared/font/defaultFont.font','shared/font/defaultFont.png')
+                   'shared/font/defaultFont.font','shared/font/defaultFont.png',
+                   'profileTemplate/gameSettingsTemplate.xml','profileTemplate/inputBindingDefault.xml',
+                   'data/maps/sounds/achievementSound.wav',
+                   'data/vehicles/store/store_caseIHMagnum380.dds','data/vehicles/store/brand_caseIH.dds',
+                   'data/vehicles/store/store_empty.dds','data/maps/map01/map_preview.dds')
+            missing=[name for name in names if not (args.resources/name).is_file()]
+            if missing:
+                parser.error('Missing private startup inputs: '+', '.join(missing))
             for name in names:
                 print('Private VM input: '+name,flush=True)
                 upload(client,args.resources/name,'/game/'+name)
