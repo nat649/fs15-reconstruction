@@ -48,3 +48,18 @@ class X11EvidenceTests(unittest.TestCase):
         for log in (LOG+'GE6_NATIVE_FAULT signal=11\n',LOG.replace('local-platform','reference')):
             with self.assertRaisesRegex(ValueError,'faulted or wrong-provenance'):
                 observations(log)
+
+    def test_draw_and_swap_use_the_original_main_context(self):
+        drawing='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\n'
+        swap='GE6_NATIVE_SWAP frame=1 draws=2 dc=0x30 context=0x40 caller=0x14000922e\n'
+        result=observations(LOG+drawing+swap)
+        self.assertEqual(result['original_gl_calls'][0]['name'],'glDrawArrays')
+        self.assertEqual(result['original_buffer_swaps'][0]['draw_calls'],2)
+        self.assertFalse(result['original_frame_rendered']) # Call logs alone do not confirm pixels.
+        self.assertFalse(observations(LOG+swap.replace('dc=0x30','dc=0x99'))['original_buffer_swaps'])
+
+    def test_authored_host_drawing_is_not_original_execution(self):
+        for extra in ('GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x1234 context=0x40\n',
+                      'GE6_NATIVE_SWAP frame=1 draws=2 dc=0x30 context=0x40 caller=0x1234\n'):
+            with self.assertRaisesRegex(ValueError,'outside original image'):
+                observations(LOG+extra)

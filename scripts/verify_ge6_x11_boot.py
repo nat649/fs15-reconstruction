@@ -41,12 +41,25 @@ def observations(text):
     capture=re.search(r'GE6_X11_CAPTURE_SAVED width=(\d+) height=(\d+) path=\S+',text)
     if not all((blocked,mapped,kernel,capture)):
         raise ValueError('Missing capture, kernel, loader or stop boundary')
+    native_calls=[]
+    for name,caller,context in re.findall(r'GE6_NATIVE_GL_CALL name=(\w+) caller=(0x[0-9a-f]+) context=(0x[0-9a-f]+)',text):
+        if not 0x140000000<=int(caller,16)<0x140480000:
+            raise ValueError('GL call is outside original image')
+        if context==active['handle']:
+            native_calls.append(dict(name=name,caller=caller,context=context))
+    swaps=[]
+    for frame,draws,dc,context,caller in re.findall(r'GE6_NATIVE_SWAP frame=(\d+) draws=(\d+) dc=(0x[0-9a-f]+) context=(0x[0-9a-f]+) caller=(0x[0-9a-f]+)',text):
+        if not 0x140000000<=int(caller,16)<0x140480000 or int(frame)<1:
+            raise ValueError('Swap is outside original image or has invalid count')
+        if dc==active['dc'] and context==active['handle']:
+            swaps.append(dict(frame=int(frame),draw_calls=int(draws),caller=caller))
     return dict(scope='Original GE6 main window and GL context on Linux; blank startup surface, not a playable game',
                 kernel=kernel[0].strip(),image_kind='local-platform',original_image_sha256=LOCAL_IMAGE,
                 existing_local_platform_bootstrap_modified=True,linux_loader_patches_instructions=False,
                 wine_or_proton_used=False,replacement_engine_linked=False,
                 original_main_window=dict(handle=handle,xid=xid,width=int(width),height=int(height),procedure=procedure,viewable=True),
                 original_main_window_gl_context=active,
+                original_gl_calls=native_calls,original_buffer_swaps=swaps,
                 captured_root_dimensions=[int(capture[1]),int(capture[2])],
                 bound_import_names=int(mapped[1]),stop_trampoline_names=int(mapped[2]),
                 stopped_at=dict(library=blocked[1],symbol=blocked[2],caller=blocked[3],os_calls=int(blocked[4])),
@@ -55,7 +68,7 @@ def observations(text):
                 vm_audio_backend='null',audible_audio_verified=False)
 
 
-def verify(directory,executable,source_commit,run_id):
+def verify(directory,executable,source_commit,run_id,verified_frame=None):
     raw=(directory/'boot.log').read_bytes();result=observations(raw.decode(errors='replace'))
     elf_digest=hashlib.sha256(executable.read_bytes()).hexdigest()
     if f'{elf_digest}  /work/FS15GE6LinuxBoot' not in raw.decode(errors='replace'):
@@ -66,6 +79,13 @@ def verify(directory,executable,source_commit,run_id):
     manifest=json.loads((directory/'staged-inputs.json').read_text())
     if manifest['x64/FarmingSimulator2015Game.exe']['sha256']!=LOCAL_IMAGE:
         raise ValueError('Staged original image differs')
+    if verified_frame:
+        if verified_frame!='loading-screen' or not any(item['name'] in ('glDrawArrays','glDrawElements') for item in result['original_gl_calls']) or not any(item['draw_calls']>0 for item in result['original_buffer_swaps']):
+            raise ValueError('Visual confirmation needs matching original drawing and swaps')
+        result.update(original_frame_rendered=True,visually_verified_content=verified_frame,
+                      scope='Original GE6 loading screen rendered on Linux; native shader/texture/draw/swap path, not a playable game')
+    journal=(directory/'original-log.txt').read_bytes()
+    result['original_opengl_initialization_reported']=b'OpenGL initialization successful' in journal
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
     sources=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'src/ge6_linux'],cwd=ROOT,text=True).splitlines()
     sources+=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/verify_ge6_x11_boot.py','tests/check_ge6_x11.cpp','tests/test_ge6_x11_evidence.py','.github/workflows/ge6-linux-native-boot.yml']
@@ -73,7 +93,7 @@ def verify(directory,executable,source_commit,run_id):
                   committed_source_sha256={name:hashlib.sha256(subprocess.check_output(['git','show',commit+':'+name],cwd=ROOT)).hexdigest() for name in sources},
                   linux_elf_sha256=elf_digest,
                   private_boot_log_sha256=hashlib.sha256(raw).hexdigest(),
-                  private_original_journal_sha256=hashlib.sha256((directory/'original-log.txt').read_bytes()).hexdigest(),
+                  private_original_journal_sha256=hashlib.sha256(journal).hexdigest(),
                   captured_root_png_sha256=hashlib.sha256(screenshot).hexdigest(),
                   private_staged_inputs=manifest)
     return result
@@ -86,5 +106,6 @@ if __name__=='__main__':
     parser.add_argument('--source-commit',required=True)
     parser.add_argument('--ci-run',type=int,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--verified-frame',choices=('loading-screen',))
     args=parser.parse_args()
-    args.output.write_text(json.dumps(verify(args.directory,args.exe,args.source_commit,args.ci_run),indent=2)+'\n')
+    args.output.write_text(json.dumps(verify(args.directory,args.exe,args.source_commit,args.ci_run,args.verified_frame),indent=2)+'\n')

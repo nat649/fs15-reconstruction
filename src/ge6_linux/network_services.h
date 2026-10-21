@@ -6,12 +6,16 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <mutex>
+#include <memory>
+#include <netdb.h>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <vector>
 namespace ge6_net {
 #define GE6_NET_MS __attribute__((ms_abi))
 inline void(*trace)(const char*)=nullptr;
@@ -46,10 +50,28 @@ inline GE6_NET_MS int bind(uintptr_t socket,const void* raw,int size){trace("bin
 inline GE6_NET_MS int name(uintptr_t socket,void* raw,int* size){trace("getsockname");auto fd=descriptor(socket);if(fd<0)return -1;if(!raw||!size||*size<16)return fail(10014);sockaddr_in target{};socklen_t capacity=sizeof(target);if(::getsockname(fd,reinterpret_cast<sockaddr*>(&target),&capacity)<0)return fail(translate(errno));std::memcpy(raw,&target,16);*size=16;return 0;}
 inline GE6_NET_MS int send_to(uintptr_t socket,const void* data,int count,int flags,const void* raw,int size){trace("sendto");auto fd=descriptor(socket);if(fd<0)return -1;if(count<0||flags!=0)return fail(10022);sockaddr_in target{};if(!address(raw,size,target))return -1;auto result=::sendto(fd,data,size_t(count),MSG_NOSIGNAL,reinterpret_cast<sockaddr*>(&target),16);return result<0?fail(translate(errno)):int(result);}
 inline GE6_NET_MS int receive_from(uintptr_t socket,void* data,int count,int flags,void* raw,int* size){trace("recvfrom");auto fd=descriptor(socket);if(fd<0)return -1;if(count<0||(flags!=0&&flags!=2))return fail(10022);if(raw&&(!size||*size<16))return fail(10014);sockaddr_in target{};iovec buffer{data,size_t(count)};msghdr message{};message.msg_name=raw?&target:nullptr;message.msg_namelen=raw?16:0;message.msg_iov=&buffer;message.msg_iovlen=1;auto result=::recvmsg(fd,&message,flags==2?MSG_PEEK:0);if(result<0)return fail(translate(errno));if(raw){std::memcpy(raw,&target,16);*size=16;}if(message.msg_flags&MSG_TRUNC)return fail(10040);return int(result);}
+// Windows ADDRINFOA swaps the two pointers and uses an eight-byte length.
+struct AddressInfo {int32_t flags,family,type,protocol;uint64_t length;char* canonical;void* address;AddressInfo* next;};
+static_assert(sizeof(AddressInfo)==48&&offsetof(AddressInfo,canonical)==24&&offsetof(AddressInfo,address)==32);
+struct AddressNode {AddressInfo value{};std::vector<uint8_t> address;std::string canonical;};
+struct AddressList {std::vector<std::unique_ptr<AddressNode>> nodes;};
+inline std::map<AddressInfo*,std::unique_ptr<AddressList>> address_lists;
+inline int address_error(int value){switch(value){case EAI_AGAIN:return 11002;case EAI_BADFLAGS:return 10022;case EAI_FAIL:return 11003;case EAI_FAMILY:return 10047;case EAI_MEMORY:return 8;case EAI_NONAME:return 11001;case EAI_SERVICE:return 10109;case EAI_SOCKTYPE:return 10044;case EAI_SYSTEM:return translate(errno);default:return 11003;}}
+inline int address_flags(int flags,bool to_host){int result=0;for(auto pair:{std::pair<int,int>{1,AI_PASSIVE},{2,AI_CANONNAME},{4,AI_NUMERICHOST},{8,AI_NUMERICSERV},{0x100,AI_ALL},{0x400,AI_ADDRCONFIG},{0x800,AI_V4MAPPED}})if(flags&(to_host?pair.first:pair.second))result|=to_host?pair.second:pair.first;return result;}
+inline GE6_NET_MS int get_address(const char* node,const char* service,const AddressInfo* requested,AddressInfo** output){
+    trace("getaddrinfo");if(!output){last_error=10014;return last_error;}*output=nullptr;{std::lock_guard<std::recursive_mutex> guard(registry_mutex);if(!references){last_error=10093;return last_error;}}
+    addrinfo hints{},*result=nullptr;if(requested){if(requested->flags&~0xd0f){last_error=10022;return last_error;}hints.ai_flags=address_flags(requested->flags,true);hints.ai_family=requested->family==23?AF_INET6:requested->family;if(hints.ai_family!=AF_UNSPEC&&hints.ai_family!=AF_INET&&hints.ai_family!=AF_INET6){last_error=10047;return last_error;}hints.ai_socktype=requested->type;hints.ai_protocol=requested->protocol;}
+    int status=::getaddrinfo(node,service,requested?&hints:nullptr,&result);if(status){last_error=address_error(status);std::fprintf(stderr,"GE6_DNS_RESULT error=%d caller=0x%lx\n",last_error,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return last_error;}
+    auto owner=std::make_unique<AddressList>();for(auto* item=result;item;item=item->ai_next){if(item->ai_family!=AF_INET&&item->ai_family!=AF_INET6)continue;auto value=std::make_unique<AddressNode>();value->address.assign(reinterpret_cast<const uint8_t*>(item->ai_addr),reinterpret_cast<const uint8_t*>(item->ai_addr)+item->ai_addrlen);uint16_t family=item->ai_family==AF_INET6?23:2;std::memcpy(value->address.data(),&family,2);if(item->ai_canonname)value->canonical=item->ai_canonname;value->value={address_flags(item->ai_flags,false),family,item->ai_socktype,item->ai_protocol,item->ai_addrlen,item->ai_canonname?value->canonical.data():nullptr,value->address.data(),nullptr};if(!owner->nodes.empty())owner->nodes.back()->value.next=&value->value;owner->nodes.push_back(std::move(value));}
+    ::freeaddrinfo(result);if(owner->nodes.empty()){last_error=11001;return last_error;}auto* head=&owner->nodes.front()->value;{std::lock_guard<std::recursive_mutex> guard(registry_mutex);address_lists.emplace(head,std::move(owner));}*output=head;return 0;
+}
+inline GE6_NET_MS void free_address(AddressInfo* head){trace("freeaddrinfo");if(!head)return;std::lock_guard<std::recursive_mutex> guard(registry_mutex);for(auto it=address_lists.begin();it!=address_lists.end();++it){auto& nodes=it->second->nodes;for(size_t i=0;i<nodes.size();++i)if(&nodes[i]->value==head){if(!i)address_lists.erase(it);else{nodes.resize(i);nodes.back()->value.next=nullptr;}return;}}last_error=10022;}
 inline uintptr_t resolve(const std::string& symbol){
 #define NET_BIND(n,o,f) if(symbol==n||symbol==o)return reinterpret_cast<uintptr_t>(&f)
     NET_BIND("WSAStartup","ordinal:115",startup);NET_BIND("WSACleanup","ordinal:116",cleanup);NET_BIND("WSAGetLastError","ordinal:111",get_error);
     NET_BIND("socket","ordinal:23",create);NET_BIND("closesocket","ordinal:3",close);NET_BIND("bind","ordinal:2",bind);NET_BIND("getsockname","ordinal:6",name);NET_BIND("sendto","ordinal:20",send_to);NET_BIND("recvfrom","ordinal:17",receive_from);
+    if(symbol=="getaddrinfo")return reinterpret_cast<uintptr_t>(&get_address);
+    if(symbol=="freeaddrinfo")return reinterpret_cast<uintptr_t>(&free_address);
 #undef NET_BIND
     return 0;
 }
