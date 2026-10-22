@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from verify_ge6_x11_boot import observations,confirm_visual
+from verify_ge6_x11_boot import observations,confirm_visual,journal_observations
 
 LOG='''Linux fixture 6.0 x86_64 Linux
 GE6_GRAPHICS_ENV=X11 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null
@@ -25,6 +25,18 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_original_journal_load_records_do_not_establish_world_rendering(self):
+        journal=b'data/sky/rain.i3d (8.30 ms)\r\r\ndata/maps/map01.i3d (134732.66 ms)\r\r\nError: fixture missing resource\r\r\n'
+        reported=journal_observations(journal)
+        self.assertEqual(reported['original_journal_i3d_loads'][1],dict(path='data/maps/map01.i3d',elapsed_ms=134732.66))
+        self.assertTrue(reported['original_map_i3d_load_reported'])
+        self.assertEqual(reported['original_journal_resource_error_count'],1)
+        self.assertFalse(journal_observations(b'data/maps/map01.i3d (pending)\n')['original_map_i3d_load_reported'])
+        result=observations(LOG)
+        result.update(reported)
+        self.assertFalse(result['original_frame_rendered'])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_slow_swaps_remain_measured_progress_not_automatic_playability(self):
         result=observations(LOG+'GE6_NATIVE_SWAP frame=30 draws=824 dc=0x30 context=0x40 caller=0x14000c267 duration_us=4340681\n')
         self.assertEqual(result['original_buffer_swaps'][0]['frame'],30)

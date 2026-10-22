@@ -13,6 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 VISUAL_FRAMES = ('loading-screen','main-menu','career-screen','difficulty-screen','map-selection-screen','mission-loading-screen')
 
 
+def journal_observations(raw):
+    text=raw.decode(errors='replace').replace('\r','')
+    loads=[dict(path=path,elapsed_ms=float(duration)) for path,duration in
+           re.findall(r'^([^\n]+\.i3d) \((\d+(?:\.\d+)?) ms\)$',text,re.MULTILINE)]
+    return dict(original_journal_i3d_loads=loads,
+                original_map_i3d_load_reported=any(item['path']=='data/maps/map01.i3d' for item in loads),
+                original_journal_resource_error_count=len(re.findall(r'^Error:',text,re.MULTILINE)))
+
+
 def observations(text):
     required=('GE6_IMAGE_KIND=local-platform','GE6_NATIVE_NT_TIB_READY',
               'GE6_ORIGINAL_CRT_ENTER','GE6_ORIGINAL_MAIN_REACHED')
@@ -119,6 +128,7 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_f
     if verified_frame:
         confirm_visual(result,verified_frame)
     journal=(directory/'original-log.txt').read_bytes()
+    result.update(journal_observations(journal))
     result['original_opengl_initialization_reported']=b'OpenGL initialization successful' in journal
     result['original_vehicle_types_loaded_reported']=b'Game vehicle types loaded' in journal
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
