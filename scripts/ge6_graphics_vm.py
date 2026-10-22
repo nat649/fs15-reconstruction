@@ -36,17 +36,19 @@ def command(client, text, timeout=180):
     return code, result
 
 
-def upload(client, source, target):
-    with client.open_sftp() as sftp:
-        for parent in reversed(PurePosixPath(target).parents):
-            if str(parent) != '/':
-                try:
-                    sftp.mkdir(str(parent))
-                except OSError:
-                    pass
-        sftp.put(str(source), target)
-        metadata=source.stat()
-        sftp.utime(target,(int(metadata.st_atime),int(metadata.st_mtime)))
+def upload(client, source, target, sftp=None):
+    if sftp is None:
+        with client.open_sftp() as transfer:
+            return upload(client,source,target,transfer)
+    for parent in reversed(PurePosixPath(target).parents):
+        if str(parent) != '/':
+            try:
+                sftp.mkdir(str(parent))
+            except OSError:
+                pass
+    sftp.put(str(source), target)
+    metadata=source.stat()
+    sftp.utime(target,(int(metadata.st_atime),int(metadata.st_mtime)))
 
 
 def main():
@@ -57,6 +59,8 @@ def main():
     parser.add_argument('--qemu',type=Path)
     parser.add_argument('--kernel',type=Path,default=ROOT/'build/linux-play-vm/boot/vmlinuz-virt')
     parser.add_argument('--resources',type=Path,default=ROOT/'build/ge6-local')
+    parser.add_argument('--resource-set',choices=('startup','world'),default='startup',
+                        help='Private startup inputs, or all available original data/shared/profileTemplate files for map loading')
     parser.add_argument('--command')
     parser.add_argument('--exe',type=Path)
     parser.add_argument('--display',default=':98',help='Xorg dummy at 60 Hz; :99 selects the separate Xvfb zero-Hz diagnostic')
@@ -107,12 +111,18 @@ def main():
                    'data/maps/sounds/achievementSound.wav',
                    'data/vehicles/store/store_caseIHMagnum380.dds','data/vehicles/store/brand_caseIH.dds',
                    'data/vehicles/store/store_empty.dds','data/maps/map01/map_preview.dds')
+            if args.resource_set=='world':
+                names=tuple(sorted(set(names)|{path.relative_to(args.resources).as_posix()
+                            for folder in ('data','shared','profileTemplate')
+                            for path in (args.resources/folder).rglob('*') if path.is_file()}))
             missing=[name for name in names if not (args.resources/name).is_file()]
             if missing:
                 parser.error('Missing private startup inputs: '+', '.join(missing))
-            for name in names:
-                print('Private VM input: '+name,flush=True)
-                upload(client,args.resources/name,'/game/'+name)
+            with client.open_sftp() as transfer:
+                for index,name in enumerate(names,1):
+                    if len(names)<50 or index==1 or index%100==0 or index==len(names):
+                        print(f'Private VM input {index}/{len(names)}: '+name,flush=True)
+                    upload(client,args.resources/name,'/game/'+name,transfer)
             manifest={name:dict(sha256=hashlib.sha256((args.resources/name).read_bytes()).hexdigest(),size=(args.resources/name).stat().st_size) for name in names}
             (directory/'staged-inputs.json').write_text(json.dumps(manifest,indent=2)+'\n')
             code,_=command(client,'/usr/bin/busybox mkdir -p /profile')

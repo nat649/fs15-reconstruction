@@ -60,6 +60,21 @@ class X11EvidenceTests(unittest.TestCase):
     def test_explicit_x11_display_is_recorded(self):
         self.assertEqual(observations(LOG.replace('DISPLAY=:99','DISPLAY=:98'))['x11_display'],':98')
 
+    def test_map_selection_and_loading_screen_do_not_establish_a_loaded_world(self):
+        drawing='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\nGE6_NATIVE_SWAP frame=30 draws=200 dc=0x30 context=0x40 caller=0x14000c267\n'
+        pointer='GE6_X11_MOUSE_EVENT hwnd=0x10 message=0x201 keys=0x1 root_x=865 root_y=603 time=1234\n'
+        for frame in ('difficulty-screen','map-selection-screen','mission-loading-screen'):
+            with self.subTest(frame=frame):
+                with self.assertRaisesRegex(ValueError,'pointer input'):
+                    confirm_visual(observations(LOG+drawing),frame)
+                result=observations(LOG+drawing+pointer)
+                confirm_visual(result,frame)
+                self.assertTrue(result['menu_interaction_verified'])
+                self.assertFalse(result['original_renderer_initialized'])
+                self.assertFalse(result['full_engine_initialization_verified'])
+                self.assertFalse(result['playable_game_verified'])
+                self.assertEqual(result.get('original_mission_loading_screen_verified',False),frame=='mission-loading-screen')
+
     def test_bounded_run_is_not_complete_startup(self):
         text=LOG.replace('GE6_BLOCKED_IMPORT GDI32.dll!GetDeviceGammaRamp caller=0x140382f02 os_calls=2000\n','').replace('GE6_GRAPHICS_RESULT=78','GE6_GRAPHICS_BOUNDED_TIMEOUT seconds=90 elapsed=90.100\nGE6_GRAPHICS_RESULT=143')
         result=observations(text)

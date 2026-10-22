@@ -10,6 +10,7 @@ import subprocess
 from ge6_linux_images import LOCAL_IMAGE
 
 ROOT = Path(__file__).resolve().parents[1]
+VISUAL_FRAMES = ('loading-screen','main-menu','career-screen','difficulty-screen','map-selection-screen','mission-loading-screen')
 
 
 def observations(text):
@@ -83,18 +84,21 @@ def observations(text):
 
 
 def confirm_visual(result,verified_frame):
-    if verified_frame not in ('loading-screen','main-menu','career-screen') or not any(item['name'] in ('glDrawArrays','glDrawElements') for item in result['original_gl_calls']) or not any(item['draw_calls']>0 for item in result['original_buffer_swaps']):
+    if verified_frame not in VISUAL_FRAMES or not any(item['name'] in ('glDrawArrays','glDrawElements') for item in result['original_gl_calls']) or not any(item['draw_calls']>0 for item in result['original_buffer_swaps']):
         raise ValueError('Visual confirmation needs matching original drawing and swaps')
     if verified_frame!='loading-screen' and not any(item['caller']=='0x14000c267' for item in result['original_buffer_swaps']):
         raise ValueError('A menu needs original application-loop presentation, not only loading frames')
-    if verified_frame=='career-screen' and not any(item['message']=='0x201' for item in result['original_window_pointer_events']):
-        raise ValueError('Career navigation needs original-window pointer input as well as visual confirmation')
+    interactive=verified_frame in ('career-screen','difficulty-screen','map-selection-screen','mission-loading-screen')
+    if interactive and not any(item['message']=='0x201' for item in result['original_window_pointer_events']):
+        raise ValueError('Menu navigation needs original-window pointer input as well as visual confirmation')
     result.update(original_frame_rendered=True,visually_verified_content=verified_frame)
     if verified_frame=='loading-screen':
         result['scope']='Original GE6 loading screen rendered on Linux; native shader/texture/draw/swap path, not a playable game'
     else:
-        result.update(menu_verified=True,menu_interaction_verified=verified_frame=='career-screen',
-                      scope='Original GE6 '+('career menu reached through X11 pointer input' if verified_frame=='career-screen' else 'main menu rendered')+' on Linux; map loading and playable simulation remain unverified')
+        result.update(menu_verified=True,menu_interaction_verified=interactive,
+                      scope='Original GE6 '+verified_frame+' reached on Linux; completed 3D world loading and playable simulation remain unverified')
+        if verified_frame=='mission-loading-screen':
+            result['original_mission_loading_screen_verified']=True
 
 
 def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_file='ge6-native-screen.png'):
@@ -143,7 +147,7 @@ if __name__=='__main__':
     parser.add_argument('--source-commit',required=True)
     parser.add_argument('--ci-run',type=int,required=True)
     parser.add_argument('--output',type=Path,required=True)
-    parser.add_argument('--verified-frame',choices=('loading-screen','main-menu','career-screen'))
+    parser.add_argument('--verified-frame',choices=VISUAL_FRAMES)
     parser.add_argument('--frame-file',choices=('ge6-native-screen.png','ge6-native-final-screen.png'),default='ge6-native-screen.png')
     args=parser.parse_args()
     args.output.write_text(json.dumps(verify(args.directory,args.exe,args.source_commit,args.ci_run,args.verified_frame,args.frame_file),indent=2)+'\n')
