@@ -25,6 +25,19 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_ready_or_world_visual_gate_needs_map_records_and_keeps_playability_unconfirmed(self):
+        drawing='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\nGE6_NATIVE_SWAP frame=30 draws=200 dc=0x30 context=0x40 caller=0x14000c267\n'
+        pointer='GE6_X11_MOUSE_EVENT hwnd=0x10 message=0x201 keys=0x1 root_x=640 root_y=360 time=1234\n'
+        for frame in ('mission-ready-screen','world-screen'):
+            result=observations(LOG+drawing+pointer)
+            with self.assertRaisesRegex(ValueError,'map load record'):
+                confirm_visual(result,frame)
+            result.update(journal_observations(b'data/maps/map01.i3d (123243.11 ms)\n'))
+            confirm_visual(result,frame)
+            self.assertFalse(result['playable_game_verified'])
+            self.assertFalse(result['full_engine_initialization_verified'])
+            self.assertEqual(result.get('original_world_frame_rendered',False),frame=='world-screen')
+
     def test_mesa_software_compiler_diagnostic_is_explicit_and_does_not_confirm_world(self):
         self.assertFalse(observations(LOG)['mesa_llvm_optimization_disabled'])
         result=observations(LOG.replace('ALSOFT_DRIVERS=null','ALSOFT_DRIVERS=null GALLIVM_PERF=nopt'))

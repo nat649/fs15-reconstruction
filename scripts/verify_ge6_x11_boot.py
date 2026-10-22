@@ -10,7 +10,7 @@ import subprocess
 from ge6_linux_images import LOCAL_IMAGE
 
 ROOT = Path(__file__).resolve().parents[1]
-VISUAL_FRAMES = ('loading-screen','main-menu','career-screen','difficulty-screen','map-selection-screen','mission-loading-screen')
+VISUAL_FRAMES = ('loading-screen','main-menu','career-screen','difficulty-screen','map-selection-screen','mission-loading-screen','mission-ready-screen','world-screen')
 
 
 def journal_observations(raw):
@@ -102,9 +102,11 @@ def confirm_visual(result,verified_frame):
         raise ValueError('Visual confirmation needs matching original drawing and swaps')
     if verified_frame!='loading-screen' and not any(item['caller']=='0x14000c267' for item in result['original_buffer_swaps']):
         raise ValueError('A menu needs original application-loop presentation, not only loading frames')
-    interactive=verified_frame in ('career-screen','difficulty-screen','map-selection-screen','mission-loading-screen')
+    interactive=verified_frame in ('career-screen','difficulty-screen','map-selection-screen','mission-loading-screen','mission-ready-screen','world-screen')
     if interactive and not any(item['message']=='0x201' for item in result['original_window_pointer_events']):
         raise ValueError('Menu navigation needs original-window pointer input as well as visual confirmation')
+    if verified_frame in ('mission-ready-screen','world-screen') and not result.get('original_map_i3d_load_reported'):
+        raise ValueError('Mission readiness needs the original map load record as well as visual confirmation')
     result.update(original_frame_rendered=True,visually_verified_content=verified_frame)
     if verified_frame=='loading-screen':
         result['scope']='Original GE6 loading screen rendered on Linux; native shader/texture/draw/swap path, not a playable game'
@@ -113,6 +115,11 @@ def confirm_visual(result,verified_frame):
                       scope='Original GE6 '+verified_frame+' reached on Linux; completed 3D world loading and playable simulation remain unverified')
         if verified_frame=='mission-loading-screen':
             result['original_mission_loading_screen_verified']=True
+        if verified_frame=='mission-ready-screen':
+            result['original_mission_ready_screen_verified']=True
+        if verified_frame=='world-screen':
+            result['original_world_frame_rendered']=True
+            result['scope']='Original GE6 3D world frame visually confirmed on Linux; interactive gameplay and simulation parity remain unverified'
 
 
 def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_file='ge6-native-screen.png'):
@@ -130,10 +137,10 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_f
     manifest=json.loads((directory/'staged-inputs.json').read_text())
     if manifest['x64/FarmingSimulator2015Game.exe']['sha256']!=LOCAL_IMAGE:
         raise ValueError('Staged original image differs')
-    if verified_frame:
-        confirm_visual(result,verified_frame)
     journal=(directory/'original-log.txt').read_bytes()
     result.update(journal_observations(journal))
+    if verified_frame:
+        confirm_visual(result,verified_frame)
     result['original_opengl_initialization_reported']=b'OpenGL initialization successful' in journal
     result['original_vehicle_types_loaded_reported']=b'Game vehicle types loaded' in journal
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
