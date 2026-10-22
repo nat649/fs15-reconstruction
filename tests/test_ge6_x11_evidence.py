@@ -25,6 +25,13 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_slow_swaps_remain_measured_progress_not_automatic_playability(self):
+        result=observations(LOG+'GE6_NATIVE_SWAP frame=30 draws=824 dc=0x30 context=0x40 caller=0x14000c267 duration_us=4340681\n')
+        self.assertEqual(result['original_buffer_swaps'][0]['frame'],30)
+        self.assertEqual(result['original_buffer_swaps'][0]['duration_us'],4340681)
+        self.assertFalse(result['menu_verified'])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_menu_needs_application_loop_not_only_loading_draws(self):
         calls='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\n'
         swap='GE6_NATIVE_SWAP frame=1 draws=2 dc=0x30 context=0x40 caller=0x14000922e\n'

@@ -53,11 +53,14 @@ def observations(text):
         if context==active['handle']:
             native_calls.append(dict(name=name,caller=caller,context=context))
     swaps=[]
-    for frame,draws,dc,context,caller in re.findall(r'GE6_NATIVE_SWAP frame=(\d+) draws=(\d+) dc=(0x[0-9a-f]+) context=(0x[0-9a-f]+) caller=(0x[0-9a-f]+)',text):
+    for frame,draws,dc,context,caller,duration in re.findall(r'GE6_NATIVE_SWAP frame=(\d+) draws=(\d+) dc=(0x[0-9a-f]+) context=(0x[0-9a-f]+) caller=(0x[0-9a-f]+)(?: duration_us=(\d+))?',text):
         if not 0x140000000<=int(caller,16)<0x140480000 or int(frame)<1:
             raise ValueError('Swap is outside original image or has invalid count')
         if dc==active['dc'] and context==active['handle']:
-            swaps.append(dict(frame=int(frame),draw_calls=int(draws),caller=caller))
+            item=dict(frame=int(frame),draw_calls=int(draws),caller=caller)
+            if duration:
+                item['duration_us']=int(duration)
+            swaps.append(item)
     pointer_events=[]
     for owner,message,keys,x,y,timestamp in re.findall(r'GE6_X11_MOUSE_EVENT hwnd=(0x[0-9a-f]+) message=(0x[0-9a-f]+) keys=(0x[0-9a-f]+) root_x=(-?\d+) root_y=(-?\d+) time=(\d+)',text):
         if owner==handle:

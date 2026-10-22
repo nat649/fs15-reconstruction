@@ -117,6 +117,8 @@ def main():
             (directory/'staged-inputs.json').write_text(json.dumps(manifest,indent=2)+'\n')
             code,_=command(client,'/usr/bin/busybox mkdir -p /profile')
         elif args.action=='run':
+            for name in ('boot.log','original-log.txt','ge6-native-screen.png','ge6-native-final-screen.png'):
+                (directory/name).unlink(missing_ok=True)
             upload(client,ROOT/'scripts/ge6_vm_run.py','/work/ge6_vm_run.py')
             upload(client,ROOT/'scripts/ge6_vm_pointer.py','/work/ge6_vm_pointer.py')
             display=shlex.quote(args.display)
