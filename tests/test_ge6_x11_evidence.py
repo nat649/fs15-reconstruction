@@ -25,6 +25,13 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_mesa_software_compiler_diagnostic_is_explicit_and_does_not_confirm_world(self):
+        self.assertFalse(observations(LOG)['mesa_llvm_optimization_disabled'])
+        result=observations(LOG.replace('ALSOFT_DRIVERS=null','ALSOFT_DRIVERS=null GALLIVM_PERF=nopt'))
+        self.assertTrue(result['mesa_llvm_optimization_disabled'])
+        self.assertFalse(result['original_frame_rendered'])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_focus_records_belong_to_the_original_window_and_do_not_prove_playability(self):
         result=observations(LOG+'GE6_X11_FOCUS hwnd=0x10 active=1 other=0x0 mode=0 detail=3\nGE6_X11_FOCUS hwnd=0x99 active=0 other=0x0 mode=0 detail=3\n')
         self.assertEqual(result['original_window_focus_events'],[dict(active=True,other_window='0x0',mode=0,detail=3)])

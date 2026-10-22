@@ -85,6 +85,7 @@ def observations(text):
                 original_main_window=dict(handle=handle,xid=xid,width=int(width),height=int(height),procedure=procedure,viewable=True),
                 original_main_window_gl_context=active,
                 x11_display=environment[1],
+                mesa_llvm_optimization_disabled='GALLIVM_PERF=nopt' in text[environment.start():].splitlines()[0],
                 original_gl_calls=native_calls,original_buffer_swaps=swaps,
                 original_window_pointer_events=pointer_events,
                 original_window_focus_events=focus_events,

@@ -76,6 +76,7 @@ def main():
     parser.add_argument('--exe',type=Path)
     parser.add_argument('--display',default=':98',help='Xorg dummy at 60 Hz; :99 selects the separate Xvfb zero-Hz diagnostic')
     parser.add_argument('--timeout',type=int,default=90,help='Bounded original-code run duration in seconds')
+    parser.add_argument('--mesa-no-opt',action='store_true',help='Diagnostic: use Mesa GALLIVM_PERF=nopt for faster software-shader compilation')
     parser.add_argument('--capture-name',default='ge6-native-observation.png')
     args=parser.parse_args();directory=args.directory
     if args.timeout<1 or Path(args.capture_name).name!=args.capture_name or not args.capture_name.endswith('.png'):
@@ -143,7 +144,8 @@ def main():
             upload(client,ROOT/'scripts/ge6_vm_run.py','/work/ge6_vm_run.py')
             upload(client,ROOT/'scripts/ge6_vm_pointer.py','/work/ge6_vm_pointer.py')
             display=shlex.quote(args.display)
-            code,_=command(client,f"cd /game && {{ uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; DISPLAY={display} xrandr --current; }} > /work/boot.log; rm -f /work/ge6-native-screen.png /work/ge6-native-final-screen.png; cd /game && DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/python3 /work/ge6_vm_run.py --timeout {args.timeout} /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; tail -35 /work/boot.log; cat /profile/log.txt",timeout=args.timeout+60)
+            mesa=' GALLIVM_PERF=nopt' if args.mesa_no_opt else ''
+            code,_=command(client,f"cd /game && {{ uname -a; sha256sum /work/FS15GE6LinuxBoot /profile/game.xml; echo GE6_GRAPHICS_ENV=X11 DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null{mesa}; DISPLAY={display} xrandr --current; }} > /work/boot.log; rm -f /work/ge6-native-screen.png /work/ge6-native-final-screen.png; cd /game && DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null{mesa} GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/python3 /work/ge6_vm_run.py --timeout {args.timeout} /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; tail -35 /work/boot.log; cat /profile/log.txt",timeout=args.timeout+60)
             with client.open_sftp() as sftp:
                 sftp.get('/work/boot.log',str(directory/'boot.log'))
                 try:
