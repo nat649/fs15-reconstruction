@@ -46,11 +46,14 @@ def observations(text):
         raise ValueError('Probe contexts do not establish a main-window context')
     blocked=re.search(r'GE6_BLOCKED_IMPORT ([^!\s]+)!([^\s]+) caller=(0x[0-9a-f]+) os_calls=(\d+)',text)
     bounded=re.search(r'GE6_GRAPHICS_BOUNDED_TIMEOUT seconds=(\d+) elapsed=([\d.]+)',text)
+    operator=re.search(r'GE6_GRAPHICS_OPERATOR_STOP pid=(\d+) monotonic=([\d.]+) reason=(world-frame-observed|diagnostic-complete)\b',text)
     boundary=None
     if blocked and 'GE6_GRAPHICS_RESULT=78' in text:
         boundary=dict(library=blocked[1],symbol=blocked[2],caller=blocked[3],os_calls=int(blocked[4]))
     elif not blocked and bounded and 'GE6_GRAPHICS_RESULT=143' in text and int(bounded[1])>=1 and float(bounded[2])>=int(bounded[1]):
         boundary=dict(kind='controlled-test-timeout',seconds=int(bounded[1]),elapsed_seconds=float(bounded[2]),startup_completion_verified=False)
+    elif not blocked and operator and int(operator[1])>0 and float(operator[2])>0 and 'GE6_GRAPHICS_RESULT=143' in text:
+        boundary=dict(kind='explicit-operator-stop',pid=int(operator[1]),monotonic_seconds=float(operator[2]),reason=operator[3],startup_completion_verified=False)
     mapped=re.search(r'GE6_IMAGE_MAPPED base=0x140000000 entry=0x1403fc96c supported_imports=(\d+) blocked_imports=(\d+)',text)
     kernel=re.search(r'^Linux .+$',text,re.MULTILINE)
     capture=re.search(r'GE6_X11_CAPTURE_SAVED width=(\d+) height=(\d+) path=\S+',text)
@@ -146,7 +149,7 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_f
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
     sources=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'src/ge6_linux'],cwd=ROOT,text=True).splitlines()
     sources+=['tests/check_ge6_x11.cpp','.github/workflows/ge6-linux-native-boot.yml']
-    evidence_tools=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/ge6_xorg_dummy.conf','scripts/ge6_vm_run.py','scripts/ge6_vm_pointer.py','scripts/verify_ge6_x11_boot.py','tests/test_ge6_x11_evidence.py']
+    evidence_tools=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/ge6_xorg_dummy.conf','scripts/ge6_vm_run.py','scripts/ge6_vm_pointer.py','scripts/ge6_vm_loading_probe.py','scripts/ge6_vm_end_run.py','scripts/ge6_vm_window_capture.py','scripts/verify_ge6_x11_boot.py','tests/test_ge6_x11_evidence.py']
     evidence_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     if subprocess.run(['git','diff','--quiet',evidence_commit,'--',*evidence_tools],cwd=ROOT).returncode:
         raise ValueError('Commit the evidence tools before publishing a source-pinned report')

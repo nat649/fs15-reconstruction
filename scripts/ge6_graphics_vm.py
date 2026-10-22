@@ -64,7 +64,7 @@ def upload(client, source, target, sftp=None):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=('start','status','compile','deploy','stage','run','capture','exec','stop'))
+    parser.add_argument('action',choices=('start','status','compile','deploy','stage','run','capture','exec','end-run','stop'))
     parser.add_argument('--directory',type=Path,default=ROOT/'build/ge6-graphics-vm')
     parser.add_argument('--port',type=int,default=22222)
     parser.add_argument('--qemu',type=Path)
@@ -77,6 +77,7 @@ def main():
     parser.add_argument('--display',default=':98',help='Xorg dummy at 60 Hz; :99 selects the separate Xvfb zero-Hz diagnostic')
     parser.add_argument('--timeout',type=int,default=90,help='Bounded original-code run duration in seconds')
     parser.add_argument('--mesa-no-opt',action='store_true',help='Diagnostic: use Mesa GALLIVM_PERF=nopt for faster software-shader compilation')
+    parser.add_argument('--stop-reason',choices=('world-frame-observed','diagnostic-complete'))
     parser.add_argument('--capture-name',default='ge6-native-observation.png')
     args=parser.parse_args();directory=args.directory
     if args.timeout<1 or Path(args.capture_name).name!=args.capture_name or not args.capture_name.endswith('.png'):
@@ -160,6 +161,12 @@ def main():
                     sftp.get('/profile/log.txt',str(directory/'original-log.txt'))
                 except OSError:
                     pass
+        elif args.action=='end-run':
+            if not args.stop_reason:
+                parser.error('end-run requires --stop-reason')
+            for name in ('ge6_vm_end_run.py','ge6_vm_loading_probe.py'):
+                upload(client,ROOT/'scripts'/name,'/work/'+name)
+            code,_=command(client,f'python3 /work/ge6_vm_end_run.py --display {shlex.quote(args.display)} --reason {shlex.quote(args.stop_reason)}')
         elif args.action=='capture':
             output='/work/'+args.capture_name;display=shlex.quote(args.display)
             code,log=command(client,f'DISPLAY={display} xwininfo -root -tree; DISPLAY={display} /work/FS15GE6X11Snapshot {shlex.quote(output)}')

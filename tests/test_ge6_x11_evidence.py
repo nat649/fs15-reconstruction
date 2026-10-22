@@ -25,6 +25,15 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_early_stop_needs_explicit_operator_record_and_does_not_prove_world(self):
+        base=LOG.replace('GE6_BLOCKED_IMPORT GDI32.dll!GetDeviceGammaRamp caller=0x140382f02 os_calls=2000\n','').replace('GE6_GRAPHICS_RESULT=78','GE6_GRAPHICS_RESULT=143')
+        for text in (base,base+'GE6_GRAPHICS_OPERATOR_STOP pid=0 monotonic=123.5 reason=world-frame-observed\n',base+'GE6_GRAPHICS_OPERATOR_STOP pid=123 monotonic=123.5 reason=unexpected\n'):
+            with self.assertRaises(ValueError):observations(text)
+        result=observations(base+'GE6_GRAPHICS_OPERATOR_STOP pid=123 monotonic=123.5 reason=world-frame-observed\n')
+        self.assertEqual(result['stopped_at']['kind'],'explicit-operator-stop')
+        self.assertFalse(result['original_frame_rendered'])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_ready_or_world_visual_gate_needs_map_records_and_keeps_playability_unconfirmed(self):
         drawing='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\nGE6_NATIVE_SWAP frame=30 draws=200 dc=0x30 context=0x40 caller=0x14000c267\n'
         pointer='GE6_X11_MOUSE_EVENT hwnd=0x10 message=0x201 keys=0x1 root_x=640 root_y=360 time=1234\n'
