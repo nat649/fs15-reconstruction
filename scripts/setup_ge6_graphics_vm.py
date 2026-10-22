@@ -23,7 +23,7 @@ from check_ge6_linux_vm import archive_entries
 ROOTS = ('g++', 'make', 'libssl-dev', 'libpng-dev', 'libx11-dev', 'libxrandr-dev',
          'libxcursor-dev', 'libxi-dev', 'libgl-dev', 'libgl1-mesa-dri', 'libglx-mesa0',
          'xvfb', 'xserver-xorg-core', 'xserver-xorg-video-dummy',
-         'xauth', 'x11-utils', 'x11-xserver-utils', 'xfonts-base',
+         'xauth', 'x11-utils', 'x11-xserver-utils', 'xfonts-base', 'libxtst6',
          'openssh-server', 'python3', 'libpython3-stdlib', 'libatomic1')
 BASE = 'https://archive.ubuntu.com/ubuntu/'
 

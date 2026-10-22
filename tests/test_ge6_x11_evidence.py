@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from verify_ge6_x11_boot import observations
+from verify_ge6_x11_boot import observations,confirm_visual
 
 LOG='''Linux fixture 6.0 x86_64 Linux
 GE6_GRAPHICS_ENV=X11 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null
@@ -25,6 +25,31 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_menu_needs_application_loop_not_only_loading_draws(self):
+        calls='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\n'
+        swap='GE6_NATIVE_SWAP frame=1 draws=2 dc=0x30 context=0x40 caller=0x14000922e\n'
+        result=observations(LOG+calls+swap)
+        confirm_visual(result,'loading-screen')
+        with self.assertRaisesRegex(ValueError,'application-loop'):
+            confirm_visual(result,'main-menu')
+        result=observations(LOG+calls+swap.replace('0x14000922e','0x14000c267'))
+        confirm_visual(result,'main-menu')
+        self.assertTrue(result['menu_verified'])
+        self.assertFalse(result['menu_interaction_verified'])
+        self.assertFalse(result['playable_game_verified'])
+
+    def test_career_navigation_needs_pointer_input_and_visual_confirmation(self):
+        calls='GE6_NATIVE_GL_CALL name=glDrawArrays caller=0x14006560d context=0x40\nGE6_NATIVE_SWAP frame=10 draws=32 dc=0x30 context=0x40 caller=0x14000c267\n'
+        pointer='GE6_X11_MOUSE_EVENT hwnd=0x10 message=0x201 keys=0x1 root_x=300 root_y=280 time=1234\n'
+        for extra in ('',pointer.replace('hwnd=0x10','hwnd=0x99')):
+            with self.assertRaisesRegex(ValueError,'pointer input'):
+                confirm_visual(observations(LOG+calls+extra),'career-screen')
+        result=observations(LOG+calls+pointer)
+        self.assertFalse(result['menu_verified'])
+        confirm_visual(result,'career-screen')
+        self.assertTrue(result['menu_interaction_verified'])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_explicit_x11_display_is_recorded(self):
         self.assertEqual(observations(LOG.replace('DISPLAY=:99','DISPLAY=:98'))['x11_display'],':98')
 

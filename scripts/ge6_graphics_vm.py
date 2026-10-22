@@ -1,7 +1,7 @@
 """Control the private, loopback-only GE6 Linux graphics VM.
 
 No private payload is uploaded to GitHub. SSH host identity is pinned to the
-local setup-generated key. The VM uses official Ubuntu tools and Xvfb.
+local setup-generated key. The VM uses official Ubuntu tools and X11 servers.
 """
 import argparse
 import base64
@@ -60,7 +60,11 @@ def main():
     parser.add_argument('--command')
     parser.add_argument('--exe',type=Path)
     parser.add_argument('--display',default=':98',help='Xorg dummy at 60 Hz; :99 selects the separate Xvfb zero-Hz diagnostic')
+    parser.add_argument('--timeout',type=int,default=90,help='Bounded original-code run duration in seconds')
+    parser.add_argument('--capture-name',default='ge6-native-observation.png')
     args=parser.parse_args();directory=args.directory
+    if args.timeout<1 or Path(args.capture_name).name!=args.capture_name or not args.capture_name.endswith('.png'):
+        parser.error('Timeout must be positive and capture name must be a PNG basename')
     if args.action=='start':
         if not args.qemu:
             parser.error('start requires --qemu')
@@ -114,8 +118,9 @@ def main():
             code,_=command(client,'/usr/bin/busybox mkdir -p /profile')
         elif args.action=='run':
             upload(client,ROOT/'scripts/ge6_vm_run.py','/work/ge6_vm_run.py')
+            upload(client,ROOT/'scripts/ge6_vm_pointer.py','/work/ge6_vm_pointer.py')
             display=shlex.quote(args.display)
-            code,_=command(client,f"cd /game && {{ uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; DISPLAY={display} xrandr --current; }} > /work/boot.log; rm -f /work/ge6-native-screen.png /work/ge6-native-final-screen.png; cd /game && DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/python3 /work/ge6_vm_run.py --timeout 90 /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; tail -35 /work/boot.log; cat /profile/log.txt",timeout=150)
+            code,_=command(client,f"cd /game && {{ uname -a; sha256sum /work/FS15GE6LinuxBoot; echo GE6_GRAPHICS_ENV=X11 DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null; DISPLAY={display} xrandr --current; }} > /work/boot.log; rm -f /work/ge6-native-screen.png /work/ge6-native-final-screen.png; cd /game && DISPLAY={display} LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null GE6_X11_CAPTURE=/work/ge6-native-screen.png /usr/bin/python3 /work/ge6_vm_run.py --timeout {args.timeout} /work/FS15GE6LinuxBoot --image /game/x64/FarmingSimulator2015Game.exe --command-line 'FarmingSimulator2015Game.exe -profile Z:/profile' >> /work/boot.log 2>&1; tail -35 /work/boot.log; cat /profile/log.txt",timeout=args.timeout+60)
             with client.open_sftp() as sftp:
                 sftp.get('/work/boot.log',str(directory/'boot.log'))
                 try:
@@ -131,9 +136,11 @@ def main():
                 except OSError:
                     pass
         elif args.action=='capture':
-            code,_=command(client,'DISPLAY=:99 xwininfo -root -tree; DISPLAY=:99 xwd -root -silent -out /work/screen.xwd')
+            output='/work/'+args.capture_name;display=shlex.quote(args.display)
+            code,log=command(client,f'DISPLAY={display} xwininfo -root -tree; DISPLAY={display} /work/FS15GE6X11Snapshot {shlex.quote(output)}')
             with client.open_sftp() as sftp:
-                sftp.get('/work/screen.xwd',str(directory/'screen.xwd'))
+                sftp.get(output,str(directory/args.capture_name))
+            (directory/(args.capture_name+'.log')).write_text(log)
         elif args.action=='exec':
             if not args.command:
                 parser.error('exec requires --command')
