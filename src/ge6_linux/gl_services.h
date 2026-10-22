@@ -28,7 +28,14 @@ inline GE6_GL_MS int make_current(uintptr_t dc,uintptr_t context){trace("wglMake
 inline GE6_GL_MS int remove(uintptr_t context){trace("wglDeleteContext");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=contexts.find(context);if(found==contexts.end()||context==current){set_error(6);return 0;}glXDestroyContext(display,found->second.native);contexts.erase(found);return 1;}
 inline GE6_GL_MS int share(uintptr_t,uintptr_t){trace("wglShareLists");set_error(50);return 0;} // GLX sharing must be selected at creation; no unsupported sharing success.
 inline GE6_GL_MS const char* extensions(uintptr_t){trace("wglGetExtensionsStringARB");return "";} // No WGL extension adapter is advertised yet.
-inline GE6_GL_MS int swap(uintptr_t dc){trace("SwapBuffers");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(dc);if(found==dcs.end()||!current){set_error(6);return 0;}glXSwapBuffers(display,found->second.drawable);auto frame=++swapped_frames;auto draws=draw_calls.load();if(frame<=3||frame%300==0)std::fprintf(stderr,"GE6_NATIVE_SWAP frame=%lu draws=%lu dc=0x%lx context=0x%lx caller=0x%lx\n",frame,draws,dc,current,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));if(frame==1||(draws&&!captured_draw.exchange(true)))ge6_windows::capture_on_stop();return 1;}
+inline GE6_GL_MS int swap(uintptr_t dc){
+    trace("SwapBuffers");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(dc);if(found==dcs.end()||!current){set_error(6);return 0;}
+    timespec before{},after{};clock_gettime(CLOCK_MONOTONIC,&before);glXSwapBuffers(display,found->second.drawable);clock_gettime(CLOCK_MONOTONIC,&after);
+    auto frame=++swapped_frames;auto draws=draw_calls.load();auto elapsed=(int64_t(after.tv_sec)-int64_t(before.tv_sec))*1000000+(int64_t(after.tv_nsec)-int64_t(before.tv_nsec))/1000;
+    if(frame<=10||frame%30==0)std::fprintf(stderr,"GE6_NATIVE_SWAP frame=%lu draws=%lu dc=0x%lx context=0x%lx caller=0x%lx duration_us=%ld\n",frame,draws,dc,current,reinterpret_cast<uintptr_t>(__builtin_return_address(0)),long(elapsed));
+    if(frame==1||(draws&&!captured_draw.exchange(true))){ge6_windows::capture_on_stop();}
+    return 1;
+}
 inline uintptr_t resolve(const std::string&,const std::string&);
 inline GE6_GL_MS uintptr_t procedure(const char* name){trace("wglGetProcAddress");auto address=name?resolve("OPENGL32.dll",name):0;if(!address&&name)std::fprintf(stderr,"GE6_GL_PROC_UNAVAILABLE name=%s caller=0x%lx\n",name,reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return address;}
 template<auto Function>struct Bridge;

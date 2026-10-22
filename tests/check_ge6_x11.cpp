@@ -74,6 +74,26 @@ int main(){try{
     require(ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==10&&damage.top==20&&damage.right==50&&damage.bottom==50,"Actual X11 damaged rectangle differs");
     ge6_windows::Rect partial{10,20,30,50};require(ge6_windows::validate_rect(hwnd,&partial)&&ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==30&&damage.right==50,"Partial validation discarded unpainted area");
     require(ge6_windows::validate_rect(hwnd,nullptr)&&!ge6_windows::update_rect(hwnd,nullptr,0)&&!ge6_windows::update_rect(0,&damage,0)&&error==1400,"Update rectangle lifetime/invalid handle differs");
+    auto pointer_event=[&](int type,unsigned button,unsigned state,int x,int y,bool expected=true){
+        XEvent event{};auto xid=ge6_windows::windows.at(hwnd).xid;
+        if(type==MotionNotify){event.xmotion.type=type;event.xmotion.display=display;event.xmotion.window=xid;event.xmotion.root=DefaultRootWindow(display);event.xmotion.x=x;event.xmotion.y=y;event.xmotion.x_root=x+40;event.xmotion.y_root=y+40;event.xmotion.state=state;event.xmotion.time=1234;event.xmotion.same_screen=True;}
+        else{event.xbutton.type=type;event.xbutton.display=display;event.xbutton.window=xid;event.xbutton.root=DefaultRootWindow(display);event.xbutton.x=x;event.xbutton.y=y;event.xbutton.x_root=x+40;event.xbutton.y_root=y+40;event.xbutton.state=state;event.xbutton.button=button;event.xbutton.time=1234;event.xbutton.same_screen=True;}
+        auto mask=type==MotionNotify?PointerMotionMask:(type==ButtonPress?ButtonPressMask:ButtonReleaseMask);
+        require(XSendEvent(display,xid,False,mask,&event),"Cannot deliver authored pointer event through actual X server");XSync(display,False);
+        ge6_windows::Message result{};require(bool(ge6_windows::peek(&result,hwnd,0x200,0x20e,1))==expected,"Pointer event lost or ignored wheel release queued");return result;
+    };
+    auto motion=pointer_event(MotionNotify,0,ShiftMask|Button1Mask,-4,17);require(motion.message==0x200&&motion.wparam==5&&int16_t(motion.lparam&65535)==-4&&int16_t((uintptr_t(motion.lparam)>>16)&65535)==17&&motion.point.x==36&&motion.point.y==57&&motion.time==1234,"Motion client/root coordinates, modifier or timestamp differs");
+    auto press=pointer_event(ButtonPress,1,ShiftMask|ControlMask,10,20);require(press.message==0x201&&press.wparam==13,"Left press did not include post-transition button/modifier state");
+    auto release=pointer_event(ButtonRelease,1,Button1Mask|ControlMask,10,20);require(release.message==0x202&&release.wparam==8,"Left release retained released button");
+    auto middle=pointer_event(ButtonPress,2,0,10,20);require(middle.message==0x207&&middle.wparam==16,"Middle button mapping differs");
+    auto right=pointer_event(ButtonRelease,3,Button2Mask|Button3Mask,10,20);require(right.message==0x205&&right.wparam==16,"Right release/middle held mapping differs");
+    auto extra=pointer_event(ButtonPress,8,Button1Mask,10,20);require(extra.message==0x20b&&extra.wparam==0x10021,"X1 button ID/state differs");
+    motion=pointer_event(MotionNotify,0,Button1Mask,11,21);require(motion.wparam==0x21,"Held extra button lost on subsequent motion");
+    extra=pointer_event(ButtonRelease,8,Button1Mask,10,20);require(extra.message==0x20c&&extra.wparam==0x10001,"X1 release retained extra button");
+    auto wheel=pointer_event(ButtonPress,5,ControlMask|Button1Mask,-5,8);require(wheel.message==0x20a&&int16_t(wheel.wparam>>16)==-120&&(wheel.wparam&65535)==9&&int16_t(wheel.lparam&65535)==35&&int16_t((uintptr_t(wheel.lparam)>>16)&65535)==48,"Wheel delta, held state or screen coordinates differ");
+    pointer_event(ButtonRelease,5,0,10,20,false);
+    wheel=pointer_event(ButtonPress,7,0,10,20);require(wheel.message==0x20e&&int16_t(wheel.wparam>>16)==120,"Horizontal wheel direction differs");
+    pointer_event(ButtonPress,10,0,10,20,false);
     require(ge6_gl::make_current(0,0)&&ge6_gl::remove(context)&&ge6_windows::release_dc(hwnd,dc)&&ge6_windows::destroy(hwnd)&&ge6_classes::remove(klass.name,klass.instance),"Resource cleanup failed");
     require(ge6_windows::windows.empty()&&ge6_gl::contexts.empty(),"Native host resources leaked");
     std::puts("Authored X11/RandR/window/MS-ABI/GLX actual pixel and lifetime fixture passed; no game result claimed");return 0;

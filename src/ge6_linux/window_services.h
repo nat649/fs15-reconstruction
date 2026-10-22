@@ -46,7 +46,7 @@ struct Rect {int32_t left,top,right,bottom;};
 struct Point {int32_t x,y;};
 struct Message {uintptr_t window;uint32_t message,pad;uintptr_t wparam;intptr_t lparam;uint32_t time;Point point;uint32_t pad2;};
 static_assert(sizeof(Message)==48);
-struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;std::map<unsigned,std::pair<uintptr_t,std::shared_ptr<ge6_images::Icon>>> icons;std::vector<Rect> damaged;};
+struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;std::map<unsigned,std::pair<uintptr_t,std::shared_ptr<ge6_images::Icon>>> icons;std::vector<Rect> damaged;uint32_t mouse_buttons=0;};
 inline std::map<uintptr_t,WindowData> windows;
 inline std::deque<Message> messages;
 inline uintptr_t foreground=0;
@@ -82,7 +82,7 @@ inline GE6_WIN_MS uintptr_t create(uint32_t extended,const uint16_t* raw_class,c
     XSelectInput(display,xid,StructureNotifyMask|ExposureMask|FocusChangeMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask);
     auto title_text=wide(title);auto name=ge6_fs::utf8(reinterpret_cast<const uint16_t*>(title_text.data()),title_text.size());XStoreName(display,xid,name.c_str());
     auto protocol=XInternAtom(display,"WM_DELETE_WINDOW",False);XSetWMProtocols(display,xid,&protocol,1);
-    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{},{},{}});
+    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{},{},{},0});
     Create info{parameter,instance,menu,parent,height,width,y,x,style,0,title,raw_class,extended,0};
     auto proc=klass->value.procedure;
     if(!proc(handle,0x81,0,reinterpret_cast<intptr_t>(&info))||proc(handle,1,0,reinterpret_cast<intptr_t>(&info))==-1){XDestroyWindow(display,xid);windows.erase(handle);--klass->windows;return 0;}
@@ -104,10 +104,32 @@ inline GE6_WIN_MS int window_rect(uintptr_t handle,Rect* rect){trace("GetWindowR
 inline GE6_WIN_MS int to_screen(uintptr_t handle,Point* point){trace("ClientToScreen");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data||!point)return 0;Window child=0;int x=0,y=0;if(!XTranslateCoordinates(display,data->xid,DefaultRootWindow(display),point->x,point->y,&x,&y,&child))return 0;*point={x,y};return 1;}
 inline GE6_WIN_MS uintptr_t get_dc(uintptr_t handle){trace("GetDC");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;Window drawable=DefaultRootWindow(display);int width=DisplayWidth(display,0),height=DisplayHeight(display,0);if(handle){auto* data=window(handle);if(!data)return 0;drawable=data->xid;width=data->width;height=data->height;}auto gc=XCreateGC(display,drawable,0,nullptr);if(!gc)return 0;auto token=next++;dcs.emplace(token,DC{drawable,gc,width,height,DisplayWidthMM(display,0),DisplayHeightMM(display,0),handle});std::fprintf(stderr,"GE6_X11_DC window=0x%lx dc=0x%lx drawable=0x%lx\n",handle,token,drawable);return token;}
 inline GE6_WIN_MS int release_dc(uintptr_t handle,uintptr_t dc){trace("ReleaseDC");std::lock_guard<std::recursive_mutex> lock(mutex);auto found=dcs.find(dc);if(found==dcs.end()||found->second.window!=handle)return 0;return delete_dc(dc);}
+inline intptr_t mouse_position(int x,int y){return intptr_t(int32_t(uint32_t(uint16_t(x))|(uint32_t(uint16_t(y))<<16)));}
+inline uint32_t mouse_keys(unsigned state,uint32_t extras){return ((state&Button1Mask)?1u:0u)|((state&Button3Mask)?2u:0u)|((state&ShiftMask)?4u:0u)|((state&ControlMask)?8u:0u)|((state&Button2Mask)?16u:0u)|(extras&0x60u);}
+inline uint32_t mouse_event_count=0;
+inline bool mouse_message(uintptr_t handle,WindowData& data,const XEvent& event,Message& result){
+    if(event.type!=MotionNotify&&event.type!=ButtonPress&&event.type!=ButtonRelease)return false;
+    result={};result.window=handle;
+    if(event.type==MotionNotify){result.message=0x200;result.wparam=mouse_keys(event.xmotion.state,data.mouse_buttons);result.lparam=mouse_position(event.xmotion.x,event.xmotion.y);result.point={event.xmotion.x_root,event.xmotion.y_root};result.time=uint32_t(event.xmotion.time);}
+    else{
+        const auto& button=event.xbutton;bool pressed=event.type==ButtonPress;
+        auto keys=mouse_keys(button.state,data.mouse_buttons);result.point={button.x_root,button.y_root};result.time=uint32_t(button.time);
+        if(button.button>=4&&button.button<=7){if(!pressed)return false;bool horizontal=button.button>=6;int delta=(button.button==4||button.button==7)?120:-120;result.message=horizontal?0x20e:0x20a;result.wparam=keys|(uintptr_t(uint16_t(delta))<<16);result.lparam=mouse_position(button.x_root,button.y_root);}
+        else{
+            uint32_t bit=0;switch(button.button){case 1:bit=1;result.message=pressed?0x201:0x202;break;case 2:bit=16;result.message=pressed?0x207:0x208;break;case 3:bit=2;result.message=pressed?0x204:0x205;break;case 8:case 9:bit=button.button==8?32:64;result.message=pressed?0x20b:0x20c;break;default:return false;}
+            keys=pressed?(keys|bit):(keys&~bit);result.wparam=keys;if(button.button>=8)result.wparam|=uintptr_t(button.button==8?1:2)<<16;
+            result.lparam=mouse_position(button.x,button.y);
+        }
+        data.mouse_buttons=uint32_t(result.wparam)&0x73u;
+    }
+    if(++mouse_event_count<=64)std::fprintf(stderr,"GE6_X11_MOUSE_EVENT hwnd=0x%lx message=0x%x keys=0x%lx root_x=%d root_y=%d time=%u\n",handle,result.message,result.wparam,result.point.x,result.point.y,result.time);
+    return true;
+}
 inline void events(){
     if(!display)return;
     while(XPending(display)){XEvent event{};XNextEvent(display,&event);uintptr_t handle=0;for(auto& item:windows)if(item.second.xid==event.xany.window){handle=item.first;break;}if(!handle)continue;
         auto& data=windows.at(handle);uint32_t type=0;uintptr_t wp=0;intptr_t lp=0;
+        Message mouse{};if(mouse_message(handle,data,event,mouse)){messages.push_back(mouse);continue;}
         switch(event.type){case Expose:data.damaged.push_back({event.xexpose.x,event.xexpose.y,event.xexpose.x+event.xexpose.width,event.xexpose.y+event.xexpose.height});type=15;break;case ConfigureNotify:data.x=event.xconfigure.x;data.y=event.xconfigure.y;data.width=event.xconfigure.width;data.height=event.xconfigure.height;type=5;lp=intptr_t((uint32_t(data.height)<<16)|(uint32_t(data.width)&65535));break;case MapNotify:data.style|=0x10000000;type=24;wp=1;break;case UnmapNotify:data.style&=~0x10000000u;type=24;break;case FocusIn:foreground=handle;type=7;break;case FocusOut:if(foreground==handle)foreground=0;type=8;break;case ClientMessage:if(Atom(event.xclient.data.l[0])==XInternAtom(display,"WM_DELETE_WINDOW",False))type=16;break;default:break;}
         if(type)messages.push_back(Message{handle,type,0,wp,lp,milliseconds(),{0,0},0});
     }
