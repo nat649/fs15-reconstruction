@@ -94,6 +94,17 @@ int main(){try{
     pointer_event(ButtonRelease,5,0,10,20,false);
     wheel=pointer_event(ButtonPress,7,0,10,20);require(wheel.message==0x20e&&int16_t(wheel.wparam>>16)==120,"Horizontal wheel direction differs");
     pointer_event(ButtonPress,10,0,10,20,false);
+    ge6_windows::MouseTracking tracking{24,2,hwnd,0xffffffffu,0};
+    XWarpPointer(display,0,ge6_windows::windows.at(hwnd).xid,0,0,0,0,20,20);XSync(display,False);
+    require(ge6_windows::track_mouse(&tracking)&&ge6_windows::windows.at(hwnd).mouse_leave,"Real inside pointer did not arm leave tracking");
+    XWarpPointer(display,0,DefaultRootWindow(display),0,0,0,0,1000,650);XSync(display,False);
+    ge6_windows::Message leave{};require(ge6_windows::peek(&leave,hwnd,0x2a3,0x2a3,1)&&leave.wparam==0&&leave.lparam==0&&!ge6_windows::windows.at(hwnd).mouse_leave,"Actual X11 leave did not produce one-shot WM_MOUSELEAVE");
+    require(!ge6_windows::peek(&leave,hwnd,0x2a3,0x2a3,1),"Leave tracking generated duplicate leave messages");
+    require(ge6_windows::track_mouse(&tracking)&&ge6_windows::peek(&leave,hwnd,0x2a3,0x2a3,1),"Already-outside registration did not queue immediate leave");
+    XWarpPointer(display,0,ge6_windows::windows.at(hwnd).xid,0,0,0,0,20,20);XSync(display,False);require(ge6_windows::track_mouse(&tracking),"Cannot rearm client leave tracking");
+    tracking.flags=0x80000002u;require(ge6_windows::track_mouse(&tracking),"Cannot cancel client leave tracking");
+    XWarpPointer(display,0,DefaultRootWindow(display),0,0,0,0,1000,650);XSync(display,False);require(!ge6_windows::peek(&leave,hwnd,0x2a3,0x2a3,1),"Cancelled tracking still generated leave");
+    tracking.size=23;require(!ge6_windows::track_mouse(&tracking)&&error==87,"Invalid tracking ABI size accepted");tracking.size=24;tracking.flags=1;require(!ge6_windows::track_mouse(&tracking)&&error==50,"Unimplemented hover tracking reported success");tracking.flags=2;tracking.window=0;require(!ge6_windows::track_mouse(&tracking)&&error==1400,"Invalid tracked window accepted");
     require(ge6_gl::make_current(0,0)&&ge6_gl::remove(context)&&ge6_windows::release_dc(hwnd,dc)&&ge6_windows::destroy(hwnd)&&ge6_classes::remove(klass.name,klass.instance),"Resource cleanup failed");
     require(ge6_windows::windows.empty()&&ge6_gl::contexts.empty(),"Native host resources leaked");
     std::puts("Authored X11/RandR/window/MS-ABI/GLX actual pixel and lifetime fixture passed; no game result claimed");return 0;

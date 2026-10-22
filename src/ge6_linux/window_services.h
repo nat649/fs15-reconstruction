@@ -46,7 +46,7 @@ struct Rect {int32_t left,top,right,bottom;};
 struct Point {int32_t x,y;};
 struct Message {uintptr_t window;uint32_t message,pad;uintptr_t wparam;intptr_t lparam;uint32_t time;Point point;uint32_t pad2;};
 static_assert(sizeof(Message)==48);
-struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;std::map<unsigned,std::pair<uintptr_t,std::shared_ptr<ge6_images::Icon>>> icons;std::vector<Rect> damaged;uint32_t mouse_buttons=0;};
+struct WindowData {Window xid;std::shared_ptr<ge6_classes::Class> klass;ge6_classes::Procedure procedure;uint32_t style,extended;int x,y,width,height;uintptr_t instance,parent,user=0;bool message_only=false;std::map<std::u16string,uintptr_t> properties;std::map<unsigned,std::pair<uintptr_t,std::shared_ptr<ge6_images::Icon>>> icons;std::vector<Rect> damaged;uint32_t mouse_buttons=0;bool mouse_leave=false;};
 inline std::map<uintptr_t,WindowData> windows;
 inline std::deque<Message> messages;
 inline uintptr_t foreground=0;
@@ -79,10 +79,10 @@ inline GE6_WIN_MS uintptr_t create(uint32_t extended,const uint16_t* raw_class,c
     {std::lock_guard<std::mutex> guard(ge6_classes::mutex);klass=ge6_classes::find(instance,ge6_images::name(raw_class));if(!klass){set_error(1407);return 0;}++klass->windows;}
     bool message_only=parent==uintptr_t(-3);Window host_parent=DefaultRootWindow(display);if(parent&&!message_only){auto* data=window(parent);if(!data){--klass->windows;return 0;}host_parent=data->xid;}
     auto xid=XCreateSimpleWindow(display,host_parent,x,y,unsigned(std::max(1,width)),unsigned(std::max(1,height)),0,0,0);if(!xid){--klass->windows;set_error(8);return 0;}
-    XSelectInput(display,xid,StructureNotifyMask|ExposureMask|FocusChangeMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask);
+    XSelectInput(display,xid,StructureNotifyMask|ExposureMask|FocusChangeMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|LeaveWindowMask);
     auto title_text=wide(title);auto name=ge6_fs::utf8(reinterpret_cast<const uint16_t*>(title_text.data()),title_text.size());XStoreName(display,xid,name.c_str());
     auto protocol=XInternAtom(display,"WM_DELETE_WINDOW",False);XSetWMProtocols(display,xid,&protocol,1);
-    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{},{},{},0});
+    auto handle=next++;windows.emplace(handle,WindowData{xid,klass,klass->value.procedure,style,extended,x,y,width,height,instance,parent,0,message_only,{},{},{},0,false});
     Create info{parameter,instance,menu,parent,height,width,y,x,style,0,title,raw_class,extended,0};
     auto proc=klass->value.procedure;
     if(!proc(handle,0x81,0,reinterpret_cast<intptr_t>(&info))||proc(handle,1,0,reinterpret_cast<intptr_t>(&info))==-1){XDestroyWindow(display,xid);windows.erase(handle);--klass->windows;return 0;}
@@ -130,9 +130,23 @@ inline void events(){
     while(XPending(display)){XEvent event{};XNextEvent(display,&event);uintptr_t handle=0;for(auto& item:windows)if(item.second.xid==event.xany.window){handle=item.first;break;}if(!handle)continue;
         auto& data=windows.at(handle);uint32_t type=0;uintptr_t wp=0;intptr_t lp=0;
         Message mouse{};if(mouse_message(handle,data,event,mouse)){messages.push_back(mouse);continue;}
+        if(event.type==LeaveNotify&&event.xcrossing.detail!=NotifyInferior&&data.mouse_leave){data.mouse_leave=false;messages.push_back(Message{handle,0x2a3,0,0,0,uint32_t(event.xcrossing.time),{event.xcrossing.x_root,event.xcrossing.y_root},0});continue;}
         switch(event.type){case Expose:data.damaged.push_back({event.xexpose.x,event.xexpose.y,event.xexpose.x+event.xexpose.width,event.xexpose.y+event.xexpose.height});type=15;break;case ConfigureNotify:data.x=event.xconfigure.x;data.y=event.xconfigure.y;data.width=event.xconfigure.width;data.height=event.xconfigure.height;type=5;lp=intptr_t((uint32_t(data.height)<<16)|(uint32_t(data.width)&65535));break;case MapNotify:data.style|=0x10000000;type=24;wp=1;break;case UnmapNotify:data.style&=~0x10000000u;type=24;break;case FocusIn:foreground=handle;type=7;break;case FocusOut:if(foreground==handle)foreground=0;type=8;break;case ClientMessage:if(Atom(event.xclient.data.l[0])==XInternAtom(display,"WM_DELETE_WINDOW",False))type=16;break;default:break;}
         if(type)messages.push_back(Message{handle,type,0,wp,lp,milliseconds(),{0,0},0});
     }
+}
+struct MouseTracking {uint32_t size,flags;uintptr_t window;uint32_t hover_time,pad;};
+static_assert(sizeof(MouseTracking)==24&&offsetof(MouseTracking,window)==8&&offsetof(MouseTracking,hover_time)==16);
+inline bool pointer_inside(const WindowData& owner){
+    XWindowAttributes attributes{};if(!XGetWindowAttributes(display,owner.xid,&attributes)||attributes.map_state!=IsViewable)return false;
+    Window target=DefaultRootWindow(display);for(unsigned depth=0;target&&depth<128;++depth){Window root=0,child=0;int root_x=0,root_y=0,x=0,y=0;unsigned state=0;if(!XQueryPointer(display,target,&root,&child,&root_x,&root_y,&x,&y,&state))return false;if(target==owner.xid)return x>=0&&y>=0&&x<attributes.width&&y<attributes.height;target=child;}return false;
+}
+inline GE6_WIN_MS int track_mouse(MouseTracking* request){
+    trace("TrackMouseEvent");std::lock_guard<std::recursive_mutex> lock(mutex);
+    if(!request||request->size!=24){set_error(87);return 0;}if(request->flags!=2&&request->flags!=0x80000002u){set_error(50);return 0;}
+    auto* data=window(request->window);if(!data)return 0;events();
+    if(request->flags&0x80000000u){data->mouse_leave=false;return 1;}
+    data->mouse_leave=pointer_inside(*data);if(!data->mouse_leave){Point point{};Window root=0,child=0;int x=0,y=0;unsigned state=0;XQueryPointer(display,DefaultRootWindow(display),&root,&child,&point.x,&point.y,&x,&y,&state);messages.push_back(Message{request->window,0x2a3,0,0,0,milliseconds(),point,0});}return 1;
 }
 inline GE6_WIN_MS int update_rect(uintptr_t handle,Rect* result,int erase){
     trace("GetUpdateRect");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;events();
@@ -186,6 +200,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("CallWindowProcW",call_proc);WINDOW_BIND("GetSystemMetrics",metrics);WINDOW_BIND("GetCursorPos",cursor_position);WINDOW_BIND("ScreenToClient",to_client);WINDOW_BIND("SetCursorPos",warp_cursor);WINDOW_BIND("GetForegroundWindow",focus);
     WINDOW_BIND("GetMenu",menu);
     WINDOW_BIND("GetUpdateRect",update_rect);WINDOW_BIND("ValidateRect",validate_rect);
+    WINDOW_BIND("TrackMouseEvent",track_mouse);
     WINDOW_BIND("SetCursor",set_cursor);WINDOW_BIND("ShowCursor",show_cursor);
     WINDOW_BIND("LoadIconA",load_icon_a);WINDOW_BIND("SendMessageA",send_a);
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);
