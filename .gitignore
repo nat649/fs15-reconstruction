@@ -14,6 +14,8 @@
 !/analysis/ge6-linux-x11-validation.json
 !/analysis/ge6-linux-menu-navigation.json
 !/analysis/ge6-linux-mission-loading.json
+!/analysis/ge6-linux-world-validation.json
+!/analysis/ge6-linux-loading-progress.json
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json
 !/analysis/rle8-reference.json

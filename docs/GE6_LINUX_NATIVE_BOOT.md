@@ -40,6 +40,109 @@ The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
 and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
 headless diagnostic with X11 disabled. Neither build includes original files.
 
+## First original world frame (2026-10-22)
+
+**The original GE6 now renders Bjornholm's 3D farm and player HUD on Linux.**
+The scene includes the original terrain/road, buildings, trees, vegetation,
+sky, minimap and interaction icon. The original mission loads its starting
+vehicle resources and player controller, finishes loading, accepts Start and
+shows its own new-career welcome/tutorial dialog. After dismissing that dialog,
+the original 3D view appears. Actual XTest mouse motion produces an observed
+change in camera orientation. Walking and vehicle operation are not yet tested.
+
+![Actual original GE6 world window, 320 x 180 diagnostic](screenshots/ge6-linux-native-world-2026-10-22.png)
+
+This is an **actual 320 x 180 window capture**, without rescaling or scene redraw.
+The [full X11 desktop capture](screenshots/ge6-linux-native-world-desktop-2026-10-22.png)
+shows its position in the 1280 x 720 virtual desktop. A separate
+[view before the mouse motion](screenshots/ge6-linux-native-world-before-mouse-2026-10-22.png)
+records the earlier camera orientation. The [world evidence](../analysis/ge6-linux-world-validation.json)
+pins the original-image/artifact hashes, compiled transport source, committed
+capture/control tools, original window/GL callers, private journal/resource
+hashes, driver diagnostic flag and final inspected desktop PNG.
+
+The diagnostic uses a temporary windowed 320 x 180 profile with MSAA off and
+Mesa llvmpipe's `GALLIVM_PERF=nopt`. Full-resolution software rendering was too
+slow to consume the original asynchronous loading work promptly under QEMU
+TCG; the default compiler also spent substantial time optimizing world shaders.
+The reduced profile and Mesa diagnostic allow this first visual result. The
+original 1280 x 720 profile was restored afterward. Original map transforms,
+geometry, materials, Lua scripts and the pinned instruction image were not
+replaced. **This is not a Windows-parity graphics or performance validation.**
+
+The run ends through the explicit `end-run --stop-reason world-frame-observed`
+controller action after its successful final capture. It sends SIGTERM through
+a PID-pinned Linux handle to the known diagnostic process; the journal records
+an operator stop rather than a timeout or native crash. This does not validate
+GE6's complete normal shutdown path.
+
+Keyboard message delivery, walking, vehicle controls, farming interactions,
+full-resolution desktop/GPU rendering, audible audio, saves and complete engine
+compatibility remain open. `playable_game_verified` stays false. No ReFarm,
+replacement scene renderer, Wine or Proton is linked to this runtime.
+
+## Original window activation (2026-10-22)
+
+The X11 host now activates the original top-level window when an activating
+`ShowWindow` request actually gives it X input focus. Real normal `FocusIn` and
+`FocusOut` transitions queue `WM_ACTIVATE` together with focus notifications;
+grabs and transitions into a child do not invent top-level activation changes.
+Nonactivating show requests preserve the X server's current focus.
+
+This reaches the original SDL activation handler at `0x14037cf00`, including
+its calls to `GetAsyncKeyState` and `GetClipboardSequenceNumber`. Native Career
+navigation then exposed `IsRectEmpty` at `0x1403832c5`; the host now binds the
+original 32-bit rectangle comparison without changing SDL or GUI instructions.
+
+The async mouse query reads actual physical left/middle/right button state
+from X11, reversing any logical pointer mapping. XTest fixtures press/release
+all three buttons and swap the real server mapping to verify physical-state
+semantics. Only observed press transitions contribute the optional history bit;
+held extra-button queries and clipboard access remain explicitly unavailable.
+The clipboard sequence returns zero, not an invented clipboard generation.
+See Microsoft's [async-state contract](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getasynckeystate)
+and [clipboard access contract](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclipboardsequencenumber).
+Keyboard message delivery, complete focus/capture semantics and clipboard data
+transport remain open.
+
+The native transport from source `60d7f708022fb184f18363c9c2dc42a779f304e3`
+is built and tested in [CI run 39803335708](https://github.com/nat649/fs15-reconstruction/actions/runs/39803335708).
+Its deployed Linux ELF has SHA-256
+`59ddfbbbc6e6daf3df430eb48da27b9eb26df48ad8e6354a078018fcb03a669b`.
+Activating the original window is a real missing OS behavior fixed here;
+this alone does not prove that mission loading or game simulation completes.
+
+## Measured asynchronous mission progress (2026-10-22)
+
+Read-only observations of the pinned original task queue show continued work,
+not a proven deadlock. At 1280 x 720, its current task index progresses from
+4 to 119 in 90 seconds while the producer builds more than 2,100 tasks.
+A separate diagnostic profile uses the original engine's windowed 320 x 180
+setting with MSAA disabled. This changes raster resolution only; original
+scripts, map transforms, geometry, materials and instruction image are retained.
+The original 1280 x 720 profile is preserved privately for restoration.
+
+In that diagnostic run the same map task group progresses through indices
+403, 915, 1831 and 2143 over 90 seconds. Subsequent pending groups drop from
+25 to 19, 10 and 3, and GE6's own journal reports the original player and starting
+vehicle I3Ds. The original loading GUI eventually displays **Start**.
+Clicking it loads the original `playerCCT.i3d` player controller. The default-Mesa
+900-second diagnostic run reached that sequence but ended
+while the main thread was inside LLVM shader optimization, before any visually
+confirmed world frame. `--mesa-no-opt` explicitly selects Mesa's own
+`GALLIVM_PERF=nopt` diagnostic option for a separate trial; the installed
+Mesa 25.2.8 library lists that flag and actual shader/texture/draw pixel fixtures
+also pass with it on the separate Xvfb test server. Original GLSL programs,
+engine instructions and resources are retained. This driver diagnostic may
+change performance and is not graphics-parity evidence.
+
+The later nopt trial reaches the original world frame documented above. A
+completed task index, loaded vehicle file or Start button alone remains
+insufficient to confirm world rendering or playable gameplay. The public
+[loading observations](../analysis/ge6-linux-loading-progress.json) distinguish
+these stages; `ge6_vm_loading_probe.py` reads counters without calling game
+functions or changing process memory.
+
 ## Original mission loading (2026-10-22)
 
 The original Career GUI now continues through **Start -> Easy -> Bjornholm -> Start**
@@ -92,12 +195,13 @@ unbound-import stop or resource error reported. It remains on the loading screen
 A diagnostic stack shows the original streaming worker waiting on its semaphore
 and the main thread inside an actual GLX swap; this does not establish the cause
 of the incomplete transition or prove a permanent deadlock. Completing the
-original asynchronous mission transition remains the next milestone.
+original asynchronous mission transition was the next milestone at this
+checkpoint; the later diagnostic above reaches the world frame.
 
 This establishes mission-loading entry and original-resource processing.
-**A completed 3D world, player control, vehicles and farming simulation remain
-unverified.** An original map preview or loading-screen illustration is not
-a rendered in-world scene.
+**Player control and vehicle/farming simulation remain unverified.** The later
+world frame is documented separately above. An original map preview or
+loading-screen illustration is not a rendered in-world scene.
 
 ## First original main menu (2026-10-22)
 
@@ -131,7 +235,7 @@ for the original window. Those flags do not mark a loaded map or playable game.
 
 Both pinned native/static and X11 CI jobs pass, including actual event delivery,
 pointer warps, graphics pixels and ABI/lifetime checks. The current Python suite
-contains 100 tests: 98 pass and two optional checks are skipped. Public CI uses
+contains 107 tests: 105 pass and two optional checks are skipped. Public CI uses
 authored fixtures and receives no original game files. The same tested native
 launcher still stops the unchanged reference image at its original Steam restart
 boundary (`0x14000c8b4`, 129 OS calls); the Linux loader adds no workaround there.
@@ -165,9 +269,9 @@ test controller's explicit time budget, rather than a native crash or a missing
 import. The original engine's full shutdown/CRT cleanup is still unverified.
 The runtime retains its existing Local GE6 Windows bootstrap modification; the
 Linux loader adds no instruction patches. The original GAR resources remain
-private and unchanged. Full engine/renderer parity, original 3D map loading,
-vehicle/farming simulation, persistent saves, audible audio and physical-GPU
-validation remain open.
+private and unchanged. Original map rendering is now observed in the separate
+low-resolution diagnostic above. Full engine/renderer parity, vehicle/farming
+simulation, persistent saves, audible audio and physical-GPU validation remain open.
 
 Reproduce after preparing the private VM and original inputs:
 

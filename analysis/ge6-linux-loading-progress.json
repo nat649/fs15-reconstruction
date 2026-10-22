@@ -1,0 +1,189 @@
+{
+  "scope": "Original GE6 scheduling observations and mission resource progress; no world-rendering or playability claim",
+  "native_transport_source_commit": "60d7f708022fb184f18363c9c2dc42a779f304e3",
+  "native_transport_ci": "https://github.com/nat649/fs15-reconstruction/actions/runs/39803335708",
+  "native_transport_elf_sha256": "59ddfbbbc6e6daf3df430eb48da27b9eb26df48ad8e6354a078018fcb03a669b",
+  "original_image_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+  "task_queue_address": "0x14162c330",
+  "sampling_changes_process_memory": false,
+  "observations": {
+    "1280x720-default-mesa": {
+      "samples": [
+        {
+          "monotonic_seconds": 154705.17,
+          "queued_records": 0,
+          "current_record": "0x55cdb4cce020",
+          "task_group": "0x7fee0c0013a0",
+          "task_count": 122,
+          "task_index": 4,
+          "ready_limit": 121,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 154735.181,
+          "queued_records": 0,
+          "current_record": "0x55cdb4cce020",
+          "task_group": "0x7fee0c0013a0",
+          "task_count": 2113,
+          "task_index": 47,
+          "ready_limit": 2109,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 154765.186,
+          "queued_records": 0,
+          "current_record": "0x55cdb4cce020",
+          "task_group": "0x7fee0c0013a0",
+          "task_count": 2117,
+          "task_index": 76,
+          "ready_limit": 2109,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 154795.192,
+          "queued_records": 0,
+          "current_record": "0x55cdb4cce020",
+          "task_group": "0x7fee0c0013a0",
+          "task_count": 2129,
+          "task_index": 119,
+          "ready_limit": 2129,
+          "producer_finished": false
+        }
+      ],
+      "private_observation_log_sha256": "593c4f108e166aa705e137911ed35bba56a739d8f40fa1f2bc0abeb050516543"
+    },
+    "320x180-default-mesa-map": {
+      "samples": [
+        {
+          "monotonic_seconds": 155255.599,
+          "queued_records": 0,
+          "current_record": "0x5610dce3db90",
+          "task_group": "0x7f8adc0013a0",
+          "task_count": 2115,
+          "task_index": 403,
+          "ready_limit": 2109,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 155285.605,
+          "queued_records": 0,
+          "current_record": "0x5610dce3db90",
+          "task_group": "0x7f8adc0013a0",
+          "task_count": 2117,
+          "task_index": 915,
+          "ready_limit": 2109,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 155315.61,
+          "queued_records": 0,
+          "current_record": "0x5610dce3db90",
+          "task_group": "0x7f8adc0013a0",
+          "task_count": 2130,
+          "task_index": 1831,
+          "ready_limit": 2129,
+          "producer_finished": false
+        },
+        {
+          "monotonic_seconds": 155345.614,
+          "queued_records": 0,
+          "current_record": "0x5610dce3db90",
+          "task_group": "0x7f8adc0013a0",
+          "task_count": 2143,
+          "task_index": 2143,
+          "ready_limit": 2143,
+          "producer_finished": false
+        }
+      ],
+      "private_observation_log_sha256": "d3b153c6cf0d85c13911c1f9822c6f5a79f42ecf1ff15f001e579fa13b4144a6"
+    },
+    "320x180-default-mesa-vehicles": {
+      "samples": [
+        {
+          "monotonic_seconds": 155500.097,
+          "queued_records": 25,
+          "current_record": "0x7f8adcc839f0",
+          "task_group": "0x7f8adc3e4330",
+          "task_count": 8,
+          "task_index": 4,
+          "ready_limit": 8,
+          "producer_finished": true
+        },
+        {
+          "monotonic_seconds": 155530.117,
+          "queued_records": 19,
+          "current_record": "0x7f8ac95fb920",
+          "task_group": "0x7f8adf418c80",
+          "task_count": 5,
+          "task_index": 3,
+          "ready_limit": 5,
+          "producer_finished": true
+        },
+        {
+          "monotonic_seconds": 155560.123,
+          "queued_records": 10,
+          "current_record": "0x7f8adf8fa8e0",
+          "task_group": "0x7f8adfec77d0",
+          "task_count": 33,
+          "task_index": 30,
+          "ready_limit": 33,
+          "producer_finished": true
+        },
+        {
+          "monotonic_seconds": 155590.13,
+          "queued_records": 3,
+          "current_record": "0x7f8acd5c28d0",
+          "task_group": "0x7f8acd703e80",
+          "task_count": 32,
+          "task_index": 7,
+          "ready_limit": 32,
+          "producer_finished": true
+        }
+      ],
+      "private_observation_log_sha256": "114382fab234541386005ab21f3b2ef3fe224299f7f62e9118f33687c34e3765"
+    },
+    "320x180-nopt-vehicles": {
+      "samples": [
+        {
+          "monotonic_seconds": 156344.158,
+          "pid": 8353,
+          "queued_records": 25,
+          "current_record": "0x7fdd709f92a0",
+          "task_group": "0x7fdd709f8480",
+          "task_count": 8,
+          "task_index": 4,
+          "ready_limit": 8,
+          "producer_finished": true
+        },
+        {
+          "monotonic_seconds": 156374.161,
+          "pid": 8353,
+          "queued_records": 25,
+          "current_record": "0x7fdd709f92a0",
+          "task_group": "0x7fdd709f8480",
+          "task_count": 8,
+          "task_index": 4,
+          "ready_limit": 8,
+          "producer_finished": true
+        },
+        {
+          "monotonic_seconds": 156404.165,
+          "pid": 8353,
+          "queued_records": 20,
+          "current_record": "0x7fdd7b57f9a0",
+          "task_group": "0x7fdd7b4dc570",
+          "task_count": 5,
+          "task_index": 3,
+          "ready_limit": 5,
+          "producer_finished": true
+        }
+      ],
+      "private_observation_log_sha256": "22a47d1762b1d8e12c226e1eef72163cb0095fa6e99cfb026c61defb84c03d08"
+    }
+  },
+  "sampling_notes": "Default-Mesa samples used the private authored prototype; nopt samples used the public probe. Both read the same observed queue/group fields. Concurrent changes can make observations unavailable.",
+  "public_probe_commit": "b2b189916de889372ae8a0f9755669f5b6c11278",
+  "public_probe_sha256": "cf0fcc32f3ea6f0bc4e5658dc1f6b7b97d381fa59470f60409d11837d139ed09",
+  "world_frame_verified": false,
+  "playable_game_verified": false
+}

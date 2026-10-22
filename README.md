@@ -16,9 +16,15 @@ repository does not provide a ready-to-download copy of the game.
 **Exclusive active focus: original GE6 startup on Linux.** The new
 [native-instruction launch path](docs/GE6_LINUX_NATIVE_BOOT.md) preserves original
 x64 engine code and works on missing OS dependencies. ReFarm and the object
-preview remain fixtures. Original menu startup, difficulty/map selection and
-entry into Bjornholm's original mission-loading screen are now observed.
-Completed 3D world loading and a playable Linux session remain unverified.
+preview remain fixtures. **Original GE6 now displays Bjornholm's 3D farm view
+and HUD on Linux**, with mouse-look response observed in a low-resolution
+software-rendering diagnostic. Keyboard input, vehicle/farming control and
+Windows graphics/gameplay parity remain unverified.
+
+![Original GE6 Bjornholm world on Linux, 320 x 180 diagnostic window](docs/screenshots/ge6-linux-native-world-2026-10-22.png)
+
+See the [first original-world frame, captures and limitations](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-world-frame-2026-10-22)
+and [source-pinned world evidence](analysis/ge6-linux-world-validation.json).
 
 The private reference image executes its CRT/global initialization and reaches
 its original application entry inside a local Linux VM without Wine/Proton or
@@ -49,10 +55,12 @@ see [navigation evidence](analysis/ge6-linux-menu-navigation.json).
 The same original GUI now continues through **Start → Easy → Bjornholm → Start**
 into the mission-loading screen. Private world staging includes the original
 map, shapes, textures, environment, vehicle resources and career templates;
-these files remain local. See [mission-loading progress](docs/GE6_LINUX_NATIVE_BOOT.md#original-mission-loading-2026-10-22).
+these files remain local. The original loading finishes, its Start button opens
+the new-career welcome dialog, and dismissing the tutorial invitation exposes
+the original 3D scene. See [mission-loading progress](docs/GE6_LINUX_NATIVE_BOOT.md#original-mission-loading-2026-10-22).
 The image retains its previous Windows platform-bootstrap modification; the
-Linux loader adds no instruction patches. A loaded 3D world, complete renderer
-parity and playable simulation remain unverified.
+Linux loader adds no instruction patches. Complete renderer parity, keyboard
+control and playable vehicle/farming simulation remain unverified.
 See [the original-menu milestone and remaining work](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-menu-2026-10-22)
 and its [source-pinned evidence](analysis/ge6-linux-x11-validation.json).
 

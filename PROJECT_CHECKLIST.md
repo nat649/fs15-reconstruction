@@ -190,12 +190,15 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Enter Bjornholm's original mission-loading screen and load the original sky/rain/hail/dust I3D resources on Linux.
 - [x] Add private world-resource staging, verify all 3,335 staged files against their SHA-256 hashes in the VM, and publish only completed uploads atomically.
 - [x] Honor idempotent removal of an absent raw-mouse subscription and release of empty cursor confinement; raw-input registration and requested confinement remain unavailable.
+- [x] Activate the original SDL top-level window through real X11 focus, honor nonactivating show requests, query actual physical mouse state, and bind the original cursor-rectangle emptiness check.
 - [ ] Complete original window/input event processing and remaining startup dependencies, including keyboard delivery, relative mouse input and focus/capture.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [x] Execute original menu/script startup and dispatch original GUI handlers on Linux through the same native runtime.
 - [ ] Complete and validate original game-resource/script services and engine subsystems needed for mission loading and simulation.
 - [x] Reach original GE6 startup, original window/graphics setup and the original main menu through this Linux native-code path.
-- [ ] Load an original map and validate its rendering and simulation through the same native-code path.
+- [x] Finish original mission loading, enter Bjornholm, and visually inspect its original 3D world/HUD on Linux in a 320 x 180 software-rendering diagnostic. See [world capture and scope](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-world-frame-2026-10-22).
+- [x] Observe camera-orientation response to actual XTest mouse motion in the original world; walking and vehicle operation remain unverified.
+- [ ] Validate full-resolution original-map rendering and interactive player/vehicle/farming simulation through the same native-code path.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [x] Recover GE6 array/index/range draw dispatch and point-size cache; compare 4,096 driver states and 3,853 ordered calls with original code. Add actual-driver primitive framebuffer readback to the optional GL check.
 - [x] Pass actual OpenGL buffer upload/map/readback/deletion on Linux x64 with Mesa llvmpipe under Xvfb.
