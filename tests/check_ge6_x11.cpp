@@ -1,6 +1,7 @@
 // Authored OS/ABI integration fixture. It contains no original game code.
 #include "gl_services.h"
 #include <stdexcept>
+#include <dlfcn.h>
 namespace {
 uint32_t error=0;
 unsigned created=0;
@@ -68,6 +69,33 @@ int main(){try{
     ge6_gl::Bridge<&glDisableVertexAttribArray>::call(0);ge6_gl::Bridge<&glBindBufferARB>::call(GL_ARRAY_BUFFER_ARB,0);ge6_gl::Bridge<&glDeleteBuffersARB>::call(1,&buffer);ge6_gl::Bridge<&glUseProgram>::call(0);ge6_gl::Bridge<&glDeleteProgram>::call(program);ge6_gl::Bridge<&glDeleteShader>::call(vertex);ge6_gl::Bridge<&glDeleteShader>::call(fragment);
     require(!ge6_gl::procedure("glDebugMessageCallbackARB")&&!ge6_gl::procedure("AuthoredAbsentGLFunction"),"Unsafe/unavailable GL callback exposed");
     ge6_windows::show(hwnd,5);XWindowAttributes attributes{};require(XGetWindowAttributes(display,ge6_windows::windows.at(hwnd).xid,&attributes)&&attributes.map_state==IsViewable,"Host window is not actually mapped");
+    require(ge6_windows::focus()==hwnd,"Activating ShowWindow did not acquire actual X focus");
+    ge6_windows::Message activated{};
+    require(ge6_windows::peek(&activated,hwnd,6,6,1)&&activated.wparam==1,"Real X FocusIn did not activate the original window procedure");
+    require(!ge6_windows::peek(&activated,hwnd,6,6,1),"Focus activation was duplicated");
+    XSetInputFocus(display,PointerRoot,RevertToPointerRoot,CurrentTime);XSync(display,False);
+    require(ge6_windows::peek(&activated,hwnd,6,6,1)&&activated.wparam==0&&ge6_windows::focus()==0,"Real focus loss did not deactivate the window");
+    ge6_windows::show(hwnd,8);require(ge6_windows::focus()==0&&!ge6_windows::peek(&activated,hwnd,6,6,1),"SW_SHOWNA stole focus or invented activation");
+    ge6_windows::show(hwnd,5);require(ge6_windows::focus()==hwnd&&ge6_windows::peek(&activated,hwnd,6,6,1)&&activated.wparam==1,"Window did not reactivate through the X server");
+    auto xtst=dlopen("libXtst.so.6",RTLD_NOW);require(xtst,"Real XTest input library unavailable");
+    using ButtonTest=int(*)(Display*,unsigned,int,unsigned long);
+    auto button_test=reinterpret_cast<ButtonTest>(dlsym(xtst,"XTestFakeButtonEvent"));require(button_test,"XTest button input unavailable");
+    for(auto pair:{std::pair<unsigned,int>{1,1},{2,4},{3,2}}){
+        require(button_test(display,pair.first,True,0),"Cannot press actual XTest button");XSync(display,False);
+        require(uint16_t(ge6_windows::async_key_state(pair.second))==0x8001u&&uint16_t(ge6_windows::async_key_state(pair.second))==0x8000u,"Async mouse query lost actual state or repeated a press transition");
+        require(button_test(display,pair.first,False,0),"Cannot release actual XTest button");XSync(display,False);
+        require(ge6_windows::async_key_state(pair.second)==0,"Released XTest button remained down");
+    }
+    unsigned char original_map[256]{};int map_count=XGetPointerMapping(display,original_map,256);
+    require(map_count>=3,"X pointer has fewer than three physical buttons");
+    std::array<unsigned char,256> swapped{};std::copy_n(original_map,map_count,swapped.begin());std::swap(swapped[0],swapped[2]);
+    require(XSetPointerMapping(display,swapped.data(),map_count)==MappingSuccess&&button_test(display,1,True,0),"Cannot exercise actual swapped pointer mapping");XSync(display,False);
+    require((uint16_t(ge6_windows::async_key_state(1))&0x8000u)&&!(uint16_t(ge6_windows::async_key_state(2))&0x8000u),"Async query returned logical rather than physical mouse-button state");
+    require(button_test(display,1,False,0),"Cannot release swapped physical button");XSync(display,False);
+    require(XSetPointerMapping(display,original_map,map_count)==MappingSuccess,"Cannot restore actual pointer mapping");
+    dlclose(xtst);
+    while(ge6_windows::peek(&activated,hwnd,0x200,0x20e,1)){} // Consume the actual XTest button messages before separate transport fixtures.
+    require(!ge6_windows::async_key_state(5)&&error==50&&!ge6_windows::clipboard_sequence_unavailable()&&error==50,"Unavailable extra-button/clipboard access reported data");
     ge6_windows::Rect damage{};require(ge6_windows::update_rect(hwnd,&damage,0)&&damage.right==320&&damage.bottom==180,"Real initial X11 exposure was lost");
     require(ge6_windows::validate_rect(hwnd,nullptr)&&!ge6_windows::update_rect(hwnd,&damage,0)&&damage.left==0&&damage.right==0,"Validated exposure retained damage");
     XClearArea(display,ge6_windows::windows.at(hwnd).xid,10,20,40,30,True);XSync(display,False);

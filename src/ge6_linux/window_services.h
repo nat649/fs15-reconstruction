@@ -125,13 +125,27 @@ inline bool mouse_message(uintptr_t handle,WindowData& data,const XEvent& event,
     if(++mouse_event_count<=64)std::fprintf(stderr,"GE6_X11_MOUSE_EVENT hwnd=0x%lx message=0x%x keys=0x%lx root_x=%d root_y=%d time=%u\n",handle,result.message,result.wparam,result.point.x,result.point.y,result.time);
     return true;
 }
+inline uintptr_t handle_for_xid(Window xid){for(auto& item:windows)if(item.second.xid==xid)return item.first;return 0;}
+inline void focus_event(uintptr_t handle,const XFocusChangeEvent& event){
+    // Grabs and focus moving into a child do not deactivate the top-level window.
+    if(event.mode!=NotifyNormal||event.detail==NotifyInferior)return;
+    const bool active=event.type==FocusIn;
+    if((active&&foreground==handle)||(!active&&foreground!=handle))return;
+    Window focused=0;int revert=0;XGetInputFocus(display,&focused,&revert);
+    auto other=active?foreground:handle_for_xid(focused);
+    foreground=active?handle:0;
+    messages.push_back(Message{handle,6,0,uintptr_t(active),intptr_t(other),milliseconds(),{0,0},0});
+    messages.push_back(Message{handle,active?7u:8u,0,other,0,milliseconds(),{0,0},0});
+    std::fprintf(stderr,"GE6_X11_FOCUS hwnd=0x%lx active=%d other=0x%lx mode=%d detail=%d\n",handle,int(active),other,event.mode,event.detail);
+}
 inline void events(){
     if(!display)return;
     while(XPending(display)){XEvent event{};XNextEvent(display,&event);uintptr_t handle=0;for(auto& item:windows)if(item.second.xid==event.xany.window){handle=item.first;break;}if(!handle)continue;
         auto& data=windows.at(handle);uint32_t type=0;uintptr_t wp=0;intptr_t lp=0;
+        if(event.type==FocusIn||event.type==FocusOut){focus_event(handle,event.xfocus);continue;}
         Message mouse{};if(mouse_message(handle,data,event,mouse)){messages.push_back(mouse);continue;}
         if(event.type==LeaveNotify&&event.xcrossing.detail!=NotifyInferior&&data.mouse_leave){data.mouse_leave=false;messages.push_back(Message{handle,0x2a3,0,0,0,uint32_t(event.xcrossing.time),{event.xcrossing.x_root,event.xcrossing.y_root},0});continue;}
-        switch(event.type){case Expose:data.damaged.push_back({event.xexpose.x,event.xexpose.y,event.xexpose.x+event.xexpose.width,event.xexpose.y+event.xexpose.height});type=15;break;case ConfigureNotify:data.x=event.xconfigure.x;data.y=event.xconfigure.y;data.width=event.xconfigure.width;data.height=event.xconfigure.height;type=5;lp=intptr_t((uint32_t(data.height)<<16)|(uint32_t(data.width)&65535));break;case MapNotify:data.style|=0x10000000;type=24;wp=1;break;case UnmapNotify:data.style&=~0x10000000u;type=24;break;case FocusIn:foreground=handle;type=7;break;case FocusOut:if(foreground==handle)foreground=0;type=8;break;case ClientMessage:if(Atom(event.xclient.data.l[0])==XInternAtom(display,"WM_DELETE_WINDOW",False))type=16;break;default:break;}
+        switch(event.type){case Expose:data.damaged.push_back({event.xexpose.x,event.xexpose.y,event.xexpose.x+event.xexpose.width,event.xexpose.y+event.xexpose.height});type=15;break;case ConfigureNotify:data.x=event.xconfigure.x;data.y=event.xconfigure.y;data.width=event.xconfigure.width;data.height=event.xconfigure.height;type=5;lp=intptr_t((uint32_t(data.height)<<16)|(uint32_t(data.width)&65535));break;case MapNotify:data.style|=0x10000000;type=24;wp=1;break;case UnmapNotify:data.style&=~0x10000000u;type=24;break;case ClientMessage:if(Atom(event.xclient.data.l[0])==XInternAtom(display,"WM_DELETE_WINDOW",False))type=16;break;default:break;}
         if(type)messages.push_back(Message{handle,type,0,wp,lp,milliseconds(),{0,0},0});
     }
 }
@@ -180,14 +194,36 @@ inline GE6_WIN_MS int peek(Message* result,uintptr_t filter,uint32_t first,uint3
 inline GE6_WIN_MS int translate(const Message*){trace("TranslateMessage");return 0;} // Character translation is added with keyboard event delivery, not synthesized here.
 inline GE6_WIN_MS intptr_t dispatch(const Message* message){trace("DispatchMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);if(!message)return 0;auto* data=window(message->window);return data?data->procedure(message->window,message->message,message->wparam,message->lparam):0;}
 inline GE6_WIN_MS int16_t key_state(int code){trace("GetKeyState");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;char keys[32]{};XQueryKeymap(display,keys);std::vector<int> scans;if(code==0xa0)scans={42};else if(code==0xa1)scans={54};else for(size_t i=0;i<scan_vk.size();++i)if(scan_vk[i]==code)scans.push_back(int(i));for(auto scan:scans){auto key=scan+8;if(keys[key/8]&(1<<(key%8)))return int16_t(0x8000);}return 0;}
+inline std::array<bool,256> async_down{};
+inline GE6_WIN_MS int16_t async_key_state(int code){
+    trace("GetAsyncKeyState");std::lock_guard<std::recursive_mutex> lock(mutex);
+    if(code<1||code>255){set_error(87);return 0;}if(!connect())return 0;
+    bool down=false;
+    if(code==1||code==2||code==4){
+        Window root=0,child=0;int rx=0,ry=0,x=0,y=0;unsigned state=0;
+        if(!XQueryPointer(display,DefaultRootWindow(display),&root,&child,&rx,&ry,&x,&y,&state))return 0;
+        // X state contains logical buttons; Windows asks for physical buttons.
+        unsigned char mapping[256]{};int count=XGetPointerMapping(display,mapping,256);
+        unsigned physical=code==1?1u:(code==2?3u:2u);
+        unsigned logical=count>=int(physical)?mapping[physical-1]:0;
+        if(logical>5){set_error(50);return 0;}
+        down=logical&&(state&(Button1Mask<<(logical-1)));
+    }else if(code==5||code==6){set_error(50);return 0;} // Core X11 cannot query held buttons 8/9.
+    else down=bool(uint16_t(key_state(code))&0x8000u);
+    bool pressed=down&&!async_down[size_t(code)];async_down[size_t(code)]=down;
+    // Only observed press transitions set bit 0; transient unobserved presses
+    // may be missed. Original SDL activation reads only the current-state bit.
+    return int16_t((down?0x8000u:0u)|(pressed?1u:0u));
+}
+inline GE6_WIN_MS uint32_t clipboard_sequence_unavailable(){trace("GetClipboardSequenceNumber");set_error(50);return 0;}
 inline GE6_WIN_MS uintptr_t focus(){trace("GetFocus");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;Window xid=0;int revert=0;XGetInputFocus(display,&xid,&revert);for(auto& item:windows)if(item.second.xid==xid)return item.first;return 0;}
 inline GE6_WIN_MS uintptr_t menu(uintptr_t handle){trace("GetMenu");std::lock_guard<std::recursive_mutex> lock(mutex);if(!window(handle))return 0;return 0;} // CreateWindowExW accepts only menu-less windows.
 inline GE6_WIN_MS int metrics(int index){trace("GetSystemMetrics");std::lock_guard<std::recursive_mutex> lock(mutex);if(!refresh())return 0;int left=outputs[0].x,top=outputs[0].y,right=left+outputs[0].width,bottom=top+outputs[0].height;for(auto& item:outputs){left=std::min(left,item.x);top=std::min(top,item.y);right=std::max(right,item.x+item.width);bottom=std::max(bottom,item.y+item.height);}switch(index){case 0:return DisplayWidth(display,0);case 1:return DisplayHeight(display,0);case 19:return 1;case 43:{unsigned char map[256]{};return XGetPointerMapping(display,map,256);}case 76:return left;case 77:return top;case 78:return right-left;case 79:return bottom-top;case 80:return int(outputs.size());default:std::fprintf(stderr,"GE6_X11_UNSUPPORTED_METRIC index=%d\n",index);stop("USER32.dll","GetSystemMetrics",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}}
 inline GE6_WIN_MS int cursor_position(Point* point){trace("GetCursorPos");std::lock_guard<std::recursive_mutex> lock(mutex);if(!point||!connect())return 0;Window root=0,child=0;int x=0,y=0,wx=0,wy=0;unsigned mask=0;if(!XQueryPointer(display,DefaultRootWindow(display),&root,&child,&x,&y,&wx,&wy,&mask))return 0;*point={x,y};return 1;}
 inline GE6_WIN_MS int to_client(uintptr_t handle,Point* point){trace("ScreenToClient");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data||!point)return 0;Window child=0;int x=0,y=0;if(!XTranslateCoordinates(display,DefaultRootWindow(display),data->xid,point->x,point->y,&x,&y,&child))return 0;*point={x,y};return 1;}
 inline GE6_WIN_MS int warp_cursor(int x,int y){trace("SetCursorPos");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;XWarpPointer(display,0,DefaultRootWindow(display),0,0,0,0,x,y);XFlush(display);return 1;}
-inline GE6_WIN_MS int destroy(uintptr_t handle){trace("DestroyWindow");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;data->procedure(handle,2,0,0);data->procedure(handle,0x82,0,0);auto klass=data->klass;XDestroyWindow(display,data->xid);windows.erase(handle);{std::lock_guard<std::mutex> guard(ge6_classes::mutex);--klass->windows;}XSync(display,False);std::fprintf(stderr,"GE6_X11_WINDOW_DESTROY hwnd=0x%lx\n",handle);return 1;}
-inline GE6_WIN_MS int show(uintptr_t handle,int how){trace("ShowWindow");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;bool previous=data->style&0x10000000;if(how==0){XUnmapWindow(display,data->xid);data->style&=~0x10000000u;}else if(how==1||how==5||how==8||how==9||how==10){if(!data->message_only){XMapWindow(display,data->xid);data->style|=0x10000000;}}else {stop("USER32.dll","ShowWindow",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}XSync(display,False);std::fprintf(stderr,"GE6_X11_WINDOW_SHOW hwnd=0x%lx visible=%d caller=0x%lx\n",handle,int(bool(data->style&0x10000000)),reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return previous;}
+inline GE6_WIN_MS int destroy(uintptr_t handle){trace("DestroyWindow");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;data->procedure(handle,2,0,0);data->procedure(handle,0x82,0,0);auto klass=data->klass;XDestroyWindow(display,data->xid);windows.erase(handle);if(foreground==handle)foreground=0;{std::lock_guard<std::mutex> guard(ge6_classes::mutex);--klass->windows;}XSync(display,False);std::fprintf(stderr,"GE6_X11_WINDOW_DESTROY hwnd=0x%lx\n",handle);return 1;}
+inline GE6_WIN_MS int show(uintptr_t handle,int how){trace("ShowWindow");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;bool previous=data->style&0x10000000;if(how==0){XUnmapWindow(display,data->xid);data->style&=~0x10000000u;}else if(how==1||how==4||how==5||how==8||how==9||how==10){if(!data->message_only){XMapWindow(display,data->xid);data->style|=0x10000000;}}else {stop("USER32.dll","ShowWindow",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}XSync(display,False);if(how!=0&&how!=4&&how!=8&&!data->message_only&&!data->parent&&!(data->extended&0x08000000u)){XSetInputFocus(display,data->xid,RevertToPointerRoot,CurrentTime);XSync(display,False);}std::fprintf(stderr,"GE6_X11_WINDOW_SHOW hwnd=0x%lx visible=%d caller=0x%lx\n",handle,int(bool(data->style&0x10000000)),reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return previous;}
 inline GE6_WIN_MS int title(uintptr_t handle,const uint16_t* value){trace("SetWindowTextW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;auto text=wide(value);auto bytes=ge6_fs::utf8(reinterpret_cast<const uint16_t*>(text.data()),text.size());XStoreName(display,data->xid,bytes.c_str());XFlush(display);return 1;}
 inline GE6_WIN_MS int position(uintptr_t handle,uintptr_t after,int x,int y,int width,int height,uint32_t flags){trace("SetWindowPos");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;if((flags&~uint32_t(0x77f))||(after!=0&&after!=1&&after!=uintptr_t(-1)&&after!=uintptr_t(-2))){stop("USER32.dll","SetWindowPos",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}XWindowChanges change{};unsigned mask=0;if(!(flags&2)){change.x=x;change.y=y;mask|=CWX|CWY;}if(!(flags&1)){if(width<=0||height<=0){set_error(87);return 0;}change.width=width;change.height=height;mask|=CWWidth|CWHeight;}if(!(flags&4)){change.stack_mode=after==1?Below:Above;mask|=CWStackMode;}if(mask)XConfigureWindow(display,data->xid,mask,&change);if(flags&0x40)show(handle,5);if(flags&0x80)show(handle,0);XSync(display,False);return 1;}
 inline GE6_WIN_MS intptr_t send(uintptr_t handle,uint32_t message,uintptr_t wp,intptr_t lp){trace("SendMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);return data?data->procedure(handle,message,wp,lp):0;}
@@ -223,7 +259,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);
     WINDOW_BIND("GetWindowLongPtrW",get_long);WINDOW_BIND("SetWindowLongPtrW",set_long);WINDOW_BIND("GetWindowLongW",get_long32);WINDOW_BIND("SetWindowLongW",set_long32);
     WINDOW_BIND("GetClientRect",client_rect);WINDOW_BIND("GetWindowRect",window_rect);WINDOW_BIND("ClientToScreen",to_screen);WINDOW_BIND("GetDC",get_dc);WINDOW_BIND("ReleaseDC",release_dc);
-    WINDOW_BIND("PeekMessageW",peek);WINDOW_BIND("TranslateMessage",translate);WINDOW_BIND("DispatchMessageW",dispatch);WINDOW_BIND("GetKeyState",key_state);WINDOW_BIND("GetFocus",focus);
+    WINDOW_BIND("PeekMessageW",peek);WINDOW_BIND("TranslateMessage",translate);WINDOW_BIND("DispatchMessageW",dispatch);WINDOW_BIND("GetKeyState",key_state);WINDOW_BIND("GetAsyncKeyState",async_key_state);WINDOW_BIND("GetClipboardSequenceNumber",clipboard_sequence_unavailable);WINDOW_BIND("GetFocus",focus);
     WINDOW_BIND("DestroyWindow",destroy);WINDOW_BIND("ShowWindow",show);WINDOW_BIND("SetWindowTextW",title);WINDOW_BIND("SetWindowPos",position);WINDOW_BIND("SendMessageW",send);
 #undef WINDOW_BIND
     return 0;
