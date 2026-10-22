@@ -75,6 +75,9 @@ def observations(text):
     for owner,message,keys,x,y,timestamp in re.findall(r'GE6_X11_MOUSE_EVENT hwnd=(0x[0-9a-f]+) message=(0x[0-9a-f]+) keys=(0x[0-9a-f]+) root_x=(-?\d+) root_y=(-?\d+) time=(\d+)',text):
         if owner==handle:
             pointer_events.append(dict(message=message,keys=keys,root_position=[int(x),int(y)],server_time=int(timestamp)))
+    focus_events=[dict(active=active=='1',other_window=other,mode=int(mode),detail=int(detail))
+                  for owner,active,other,mode,detail in re.findall(r'GE6_X11_FOCUS hwnd=(0x[0-9a-f]+) active=([01]) other=(0x[0-9a-f]+) mode=(\d+) detail=(\d+)',text)
+                  if owner==handle]
     return dict(scope='Original GE6 main window and GL context on Linux; rendering requires separate visual confirmation, not a playable game',
                 kernel=kernel[0].strip(),image_kind='local-platform',original_image_sha256=LOCAL_IMAGE,
                 existing_local_platform_bootstrap_modified=True,linux_loader_patches_instructions=False,
@@ -84,6 +87,7 @@ def observations(text):
                 x11_display=environment[1],
                 original_gl_calls=native_calls,original_buffer_swaps=swaps,
                 original_window_pointer_events=pointer_events,
+                original_window_focus_events=focus_events,
                 captured_root_dimensions=[int(capture[1]),int(capture[2])],
                 bound_import_names=int(mapped[1]),stop_trampoline_names=int(mapped[2]),
                 stopped_at=boundary,

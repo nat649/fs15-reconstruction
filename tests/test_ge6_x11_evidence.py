@@ -25,6 +25,11 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_focus_records_belong_to_the_original_window_and_do_not_prove_playability(self):
+        result=observations(LOG+'GE6_X11_FOCUS hwnd=0x10 active=1 other=0x0 mode=0 detail=3\nGE6_X11_FOCUS hwnd=0x99 active=0 other=0x0 mode=0 detail=3\n')
+        self.assertEqual(result['original_window_focus_events'],[dict(active=True,other_window='0x0',mode=0,detail=3)])
+        self.assertFalse(result['playable_game_verified'])
+
     def test_original_journal_load_records_do_not_establish_world_rendering(self):
         journal=b'data/sky/rain.i3d (8.30 ms)\r\r\ndata/maps/map01.i3d (134732.66 ms)\r\r\nError: fixture missing resource\r\r\n'
         reported=journal_observations(journal)
