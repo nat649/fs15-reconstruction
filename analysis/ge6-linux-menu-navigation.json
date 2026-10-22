@@ -1,0 +1,769 @@
+{
+  "scope": "Original GE6 career menu reached through X11 pointer input on Linux; map loading and playable simulation remain unverified",
+  "kernel": "Linux (none) 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 x86_64 Linux",
+  "image_kind": "local-platform",
+  "original_image_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+  "existing_local_platform_bootstrap_modified": true,
+  "linux_loader_patches_instructions": false,
+  "wine_or_proton_used": false,
+  "replacement_engine_linked": false,
+  "original_main_window": {
+    "handle": "0x75000002",
+    "xid": "0x200005",
+    "width": 1280,
+    "height": 720,
+    "procedure": "0x14037cf00",
+    "viewable": true
+  },
+  "original_main_window_gl_context": {
+    "handle": "0x7500000a",
+    "dc": "0x75000003",
+    "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+    "version": "4.5 (Compatibility Profile) Mesa 25.2.8-0ubuntu0.24.04.4"
+  },
+  "x11_display": ":98",
+  "original_gl_calls": [
+    {
+      "name": "glGetString",
+      "caller": "0x140067b95",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDisable",
+      "caller": "0x1400663cb",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glHint",
+      "caller": "0x1400663db",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glFrontFace",
+      "caller": "0x1400663e6",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDepthMask",
+      "caller": "0x1400663ee",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetIntegerv",
+      "caller": "0x140070a1e",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetStringi",
+      "caller": "0x140070a3d",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetFloatv",
+      "caller": "0x140066bfc",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGenFramebuffersEXT",
+      "caller": "0x1400774d3",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindFramebufferEXT",
+      "caller": "0x1400774e2",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGenTextures",
+      "caller": "0x140072557",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindTexture",
+      "caller": "0x140072563",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glTexParameteri",
+      "caller": "0x1400725b5",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glTexImage2D",
+      "caller": "0x1400726f0",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glFramebufferTexture2DEXT",
+      "caller": "0x1400775a2",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCheckFramebufferStatusEXT",
+      "caller": "0x14007873b",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glFramebufferRenderbufferEXT",
+      "caller": "0x140078752",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGenRenderbuffersEXT",
+      "caller": "0x1400786f4",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindRenderbufferEXT",
+      "caller": "0x140078703",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glRenderbufferStorageEXT",
+      "caller": "0x140078719",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteRenderbuffersEXT",
+      "caller": "0x140078768",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteFramebuffersEXT",
+      "caller": "0x140077930",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteTextures",
+      "caller": "0x140072a46",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDrawBuffer",
+      "caller": "0x140077a6b",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glReadBuffer",
+      "caller": "0x140077a73",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCreateShader",
+      "caller": "0x1400757c1",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glShaderSource",
+      "caller": "0x14007584d",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCompileShader",
+      "caller": "0x140075855",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetShaderiv",
+      "caller": "0x14007586f",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCreateProgram",
+      "caller": "0x140075b42",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glProgramParameteri",
+      "caller": "0x140075b62",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glAttachShader",
+      "caller": "0x140075b6d",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteShader",
+      "caller": "0x140075b75",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glLinkProgram",
+      "caller": "0x140075b91",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetProgramiv",
+      "caller": "0x140075bac",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetActiveAttrib",
+      "caller": "0x140075c12",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindAttribLocation",
+      "caller": "0x140075cdb",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetActiveUniform",
+      "caller": "0x140075ea1",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetUniformLocation",
+      "caller": "0x140075ead",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUseProgram",
+      "caller": "0x1400762be",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUniform1i",
+      "caller": "0x1400762fd",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGetProgramBinary",
+      "caller": "0x1400763d0",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteProgram",
+      "caller": "0x14007661f",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glProgramBinary",
+      "caller": "0x140076e33",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGenBuffersARB",
+      "caller": "0x140077e4e",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindBufferARB",
+      "caller": "0x140077e5c",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBufferDataARB",
+      "caller": "0x140077e73",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glGenVertexArrays",
+      "caller": "0x140067045",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBindVertexArray",
+      "caller": "0x14006704f",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glEnable",
+      "caller": "0x14006705a",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDepthFunc",
+      "caller": "0x140067065",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glClearColor",
+      "caller": "0x140067087",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glClearDepth",
+      "caller": "0x14006709c",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glPixelStorei",
+      "caller": "0x1400739ad",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCompressedTexImage2DARB",
+      "caller": "0x1400737b7",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glViewport",
+      "caller": "0x140065521",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glClear",
+      "caller": "0x140065aa1",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBufferSubDataARB",
+      "caller": "0x140074b9b",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glActiveTextureARB",
+      "caller": "0x1400650e8",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glColorMask",
+      "caller": "0x140064a51",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glBlendFunc",
+      "caller": "0x140064ad4",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCullFace",
+      "caller": "0x1400648a6",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glPolygonMode",
+      "caller": "0x1400648cc",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glEnableVertexAttribArray",
+      "caller": "0x140072190",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glVertexAttribPointer",
+      "caller": "0x1400721ad",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glVertexAttribDivisor",
+      "caller": "0x1400721c2",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUniformMatrix4x3fv",
+      "caller": "0x1400829ed",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUniform4fv",
+      "caller": "0x140082985",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDrawArrays",
+      "caller": "0x14006560d",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDrawElements",
+      "caller": "0x1400655df",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDisableVertexAttribArray",
+      "caller": "0x1400653ef",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glMapBufferARB",
+      "caller": "0x140072c09",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUnmapBufferARB",
+      "caller": "0x140072ca5",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glTexSubImage2D",
+      "caller": "0x140072f8b",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDeleteBuffersARB",
+      "caller": "0x140074a76",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glDrawBuffers",
+      "caller": "0x140083171",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glCopyTexSubImage2D",
+      "caller": "0x140078089",
+      "context": "0x7500000a"
+    },
+    {
+      "name": "glUniformMatrix4fv",
+      "caller": "0x1400829f5",
+      "context": "0x7500000a"
+    }
+  ],
+  "original_buffer_swaps": [
+    {
+      "frame": 1,
+      "draw_calls": 2,
+      "caller": "0x14000922e",
+      "duration_us": 1921898
+    },
+    {
+      "frame": 2,
+      "draw_calls": 4,
+      "caller": "0x14000922e",
+      "duration_us": 1871053
+    },
+    {
+      "frame": 3,
+      "draw_calls": 5,
+      "caller": "0x14000c267",
+      "duration_us": 1808550
+    },
+    {
+      "frame": 4,
+      "draw_calls": 6,
+      "caller": "0x14000c267",
+      "duration_us": 1563511
+    },
+    {
+      "frame": 5,
+      "draw_calls": 38,
+      "caller": "0x14000c267",
+      "duration_us": 3021505
+    },
+    {
+      "frame": 6,
+      "draw_calls": 70,
+      "caller": "0x14000c267",
+      "duration_us": 2938719
+    },
+    {
+      "frame": 7,
+      "draw_calls": 102,
+      "caller": "0x14000c267",
+      "duration_us": 2960227
+    },
+    {
+      "frame": 8,
+      "draw_calls": 134,
+      "caller": "0x14000c267",
+      "duration_us": 3002260
+    },
+    {
+      "frame": 9,
+      "draw_calls": 166,
+      "caller": "0x14000c267",
+      "duration_us": 2967808
+    },
+    {
+      "frame": 10,
+      "draw_calls": 198,
+      "caller": "0x14000c267",
+      "duration_us": 2941155
+    },
+    {
+      "frame": 30,
+      "draw_calls": 824,
+      "caller": "0x14000c267",
+      "duration_us": 4340681
+    }
+  ],
+  "original_window_pointer_events": [
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131166249
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131166254
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131166456
+    },
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131170461
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131170467
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131170673
+    },
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131174677
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131174681
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 131174886
+    },
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        300,
+        280
+      ],
+      "server_time": 131231091
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        300,
+        280
+      ],
+      "server_time": 131231094
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        300,
+        280
+      ],
+      "server_time": 131231298
+    },
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        300,
+        280
+      ],
+      "server_time": 131234105
+    }
+  ],
+  "captured_root_dimensions": [
+    1280,
+    720
+  ],
+  "bound_import_names": 268,
+  "stop_trampoline_names": 156,
+  "stopped_at": {
+    "kind": "controlled-test-timeout",
+    "seconds": 150,
+    "elapsed_seconds": 150.005,
+    "startup_completion_verified": false
+  },
+  "original_frame_rendered": true,
+  "original_renderer_initialized": false,
+  "menu_verified": true,
+  "menu_interaction_verified": true,
+  "full_engine_initialization_verified": false,
+  "playable_game_verified": false,
+  "vm_audio_backend": "null",
+  "audible_audio_verified": false,
+  "visually_verified_content": "career-screen",
+  "original_opengl_initialization_reported": true,
+  "original_vehicle_types_loaded_reported": true,
+  "source_commit": "0299989c87e28db9f037408a0728f5b9f62e9b8d",
+  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39750301623",
+  "committed_source_sha256": {
+    "src/ge6_linux/AUDIO_DEPENDENCY.md": "40d22a37ad606c4b4329af629435d7c02f0fadd1ce993b298be2e0f336fe7a06",
+    "src/ge6_linux/CMakeLists.txt": "688a1a7fcf75d2f9041ae5b69551160d1949ffd54539e4c14cf85fb3495353df",
+    "src/ge6_linux/ansi_reference.h": "8490e210cf1d5be613bded042b455f21968357c77f3950b74eedc9427b02bdde",
+    "src/ge6_linux/audio_check.h": "eb8cddaae31ca26308840682b59e4a9c24d872ce282c74630095e8cdbd632f00",
+    "src/ge6_linux/audio_services.h": "f765ccc276b243310dd4fa9446d329ceff048efe049b275be55bef8efeb8ea6f",
+    "src/ge6_linux/console_check.h": "1c2cbf483fb1f9e4ee9d25ef6f13d23ebbd57254a7f092fc945281672cfc2e94",
+    "src/ge6_linux/console_services.h": "cf94410bd5dff7b4b264f73f2a1e06d60d1424f65185cbc7ede2acd8c08b046a",
+    "src/ge6_linux/crypto_check.h": "725e44222f979f3b0a547888653c8c5bb86211f77ab31b30962ec819fb2570aa",
+    "src/ge6_linux/crypto_services.h": "3d4e86f9bacd9d1a9b4a32a7b6358fb154db46bb995cc807169906189ccd79db",
+    "src/ge6_linux/display_services.h": "c5b512f11f4737ea1b077198d92294042a3ce0e3f124d870f1c679ed68624fdd",
+    "src/ge6_linux/event_services.h": "c327700570a311a87417c69e7ba616ee337266f3a2a272a8133d0d90d2b8a20b",
+    "src/ge6_linux/file_services.h": "4acbc309633129106c25aea9553f4fe22f6f90dcf4768ea3c8f13c42c1ce7599",
+    "src/ge6_linux/gl_entrypoints.h": "ea6e7ba26377c166698036ca740edbf3658b8994a5756a23e39aec35a20867be",
+    "src/ge6_linux/gl_services.h": "964aa97c3b74a653786aa3bda6eb54a8b3e9bcf6b793111db3b65951caaf09a2",
+    "src/ge6_linux/image_resources.h": "a86196083714b24523d9c0413acc595de23c26d33f9d0f3ed4f7dfb786b67428",
+    "src/ge6_linux/local_platform.h": "2af930d4f584da3d6af7f00ac492646ddd1d64f5139e59211b26382455ca7f03",
+    "src/ge6_linux/main.cpp": "00398541b84b82a2fb947efb4cf2262faa94193d621eaf44a4bb2bf65fdf2a46",
+    "src/ge6_linux/native_thread.h": "b0830f06dbbcafc09da14acfdce23dac022754421aeb99b44c6465fd997883b5",
+    "src/ge6_linux/network_services.h": "871584800796411dadcda5e1fa603d7fea654e1f2d5d7bc94dc560acffc90c09",
+    "src/ge6_linux/relink.sh": "0a991b3dd7ffb8fcaa1f13350bc156f88ba6f9dcc908184303051b4ddf4d9bed",
+    "src/ge6_linux/semaphore_check.h": "236e1e2f93afcf4800dfdf396c574bd55cb5c54949a10628d257811a3c9a7015",
+    "src/ge6_linux/semaphore_services.h": "058c4b8f594dad21798d32000bf7767a66464f22470bc26bd89f901f7cd38c68",
+    "src/ge6_linux/startup_services.h": "2e23540b3cd7020dc09af8f8ec21517308131611daa9a6cc58a48ddc7f027458",
+    "src/ge6_linux/system_services.h": "8e993c183039cbfb7f7426dbcfc01e0fdd165aac4e9d5b64a2a2982da5a2b4de",
+    "src/ge6_linux/thread_services.h": "0d07571e0bb59a90deaf3ab8186abaa841333d65980524d9fc0383b08ee6094e",
+    "src/ge6_linux/thread_slots.h": "271ea4029fe0e1fd8d45942ba9ec24d0e0d0fc5afadfcbfc8234a04edb223f82",
+    "src/ge6_linux/virtual_memory.h": "5f2e61343d459e4dcc45f9e4de160b7c9c58901ef62e59e327d61da759c015a9",
+    "src/ge6_linux/window_classes.h": "8f7baca4572ce0f87aec686cfdb2f266d099c8521724e6ac28521026a6eeee54",
+    "src/ge6_linux/window_resource_check.h": "bdca6ef1b862416aa07ab9e291ec2fe5dad24f8ab833fe73e964d32112f96b73",
+    "src/ge6_linux/window_services.h": "9bc802a4b05e08a0b3c831c118fd7e1b0ac510189baa6312bd7c7c87884ae3fc",
+    "src/ge6_linux/x11_snapshot.cpp": "a9c19b0d7907ded46f3dfb1da445bf703f4854f7921f12b1f8b584165c1e5a59",
+    "tests/check_ge6_x11.cpp": "3a8c389567669bea14c44d93631d5f935b6b93970f65723b4e9ceb96883b7227",
+    ".github/workflows/ge6-linux-native-boot.yml": "db803ae3e7872c3d34b42b5e805ece7ccbaaf55bf20b769167e8d6295d6b42fc"
+  },
+  "evidence_tool_commit": "79faed37fd25c7193f5fbc0c889f88e26b92a75f",
+  "committed_evidence_tool_sha256": {
+    "scripts/ge6_graphics_vm.py": "379fc7249bf90ed3c0c63f68f03735ff428f97e492404ca3ef6db205ca4160ce",
+    "scripts/setup_ge6_graphics_vm.py": "f0d865a7996779ef85ddc9dc972b29b4eb3250aa1149b72d10b37e0ba616cce4",
+    "scripts/ge6_xorg_dummy.conf": "ba010f5151b1f1dee3cc2e6a8b671c4761104914aed789a107b06dae321bcf92",
+    "scripts/ge6_vm_run.py": "d370413a923dbcd4f5fff4a9b541053097ed3f38925e3a5a639a6ac5f3e2786f",
+    "scripts/ge6_vm_pointer.py": "86156456976940b399b43798a401e44c8678fd47901113a3be34413af1db2017",
+    "scripts/verify_ge6_x11_boot.py": "e654cfe68d1b2742f2881fcbed79a9898f161fd183cccfef3f1621508289de44",
+    "tests/test_ge6_x11_evidence.py": "bf5b11eefc3f36ecbdc242455d3da17a6a49dbdf10f62ac285cb9e88a3e0564d"
+  },
+  "linux_elf_sha256": "f0a5a0532ccb0cbfb7182341db5c877e8f3285806fd09efc9227c682d12a5e3b",
+  "private_boot_log_sha256": "b77fc0ff050298dc94fd2766728f6f83e3a8e520430aba02949cd226ee84d314",
+  "private_original_journal_sha256": "1719b296d63e2b01fd09317bb5ce835e5bd9058f21a41817ea7a11de275e80d2",
+  "captured_root_png_sha256": "1dbb62d7820b0257136aa0459d3d2211fb7ad9290fb31a40c4516801f6d7aeda",
+  "capture_file": "ge6-native-final-screen.png",
+  "private_staged_inputs": {
+    "x64/FarmingSimulator2015Game.exe": {
+      "sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
+      "size": 6613272
+    },
+    "game.xml": {
+      "sha256": "200b54156b11eb978b8a62395d9d95f3e9617be8b28ee704bac7f8d7782f62d8",
+      "size": 1181
+    },
+    "FarmingSimulator2015.xml": {
+      "sha256": "b362df0e420304f4f6e76ae9e7484c93c7024f2aa96965ca92d9872fd56a9f1b",
+      "size": 161
+    },
+    "VERSION": {
+      "sha256": "1d9a70a747f501fcedc9a74ff7268acd6c386387041cbc6b59516b1345af632f",
+      "size": 7
+    },
+    "steamdata.dat": {
+      "sha256": "a6f99156e8f02ffdc4ca71df4820c7e86eb419444e111791c0c2c7a184cdc285",
+      "size": 29
+    },
+    "dataS.gar": {
+      "sha256": "a39d2226a0a3c5e53d3acf5b82ce898c007a2595fc4f688a56807bb917fbed18",
+      "size": 10725376
+    },
+    "dataS2.gar": {
+      "sha256": "64348d90a4c4b288696469faab646d45812d8a114965b70482f51cb4ce061abd",
+      "size": 132797952
+    },
+    "crc_files.xml": {
+      "sha256": "6b7c3e6eb82f5c90f24ba4ceedae6a6abc829158a095d729afcac5013402e6e7",
+      "size": 218
+    },
+    "data/maps/map01.i3d": {
+      "sha256": "c10d4094b69b139142ab5860d58312c3cdf472e51fbcb5dfde9b7e4fa5c0e949",
+      "size": 55498627
+    },
+    "data/maps/map01/map01_dem.png": {
+      "sha256": "60ee62c655ffc12d466f932fb0bf04d202ae5c541ce51efe4e7e3c564fd2b8e7",
+      "size": 1341248
+    },
+    "shared/shader.gar": {
+      "sha256": "4dd2212938d9710022db0fdd99b6472aabc5779ec945ccad5849a5bed32cff18",
+      "size": 184832
+    },
+    "shared/splash.dds": {
+      "sha256": "1b3d5fa3d342b988ebc78e00c23d9554e817f39d13cbfe6c7c31fb8baaec28b8",
+      "size": 2097280
+    },
+    "shared/font/defaultFont.xml": {
+      "sha256": "e2a3bf7fce359414e18a32f40351e4a1277dbff80d6bb97dfb6b9debee620ccd",
+      "size": 1963
+    },
+    "shared/font/defaultFont.font": {
+      "sha256": "02f7366bf229890b8fe9093ce1401aa5c7ae2cc90ad2a263891da3aaf5f70401",
+      "size": 12248
+    },
+    "shared/font/defaultFont.png": {
+      "sha256": "7d1c0781767738eabb3731ea03009abd51c49837f31424faa53e346b701c2b44",
+      "size": 269962
+    },
+    "profileTemplate/gameSettingsTemplate.xml": {
+      "sha256": "5e29f463e08d5394120223bebc7ec68196ad8520794c9d4ba2544b4071897ea8",
+      "size": 469
+    },
+    "profileTemplate/inputBindingDefault.xml": {
+      "sha256": "121763653cc2c180ed1413e1c23e68d264cfe16614d957c54add60dc9f4da713",
+      "size": 17699
+    },
+    "data/maps/sounds/achievementSound.wav": {
+      "sha256": "984b95acddfc7fb85f18f238505bc9996a44481623335fa73f85a7d8700e2c2d",
+      "size": 102580
+    },
+    "data/vehicles/store/store_caseIHMagnum380.dds": {
+      "sha256": "3fa5eeadd4ed0117dbdd44ba8da169bc8472093e27700d6b4a2c19fbf7f16c76",
+      "size": 262272
+    },
+    "data/vehicles/store/brand_caseIH.dds": {
+      "sha256": "cd637e50361484828d3b8954538abef1bb109feaf928e9c1e7ccabe87272f077",
+      "size": 32896
+    },
+    "data/vehicles/store/store_empty.dds": {
+      "sha256": "8b0affe8f020cdcc4f6e96bbc5f525a91cfe78e6e2e200d170d440914ca64820",
+      "size": 87536
+    },
+    "data/maps/map01/map_preview.dds": {
+      "sha256": "85203dd539125b11bf30555f49e7b78529407539da6a42d5fb5e952426ecae90",
+      "size": 65664
+    }
+  }
+}

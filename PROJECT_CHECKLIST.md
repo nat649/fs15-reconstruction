@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-21**. Checked items have supporting local build, analysis
+Updated: **2026-10-22**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Exclusive active focus:** original GE6 startup on Linux. The
@@ -181,11 +181,18 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Connect counting semaphores, drive-relative cache paths, actual POSIX address resolution, Linux account queries and OpenSSL random-provider requests; test buffer, error and resource-lifetime contracts.
 - [x] Observe original FS15 startup scripts reporting loaded vehicle types; this does not validate complete scripting, menu interaction or vehicle simulation.
 - [x] Resolve the original introduction timing fault caused by Xvfb's zero-Hz mode using a real configured 60 Hz Xorg virtual display, without changing original GE6 instructions; capture an original FOCUS introduction frame.
-- [ ] Resolve the subsequent original startup wait during introduction playback; the current bounded test is terminated after 90 seconds and does not establish a functional menu.
+- [x] Diagnose continued original introduction rendering under CPU emulation: a private GL trace records 28 completed swaps plus one pending call in 60 seconds, rather than proving a permanent Mesa/decoder deadlock.
+- [x] Transport actual X11 motion, button, extra-button and wheel events with client/screen coordinates, modifier/button transitions and timestamps; verify server-delivered fixtures in Linux CI.
+- [x] Honor original SDL client-leave tracking through real X11 crossing events, immediate outside notification and cancellation; keep hover/nonclient tracking explicitly unsupported.
+- [x] Pass all three introductions using actual XTest clicks, observe native video worker returns, and render the original FS15 main menu at 1280 x 720. See [capture and evidence](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-menu-2026-10-22).
+- [x] Click Career in the original main menu and visually verify the original savegame selection screen on Linux. See [navigation evidence](analysis/ge6-linux-menu-navigation.json).
+- [x] Honor idempotent removal of an absent raw-mouse subscription and release of empty cursor confinement; raw-input registration and requested confinement remain unavailable.
 - [ ] Complete original window/input event processing and remaining startup dependencies; the loading image does not establish a working menu.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
-- [ ] Finish original Lua/script initialization, original game-resource loading and complete central engine initialization on Linux.
-- [ ] Reach original GE6 core initialization, original window/renderer creation, menu and map loading through this Linux native-code path.
+- [x] Execute original menu/script startup and dispatch original GUI handlers on Linux through the same native runtime.
+- [ ] Complete and validate original game-resource/script services and engine subsystems needed for mission loading and simulation.
+- [x] Reach original GE6 startup, original window/graphics setup and the original main menu through this Linux native-code path.
+- [ ] Load an original map and validate its rendering and simulation through the same native-code path.
 - [x] Recover nine OpenGL vertex/index buffer paths and compare 1,024 paired lifetimes with original GE6 code; add an optional SDL/OpenGL driver readback check. See [scope](docs/GL_BUFFER_RECOVERY.md).
 - [x] Recover GE6 array/index/range draw dispatch and point-size cache; compare 4,096 driver states and 3,853 ordered calls with original code. Add actual-driver primitive framebuffer readback to the optional GL check.
 - [x] Pass actual OpenGL buffer upload/map/readback/deletion on Linux x64 with Mesa llvmpipe under Xvfb.

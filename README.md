@@ -16,7 +16,8 @@ repository does not provide a ready-to-download copy of the game.
 **Exclusive active focus: original GE6 startup on Linux.** The new
 [native-instruction launch path](docs/GE6_LINUX_NATIVE_BOOT.md) preserves original
 x64 engine code and works on missing OS dependencies. ReFarm and the object
-preview remain fixtures. Complete original-engine Linux boot is not yet validated.
+preview remain fixtures. Original menu startup is now observed; native map loading
+and a playable Linux session remain unverified.
 
 The private reference image executes its CRT/global initialization and reaches
 its original application entry inside a local Linux VM without Wine/Proton or
@@ -32,21 +33,25 @@ in the isolated VM). The VM uses an explicit silent backend; audible gameplay
 is unverified. Original SDL/CRT console-handler registration, optional icon
 lookup, class registration and dynamic USER32 export probes now continue.
 
-**The original FS15 loading screen now renders at 1280 x 720 on Linux.**
+**The original FS15 main menu now renders at 1280 x 720 on Linux.**
 GE6 opens its original shader archive, builds shader programs, uploads textures
 and buffers, issues draw calls and swaps its main-window buffers through typed
 Microsoft-ABI bindings to GLX/Mesa llvmpipe. Its own journal reports successful
 OpenGL initialization and loading of the game vehicle types. This is actual
 original-code execution, separate from ReFarm and the recovered frontend host.
+Actual X11 pointer events reach the original SDL window procedure. Mouse clicks
+pass the three introduction videos through their original handlers, and native
+Theora workers return normally. The earlier presentation-wait diagnosis was
+incomplete: a private trace showed 28 completed swaps in 60 seconds under CPU
+emulation. Clicking **Career** opens the original savegame selection screen;
+see [navigation evidence](analysis/ge6-linux-menu-navigation.json).
 The image retains its previous Windows platform-bootstrap modification; the
-Linux loader adds no instruction patches. Menu interaction, a loaded 3D world,
-complete renderer parity and playable simulation remain unverified.
-An original FOCUS introduction frame is also visible; the 90-second VM test
-then ends with a presentation wait before the menu.
-See [the loading-screen milestone and remaining boundary](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-loading-screen-2026-10-21)
+Linux loader adds no instruction patches. A loaded 3D world, complete renderer
+parity and playable simulation remain unverified.
+See [the original-menu milestone and remaining work](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-menu-2026-10-22)
 and its [source-pinned evidence](analysis/ge6-linux-x11-validation.json).
 
-![Original GE6 loading screen rendered in the Linux VM](docs/screenshots/ge6-linux-native-loading-2026-10-21.png)
+![Original FS15 main menu rendered by GE6 in the Linux VM](docs/screenshots/ge6-linux-native-menu-2026-10-22.png)
 
 **This is not a complete game rebuild. The recovered frontend and original
 map scenes and an experimental gameplay subset run in a compiled native host;
@@ -61,7 +66,7 @@ routines are reused or examined where practical. See the
 Proton, using the original Windows version as the behavior and resource
 compatibility reference. Matching that version is the target, not a result
 already achieved. The active Linux transport executes original GE6 instructions
-through its first loading frames. The separate recovered frontend host remains
+through its original main menu. The separate recovered frontend host remains
 available; complete native startup, graphics/physics/audio parity, playable
 worlds and persistent simulation saves remain open. Original-resource
 menu/input validation on a Linux desktop is also pending.

@@ -40,7 +40,100 @@ The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
 and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
 headless diagnostic with X11 disabled. Neither build includes original files.
 
+## First original main menu (2026-10-22)
+
+**The original FS15 main menu now renders at 1280 x 720 on Linux.** Actual
+XTest pointer input crosses the authored X11/Windows message transport into
+the original SDL window procedure and the original FS15 GUI handlers. Three
+clicks pass the introduction videos; the native Theora workers return normally
+and the original main menu appears. No introduction script or menu implementation
+was replaced.
+
+![Original GE6 main menu on Linux](screenshots/ge6-linux-native-menu-2026-10-22.png)
+
+The [main-menu evidence](../analysis/ge6-linux-x11-validation.json) pins source
+`9b813345ca88b906542d11d66fff8d9b5009b766`, the exact Release artifact from
+[CI run 39747550408](https://github.com/nat649/fs15-reconstruction/actions/runs/39747550408),
+the private image/resources, the original window/GL callers, actual pointer
+messages, swap timings, private log hashes and the visually inspected PNG.
+
+Clicking **Career** also opens the original savegame selection screen. This
+establishes a working original menu transition, not just a static menu image.
+
+![Original Career savegame selection reached through X11 input](screenshots/ge6-linux-native-career-2026-10-22.png)
+
+The separate [navigation evidence](../analysis/ge6-linux-menu-navigation.json)
+pins source `0299989c87e28db9f037408a0728f5b9f62e9b8d` and the exact artifact from
+[CI run 39750301623](https://github.com/nat649/fs15-reconstruction/actions/runs/39750301623).
+The verifier's committed tools are pinned separately from the executable source.
+Visual/menu flags require manual inspection plus matching original drawing and
+application-loop swaps; Career navigation additionally requires pointer input
+for the original window. Those flags do not mark a loaded map or playable game.
+
+Both pinned native/static and X11 CI jobs pass, including actual event delivery,
+pointer warps, graphics pixels and ABI/lifetime checks. The current Python suite
+contains 98 tests: 96 pass and two optional checks are skipped. Public CI uses
+authored fixtures and receives no original game files. The same tested native
+launcher still stops the unchanged reference image at its original Steam restart
+boundary (`0x14000c8b4`, 129 OS calls); the Linux loader adds no workaround there.
+
+The earlier presentation-wait diagnosis was incomplete. A private OpenGL trace
+records **29 swap calls, including 28 completed swaps, in a 60-second test**.
+The renderer was progressing slowly under QEMU CPU emulation. A debugger snapshot
+inside Mesa swapping did not prove a permanent GPU or Theora deadlock. The
+transport now logs the first ten swaps and every thirtieth swap, with actual
+elapsed presentation time. Observed calls take seconds in this VM; this does
+not predict desktop GPU performance.
+
+Pointer transport covers motion, left/middle/right and two extra buttons,
+vertical/horizontal wheel events, modifier/held-button state, client versus
+screen coordinates and X server timestamps. Client leave tracking is one-shot,
+supports cancellation and reports immediate leave when already outside. Hover
+and nonclient tracking remain unavailable. Linux CI checks these contracts
+through actual X11 event delivery and real pointer warps, using authored fixtures.
+
+The raw-input bridge accepts idempotent removal of an absent mouse subscription,
+which was compared with the Windows API in an isolated process. Raw-input
+activation returns unavailable; it does not fabricate raw devices or payloads.
+Releasing empty cursor confinement succeeds without moving the pointer or
+releasing foreign X grabs; requested confinement remains unsupported. The
+original GUI continues through the observed error/fallback path. Keyboard/gamepad
+delivery, full relative mouse input, cursor capture/focus and Windows API parity
+remain incomplete.
+
+The 90-second main-menu and 150-second Career sessions end through the private
+test controller's explicit time budget, rather than a native crash or a missing
+import. The original engine's full shutdown/CRT cleanup is still unverified.
+The runtime retains its existing Local GE6 Windows bootstrap modification; the
+Linux loader adds no instruction patches. The original GAR resources remain
+private and unchanged. Full engine/renderer parity, original 3D map loading,
+vehicle/farming simulation, persistent saves, audible audio and physical-GPU
+validation remain open.
+
+Reproduce after preparing the private VM and original inputs:
+
+```sh
+python scripts/ge6_graphics_vm.py run --timeout 150
+```
+
+From another terminal, read the actual game window ID with the helper's `exec`
+action and `DISPLAY=:98 xwininfo -root -tree`. Inside the guest, use that ID:
+
+```sh
+python3 /work/ge6_vm_pointer.py --window 0x200005 --x 640 --y 360 --repeat 3
+python3 /work/ge6_vm_pointer.py --window 0x200005 --x 300 --y 280
+```
+
+The first command passes the English introduction sequence; the second clicks
+Career after the main menu appears at this resolution. The pointer tool checks
+the actual target hierarchy before sending input. `ge6_graphics_vm.py capture`
+now captures the selected display as PNG; `--capture-name` preserves distinct
+observations. A run clears its previous generated host captures so missing new
+outputs cannot silently reuse an earlier screenshot.
+
 ## First original loading screen (2026-10-21)
+
+This historical milestone preceded the original main menu and Career transition.
 
 The original Local GE6 runtime now **renders FS15's own loading screen at
 1280 x 720 under Linux**, using Xorg's dummy display and Mesa llvmpipe. The image
@@ -58,7 +151,7 @@ successful**, then continues into FS15 script startup and **Game vehicle types
 loaded**. These are startup observations, not evidence of a rendered 3D map or
 working vehicles.
 
-The [current evidence report](../analysis/ge6-linux-x11-validation.json) records
+The [historical evidence report](https://github.com/nat649/fs15-reconstruction/blob/1101d4b4652e893bdccc72628e896547bb986025/analysis/ge6-linux-x11-validation.json) records
 the exact source commit, CI artifact SHA-256, executed-ELF hash, original GL
 callers/context, draw/swap observations, capture hash, private input hashes and
 the observed stop boundary. The separate visual-confirmation flag is
@@ -67,13 +160,10 @@ set only after inspecting the actual PNG; draw logs alone do not validate pixels
 renderer initialization/parity, menu interaction, full engine boot and playable
 simulation remain **unverified**.
 
-The latest run proceeds beyond loading into an original FOCUS introduction
-frame, but does not reach the menu within 90 seconds. A private read-only debugger snapshot locates the main
-thread's wait inside Mesa/GLX buffer swapping; Theora workers are also waiting.
-This does not establish a deadlock in the decoder. The private controller ends
-the test after 90 seconds and records a controlled timeout; this is not a
-successful boot, a normal game exit or a missing-import stop. A still image does
-not establish continuing video playback or a permanent decoder deadlock.
+That earlier run captured an original FOCUS introduction frame before its
+90-second time budget ended. Later tracing, described above, demonstrated slow
+continued presentation. The original menu is now reached through actual pointer
+input; the earlier still image alone did not establish continuing playback.
 
 ![Original FOCUS introduction frame before the startup wait](screenshots/ge6-linux-native-intro-2026-10-21.png)
 

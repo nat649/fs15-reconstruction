@@ -1,5 +1,5 @@
 {
-  "scope": "Original GE6 loading screen rendered on Linux; native shader/texture/draw/swap path, not a playable game",
+  "scope": "Original GE6 main menu rendered on Linux; map loading and playable simulation remain unverified",
   "kernel": "Linux (none) 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 x86_64 Linux",
   "image_kind": "local-platform",
   "original_image_sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
@@ -399,16 +399,6 @@
       "context": "0x7500000a"
     },
     {
-      "name": "glDrawBuffers",
-      "caller": "0x140083171",
-      "context": "0x7500000a"
-    },
-    {
-      "name": "glCopyTexSubImage2D",
-      "caller": "0x140078089",
-      "context": "0x7500000a"
-    },
-    {
       "name": "glUniformMatrix4fv",
       "caller": "0x1400829f5",
       "context": "0x7500000a"
@@ -418,43 +408,154 @@
     {
       "frame": 1,
       "draw_calls": 2,
-      "caller": "0x14000922e"
+      "caller": "0x14000922e",
+      "duration_us": 1881029
     },
     {
       "frame": 2,
       "draw_calls": 4,
-      "caller": "0x14000922e"
+      "caller": "0x14000922e",
+      "duration_us": 1834517
     },
     {
       "frame": 3,
       "draw_calls": 5,
-      "caller": "0x14000c267"
+      "caller": "0x14000c267",
+      "duration_us": 1478065
+    },
+    {
+      "frame": 4,
+      "draw_calls": 6,
+      "caller": "0x14000c267",
+      "duration_us": 1417303
+    },
+    {
+      "frame": 5,
+      "draw_calls": 7,
+      "caller": "0x14000c267",
+      "duration_us": 1393505
+    },
+    {
+      "frame": 6,
+      "draw_calls": 8,
+      "caller": "0x14000c267",
+      "duration_us": 1349858
+    },
+    {
+      "frame": 7,
+      "draw_calls": 40,
+      "caller": "0x14000c267",
+      "duration_us": 3050074
+    },
+    {
+      "frame": 8,
+      "draw_calls": 72,
+      "caller": "0x14000c267",
+      "duration_us": 2909008
+    },
+    {
+      "frame": 9,
+      "draw_calls": 104,
+      "caller": "0x14000c267",
+      "duration_us": 2941336
+    },
+    {
+      "frame": 10,
+      "draw_calls": 136,
+      "caller": "0x14000c267",
+      "duration_us": 2913780
+    }
+  ],
+  "original_window_pointer_events": [
+    {
+      "message": "0x200",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129793985
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129793987
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129794193
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129798196
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129798399
+    },
+    {
+      "message": "0x201",
+      "keys": "0x1",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129802401
+    },
+    {
+      "message": "0x202",
+      "keys": "0x0",
+      "root_position": [
+        640,
+        360
+      ],
+      "server_time": 129802603
     }
   ],
   "captured_root_dimensions": [
     1280,
     720
   ],
-  "bound_import_names": 265,
-  "stop_trampoline_names": 159,
+  "bound_import_names": 266,
+  "stop_trampoline_names": 158,
   "stopped_at": {
     "kind": "controlled-test-timeout",
     "seconds": 90,
-    "elapsed_seconds": 90.005,
+    "elapsed_seconds": 90.006,
     "startup_completion_verified": false
   },
   "original_frame_rendered": true,
   "original_renderer_initialized": false,
-  "menu_verified": false,
+  "menu_verified": true,
+  "menu_interaction_verified": false,
   "full_engine_initialization_verified": false,
   "playable_game_verified": false,
   "vm_audio_backend": "null",
   "audible_audio_verified": false,
-  "visually_verified_content": "loading-screen",
+  "visually_verified_content": "main-menu",
   "original_opengl_initialization_reported": true,
   "original_vehicle_types_loaded_reported": true,
-  "source_commit": "4d62b38e7c451f4041323a224463b2d343872238",
-  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39599710639",
+  "source_commit": "9b813345ca88b906542d11d66fff8d9b5009b766",
+  "ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39747550408",
   "committed_source_sha256": {
     "src/ge6_linux/AUDIO_DEPENDENCY.md": "40d22a37ad606c4b4329af629435d7c02f0fadd1ce993b298be2e0f336fe7a06",
     "src/ge6_linux/CMakeLists.txt": "688a1a7fcf75d2f9041ae5b69551160d1949ffd54539e4c14cf85fb3495353df",
@@ -469,7 +570,7 @@
     "src/ge6_linux/event_services.h": "c327700570a311a87417c69e7ba616ee337266f3a2a272a8133d0d90d2b8a20b",
     "src/ge6_linux/file_services.h": "4acbc309633129106c25aea9553f4fe22f6f90dcf4768ea3c8f13c42c1ce7599",
     "src/ge6_linux/gl_entrypoints.h": "ea6e7ba26377c166698036ca740edbf3658b8994a5756a23e39aec35a20867be",
-    "src/ge6_linux/gl_services.h": "a8be0fc0b57b7d8e80b4482157a21515007c00867ada8ff8b5cc7242e4f3cf61",
+    "src/ge6_linux/gl_services.h": "964aa97c3b74a653786aa3bda6eb54a8b3e9bcf6b793111db3b65951caaf09a2",
     "src/ge6_linux/image_resources.h": "a86196083714b24523d9c0413acc595de23c26d33f9d0f3ed4f7dfb786b67428",
     "src/ge6_linux/local_platform.h": "2af930d4f584da3d6af7f00ac492646ddd1d64f5139e59211b26382455ca7f03",
     "src/ge6_linux/main.cpp": "00398541b84b82a2fb947efb4cf2262faa94193d621eaf44a4bb2bf65fdf2a46",
@@ -485,21 +586,26 @@
     "src/ge6_linux/virtual_memory.h": "5f2e61343d459e4dcc45f9e4de160b7c9c58901ef62e59e327d61da759c015a9",
     "src/ge6_linux/window_classes.h": "8f7baca4572ce0f87aec686cfdb2f266d099c8521724e6ac28521026a6eeee54",
     "src/ge6_linux/window_resource_check.h": "bdca6ef1b862416aa07ab9e291ec2fe5dad24f8ab833fe73e964d32112f96b73",
-    "src/ge6_linux/window_services.h": "148e040f777a55abd10ebd6957f038339770ad99879d1b210b2defabefc41eff",
+    "src/ge6_linux/window_services.h": "fdc51a616764a05cca2ed40898c4643c9cc1ba693b175e40bc3fed1916209c77",
     "src/ge6_linux/x11_snapshot.cpp": "a9c19b0d7907ded46f3dfb1da445bf703f4854f7921f12b1f8b584165c1e5a59",
-    "scripts/ge6_graphics_vm.py": "9be940e368d5913a7850fbf00b70541ca4820ec4f8c725aa4d22fdd58cd5df8a",
-    "scripts/setup_ge6_graphics_vm.py": "64189970053cbf40e664c5922eda6c5aac24719ff660493d49016c298c1cc7f1",
-    "scripts/ge6_xorg_dummy.conf": "ba010f5151b1f1dee3cc2e6a8b671c4761104914aed789a107b06dae321bcf92",
-    "scripts/ge6_vm_run.py": "d370413a923dbcd4f5fff4a9b541053097ed3f38925e3a5a639a6ac5f3e2786f",
-    "scripts/verify_ge6_x11_boot.py": "921e66d612592659e9f3f452517d86793e832a6ff01b03ea27af8ab270763099",
-    "tests/check_ge6_x11.cpp": "17a9a68aa1ebe1907832f603205ffc1153bfb5703c821139b0942f239d8d15dd",
-    "tests/test_ge6_x11_evidence.py": "b11a9d8c64bc3b8d98a6b00a4a6ad273497c9f82417001cf8879b0e139629fcb",
+    "tests/check_ge6_x11.cpp": "522a947e376055d19cb9bc48ee16762f45c2d7d4483efa74d6dccb671bf72b94",
     ".github/workflows/ge6-linux-native-boot.yml": "db803ae3e7872c3d34b42b5e805ece7ccbaaf55bf20b769167e8d6295d6b42fc"
   },
-  "linux_elf_sha256": "3dcf04fd70e74f1cbae5305d4f34c7840b3efde3ba48adcf181b62db87b313ad",
-  "private_boot_log_sha256": "a5d4508b54e1d5d0da8f6e14593a87417d0c0ddf0977c4502e2679aaa307f460",
+  "evidence_tool_commit": "79faed37fd25c7193f5fbc0c889f88e26b92a75f",
+  "committed_evidence_tool_sha256": {
+    "scripts/ge6_graphics_vm.py": "379fc7249bf90ed3c0c63f68f03735ff428f97e492404ca3ef6db205ca4160ce",
+    "scripts/setup_ge6_graphics_vm.py": "f0d865a7996779ef85ddc9dc972b29b4eb3250aa1149b72d10b37e0ba616cce4",
+    "scripts/ge6_xorg_dummy.conf": "ba010f5151b1f1dee3cc2e6a8b671c4761104914aed789a107b06dae321bcf92",
+    "scripts/ge6_vm_run.py": "d370413a923dbcd4f5fff4a9b541053097ed3f38925e3a5a639a6ac5f3e2786f",
+    "scripts/ge6_vm_pointer.py": "86156456976940b399b43798a401e44c8678fd47901113a3be34413af1db2017",
+    "scripts/verify_ge6_x11_boot.py": "e654cfe68d1b2742f2881fcbed79a9898f161fd183cccfef3f1621508289de44",
+    "tests/test_ge6_x11_evidence.py": "bf5b11eefc3f36ecbdc242455d3da17a6a49dbdf10f62ac285cb9e88a3e0564d"
+  },
+  "linux_elf_sha256": "737ebf7b8a5df40047a931d7df49890615fbde4b1fa3c01522f0e3d2b5155af7",
+  "private_boot_log_sha256": "1ec955532aa8bc3ba4d3a9595af330ba5d0df5c71a399ed6e0c2eeb89375afa9",
   "private_original_journal_sha256": "1719b296d63e2b01fd09317bb5ce835e5bd9058f21a41817ea7a11de275e80d2",
-  "captured_root_png_sha256": "e0e13400faa17678fa3cf12f27dbef4f3d43baf0298e12c622e9637e75692ca3",
+  "captured_root_png_sha256": "56d128fcad6ea4253d32fe00645fe9e77bb41aa445d3f9dd674e6262ca313ac1",
+  "capture_file": "ge6-native-final-screen.png",
   "private_staged_inputs": {
     "x64/FarmingSimulator2015Game.exe": {
       "sha256": "e8a9f3b4397fb9aca31fdcb7471728f4f6ef7940a85911f1f727dbe09377a955",
