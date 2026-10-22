@@ -186,8 +186,11 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Honor original SDL client-leave tracking through real X11 crossing events, immediate outside notification and cancellation; keep hover/nonclient tracking explicitly unsupported.
 - [x] Pass all three introductions using actual XTest clicks, observe native video worker returns, and render the original FS15 main menu at 1280 x 720. See [capture and evidence](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-menu-2026-10-22).
 - [x] Click Career in the original main menu and visually verify the original savegame selection screen on Linux. See [navigation evidence](analysis/ge6-linux-menu-navigation.json).
+- [x] Continue through the original difficulty and map-selection screens using actual X11 pointer input; show both original map previews.
+- [x] Enter Bjornholm's original mission-loading screen and load the original sky/rain/hail/dust I3D resources on Linux.
+- [x] Add private world-resource staging, verify all 3,335 staged files against their SHA-256 hashes in the VM, and publish only completed uploads atomically.
 - [x] Honor idempotent removal of an absent raw-mouse subscription and release of empty cursor confinement; raw-input registration and requested confinement remain unavailable.
-- [ ] Complete original window/input event processing and remaining startup dependencies; the loading image does not establish a working menu.
+- [ ] Complete original window/input event processing and remaining startup dependencies, including keyboard delivery, relative mouse input and focus/capture.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [x] Execute original menu/script startup and dispatch original GUI handlers on Linux through the same native runtime.
 - [ ] Complete and validate original game-resource/script services and engine subsystems needed for mission loading and simulation.

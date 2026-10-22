@@ -16,8 +16,9 @@ repository does not provide a ready-to-download copy of the game.
 **Exclusive active focus: original GE6 startup on Linux.** The new
 [native-instruction launch path](docs/GE6_LINUX_NATIVE_BOOT.md) preserves original
 x64 engine code and works on missing OS dependencies. ReFarm and the object
-preview remain fixtures. Original menu startup is now observed; native map loading
-and a playable Linux session remain unverified.
+preview remain fixtures. Original menu startup, difficulty/map selection and
+entry into Bjornholm's original mission-loading screen are now observed.
+Completed 3D world loading and a playable Linux session remain unverified.
 
 The private reference image executes its CRT/global initialization and reaches
 its original application entry inside a local Linux VM without Wine/Proton or
@@ -45,6 +46,10 @@ Theora workers return normally. The earlier presentation-wait diagnosis was
 incomplete: a private trace showed 28 completed swaps in 60 seconds under CPU
 emulation. Clicking **Career** opens the original savegame selection screen;
 see [navigation evidence](analysis/ge6-linux-menu-navigation.json).
+The same original GUI now continues through **Start → Easy → Bjornholm → Start**
+into the mission-loading screen. Private world staging includes the original
+map, shapes, textures, environment, vehicle resources and career templates;
+these files remain local. See [mission-loading progress](docs/GE6_LINUX_NATIVE_BOOT.md#original-mission-loading-2026-10-22).
 The image retains its previous Windows platform-bootstrap modification; the
 Linux loader adds no instruction patches. A loaded 3D world, complete renderer
 parity and playable simulation remain unverified.

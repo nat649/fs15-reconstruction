@@ -40,6 +40,65 @@ The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
 and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
 headless diagnostic with X11 disabled. Neither build includes original files.
 
+## Original mission loading (2026-10-22)
+
+The original Career GUI now continues through **Start -> Easy -> Bjornholm -> Start**
+on Linux. Both original map previews render. The next screen is the original
+**Bjornholm - Game is being loaded, please wait** screen. Actual XTest input,
+the original SDL procedure and the original Lua handlers perform these
+transitions; no replacement mission or menu logic is linked.
+
+![Original map selection on Linux](screenshots/ge6-linux-native-map-selection-2026-10-22.png)
+
+![Original Bjornholm mission-loading screen on Linux](screenshots/ge6-linux-native-mission-loading-2026-10-22.png)
+
+The earlier startup-only resource set could reach the menu but omitted the
+original sky and weather resources. Starting a mission with that incomplete
+set produced invalid-entity Lua warnings and reached the explicit unsupported
+`RaiseException` boundary (`0xe24c4a02`). Supplying the original resources lets
+GE6 load `sky_day_night.i3d`, `rain.i3d`, `hail.i3d` and `dust.i3d` normally.
+The exception was not swallowed or patched out.
+The complete-resource run also reports `data/maps/map01.i3d (134732.66 ms)`
+with no resource errors in its original journal. This is the native loader's
+completion record; it does not establish a rendered, interactive world.
+
+World staging copies all available files under the private installation's
+`data`, `shared` and `profileTemplate` folders, alongside the pinned startup
+inputs. The local run has **3,335 files**, independently SHA-256 checked inside
+the VM with **zero mismatches**. Transfers now publish completed files through
+an atomic SFTP rename; a failed transfer preserves the previous target.
+The VM rootfs storage ceiling is raised from the kernel's 50% default to 75%
+of guest RAM in newly prepared images. This is a ceiling, not reserved memory.
+The previous live VM was remounted at 4 GiB after its original ceiling filled.
+
+```sh
+python scripts/ge6_graphics_vm.py stage --resource-set world
+python scripts/ge6_graphics_vm.py run --timeout 600
+```
+
+The default resource set remains `startup`. A complete original installation
+is required for world staging. Observe each screen with `capture` before
+continuing; the software-rendered VM may take several seconds per frame.
+After Career and its savegame list, the observed 1280 x 720 client coordinates
+are Start `(890, 618)`, Easy `(390, 220)`, then map Start `(865, 603)`.
+Use the actual current window ID as described below.
+
+The [source-pinned mission-loading report](../analysis/ge6-linux-mission-loading.json)
+records the unchanged native transport artifact from CI 39750301623, the
+committed evidence tools, all private input hashes, original GL/window callers,
+actual pointer messages, native journal load timings and the final inspected PNG.
+The 600-second session ends at its deliberate test deadline with no native fault,
+unbound-import stop or resource error reported. It remains on the loading screen.
+A diagnostic stack shows the original streaming worker waiting on its semaphore
+and the main thread inside an actual GLX swap; this does not establish the cause
+of the incomplete transition or prove a permanent deadlock. Completing the
+original asynchronous mission transition remains the next milestone.
+
+This establishes mission-loading entry and original-resource processing.
+**A completed 3D world, player control, vehicles and farming simulation remain
+unverified.** An original map preview or loading-screen illustration is not
+a rendered in-world scene.
+
 ## First original main menu (2026-10-22)
 
 **The original FS15 main menu now renders at 1280 x 720 on Linux.** Actual
@@ -72,7 +131,7 @@ for the original window. Those flags do not mark a loaded map or playable game.
 
 Both pinned native/static and X11 CI jobs pass, including actual event delivery,
 pointer warps, graphics pixels and ABI/lifetime checks. The current Python suite
-contains 98 tests: 96 pass and two optional checks are skipped. Public CI uses
+contains 100 tests: 98 pass and two optional checks are skipped. Public CI uses
 authored fixtures and receives no original game files. The same tested native
 launcher still stops the unchanged reference image at its original Steam restart
 boundary (`0x14000c8b4`, 129 OS calls); the Linux loader adds no workaround there.
