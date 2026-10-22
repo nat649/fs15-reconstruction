@@ -191,6 +191,9 @@ def assemble(args):
 /usr/bin/busybox mount -t proc proc /proc
 /usr/bin/busybox mount -t sysfs sysfs /sys
 /usr/bin/busybox mount -t devtmpfs devtmpfs /dev
+# The kernel's 50% rootfs default cannot hold the private world plus tools.
+# This is a storage ceiling, not a reservation; leave RAM for the native engine.
+/usr/bin/busybox mount -o remount,size=75% /
 /usr/bin/busybox mkdir -p /dev/shm /run/sshd /tmp/.X11-unix
 /usr/bin/busybox mkdir -p /usr/local/bin
 /usr/bin/busybox --install -s /usr/local/bin

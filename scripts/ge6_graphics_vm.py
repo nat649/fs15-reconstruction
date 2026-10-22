@@ -46,9 +46,20 @@ def upload(client, source, target, sftp=None):
                 sftp.mkdir(str(parent))
             except OSError:
                 pass
-    sftp.put(str(source), target)
-    metadata=source.stat()
-    sftp.utime(target,(int(metadata.st_atime),int(metadata.st_mtime)))
+    temporary=target+'.ge6-upload-tmp'
+    try:
+        sftp.put(str(source), temporary)
+        metadata=source.stat()
+        sftp.utime(temporary,(int(metadata.st_atime),int(metadata.st_mtime)))
+        # Publish only complete files, including when a previous run is still
+        # mapped. A failed/full-filesystem transfer preserves the old target.
+        sftp.posix_rename(temporary,target)
+    except BaseException:
+        try:
+            sftp.remove(temporary)
+        except OSError:
+            pass
+        raise
 
 
 def main():
