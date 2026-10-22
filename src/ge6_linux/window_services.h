@@ -148,6 +148,22 @@ inline GE6_WIN_MS int track_mouse(MouseTracking* request){
     if(request->flags&0x80000000u){data->mouse_leave=false;return 1;}
     data->mouse_leave=pointer_inside(*data);if(!data->mouse_leave){Point point{};Window root=0,child=0;int x=0,y=0;unsigned state=0;XQueryPointer(display,DefaultRootWindow(display),&root,&child,&point.x,&point.y,&x,&y,&state);messages.push_back(Message{request->window,0x2a3,0,0,0,milliseconds(),point,0});}return 1;
 }
+struct RawInputDevice {uint16_t page,usage;uint32_t flags;uintptr_t target;};
+static_assert(sizeof(RawInputDevice)==16&&offsetof(RawInputDevice,target)==8);
+inline GE6_WIN_MS int register_raw_input(const RawInputDevice* request,uint32_t count,uint32_t size){
+    trace("RegisterRawInputDevices");if(!request||!count||size!=16){set_error(87);return 0;}if(count!=1||request->page!=1||request->usage!=2){set_error(50);return 0;}
+    if((request->flags&1)&&request->target){set_error(87);return 0;}
+    // No raw-input subscription is ever created by this bounded backend.
+    // Removing an absent mouse collection is idempotent, verified on Windows.
+    if(request->flags==1){std::fprintf(stderr,"GE6_X11_RAW_INPUT_REMOVE empty=1 caller=0x%lx\n",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 1;}
+    set_error(50);return 0; // Registration/delivery of Windows raw input is unavailable.
+}
+inline GE6_WIN_MS int clip_cursor(const Rect* requested){
+    trace("ClipCursor");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;
+    // This backend installs no confinement. Releasing that empty state succeeds;
+    // never release another client's X grab or pretend a requested clip exists.
+    if(requested){set_error(50);return 0;}return 1;
+}
 inline GE6_WIN_MS int update_rect(uintptr_t handle,Rect* result,int erase){
     trace("GetUpdateRect");std::lock_guard<std::recursive_mutex> lock(mutex);auto* data=window(handle);if(!data)return 0;events();
     if(data->damaged.empty()){if(result)*result={0,0,0,0};return 0;}
@@ -201,6 +217,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("GetMenu",menu);
     WINDOW_BIND("GetUpdateRect",update_rect);WINDOW_BIND("ValidateRect",validate_rect);
     WINDOW_BIND("TrackMouseEvent",track_mouse);
+    WINDOW_BIND("RegisterRawInputDevices",register_raw_input);WINDOW_BIND("ClipCursor",clip_cursor);
     WINDOW_BIND("SetCursor",set_cursor);WINDOW_BIND("ShowCursor",show_cursor);
     WINDOW_BIND("LoadIconA",load_icon_a);WINDOW_BIND("SendMessageA",send_a);
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);
