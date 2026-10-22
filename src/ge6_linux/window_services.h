@@ -43,6 +43,7 @@ inline GE6_WIN_MS uint32_t double_click(){
     return 500;
 }
 struct Rect {int32_t left,top,right,bottom;};
+inline GE6_WIN_MS int rect_empty(const Rect* rect){trace("IsRectEmpty");if(!rect){stop("USER32.dll","IsRectEmpty(null)",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}return rect->right<=rect->left||rect->bottom<=rect->top;}
 struct Point {int32_t x,y;};
 struct Message {uintptr_t window;uint32_t message,pad;uintptr_t wparam;intptr_t lparam;uint32_t time;Point point;uint32_t pad2;};
 static_assert(sizeof(Message)==48);
@@ -254,6 +255,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("GetUpdateRect",update_rect);WINDOW_BIND("ValidateRect",validate_rect);
     WINDOW_BIND("TrackMouseEvent",track_mouse);
     WINDOW_BIND("RegisterRawInputDevices",register_raw_input);WINDOW_BIND("ClipCursor",clip_cursor);
+    WINDOW_BIND("IsRectEmpty",rect_empty);
     WINDOW_BIND("SetCursor",set_cursor);WINDOW_BIND("ShowCursor",show_cursor);
     WINDOW_BIND("LoadIconA",load_icon_a);WINDOW_BIND("SendMessageA",send_a);
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);

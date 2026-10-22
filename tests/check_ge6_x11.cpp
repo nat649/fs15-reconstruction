@@ -33,6 +33,8 @@ int main(){try{
     require(delete_dc(display_dc),"Display gamma DC leaked");
     ge6_classes::ClassW klass{};klass.procedure=procedure;klass.instance=ge6_images::module;klass.name=reinterpret_cast<const uint16_t*>(u"AuthoredX11Fixture");
     auto atom=ge6_classes::add(&klass);require(atom!=0,"Fixture class registration failed");
+    ge6_windows::Rect normal{10,20,30,40},zero{10,20,10,40},reversed{30,20,10,40};
+    require(!ge6_windows::rect_empty(&normal)&&ge6_windows::rect_empty(&zero)&&ge6_windows::rect_empty(&reversed),"Native cursor-clip rectangle emptiness differs");
     auto hwnd=ge6_windows::create(0,klass.name,reinterpret_cast<const uint16_t*>(u"Authored X11 fixture"),0,40,40,320,180,0,0,klass.instance,1234);
     require(hwnd&&created==1,"Native MS ABI creation/callback failed");
     auto cursor=ge6_windows::load_cursor(0,reinterpret_cast<const uint16_t*>(32512));require(cursor&&ge6_windows::set_cursor(cursor)==0&&ge6_windows::show_cursor(0)==-1&&ge6_windows::show_cursor(1)==0&&ge6_windows::set_cursor(0)==cursor,"Actual X11 cursor/count lifetime differs");
