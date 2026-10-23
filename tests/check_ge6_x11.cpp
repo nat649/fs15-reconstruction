@@ -95,6 +95,40 @@ int main(){try{
     require((uint16_t(ge6_windows::async_key_state(1))&0x8000u)&&!(uint16_t(ge6_windows::async_key_state(2))&0x8000u),"Async query returned logical rather than physical mouse-button state");
     require(button_test(display,1,False,0),"Cannot release swapped physical button");XSync(display,False);
     require(XSetPointerMapping(display,original_map,map_count)==MappingSuccess,"Cannot restore actual pointer mapping");
+    auto key_test=reinterpret_cast<ButtonTest>(dlsym(xtst,"XTestFakeKeyEvent"));require(key_test,"XTest keyboard input unavailable");
+    auto press_key=[&](KeySym sym,bool down){auto key=XKeysymToKeycode(display,sym);require(key&&key_test(display,key,down,0),"Cannot deliver actual XTest key");XSync(display,False);};
+    auto next_key=[&](){ge6_windows::Message m{};require(ge6_windows::peek(&m,hwnd,0x100,0x105,1),"Real X key message lost");return m;};
+    std::array<uint8_t,258> state{};state.front()=0x12;state.back()=0x34;
+    // Both events are already in the X queue: synchronous state must still
+    // change only when each Windows message is removed, not when polled.
+    press_key(XK_w,true);press_key(XK_w,false);
+    ge6_windows::Message pending{};require(ge6_windows::peek(&pending,hwnd,0x100,0x105,0)&&!ge6_windows::key_state('W'),"PM_NOREMOVE advanced keyboard state");
+    auto kd=next_key();require(kd.message==0x100&&kd.wparam=='W'&&uint32_t(kd.lparam)==0x00110001u&&kd.time>0,"W key virtual/physical scan or transition differs");
+    require(ge6_windows::keyboard_snapshot(state.data()+1)&&state['W'+1]==0x80&&state.front()==0x12&&state.back()==0x34,"Keyboard snapshot or 256-byte guard differs");
+    uint16_t chars[]{0x1234,0,0xabcd};require(ge6_windows::to_unicode('W',17,state.data()+1,chars+1,1,0)==1&&chars[1]=='w'&&chars[0]==0x1234&&chars[2]==0xabcd,"Actual layout translation/UTF16 bounds differ");
+    auto ku=next_key();require(ku.message==0x101&&uint32_t(ku.lparam)==0xc0110001u&&!ge6_windows::key_state('W'),"Key release transition/synchronous state differs");
+    press_key(XK_Shift_R,true);kd=next_key();require(kd.wparam==0x10&&uint32_t(kd.lparam)==0x00360001u&&ge6_windows::key_state(0xa1)&&ge6_windows::key_state(0x10)&&!ge6_windows::key_state(0xa0),"Right/aggregate Shift differs");
+    press_key(XK_w,true);kd=next_key();ge6_windows::keyboard_snapshot(state.data()+1);require(ge6_windows::to_unicode('W',17,state.data()+1,chars+1,1,0)==1&&chars[1]=='W',"Real Shift layout text differs");
+    require(uint16_t(ge6_windows::async_key_state('W'))==0x8001u,"Async keyboard did not query actual held key");
+    press_key(XK_w,false);next_key();press_key(XK_Shift_R,false);next_key();
+    press_key(XK_Caps_Lock,true);next_key();press_key(XK_Caps_Lock,false);next_key();
+    require(ge6_windows::key_state(20)==1,"Caps Lock toggle was lost on release");ge6_windows::keyboard_snapshot(state.data()+1);
+    require(ge6_windows::to_unicode('W',17,state.data()+1,chars+1,1,0)==1&&chars[1]=='W',"Caps Lock text differs from X layout");
+    press_key(XK_Caps_Lock,true);next_key();press_key(XK_Caps_Lock,false);next_key();require(!ge6_windows::key_state(20),"Caps Lock did not toggle off");
+    press_key(XK_w,true);next_key();usleep(900000);XSync(display,False);
+    bool repeated=false;while(ge6_windows::peek(&pending,hwnd,0x100,0x105,1)){require(pending.message==0x100&&pending.wparam=='W'&&(uint32_t(pending.lparam)&0x40000000u),"Autorepeat lost held-state bit or invented key release");repeated=true;}
+    require(repeated,"Actual X server autorepeat was not delivered");press_key(XK_w,false);next_key();
+    press_key(XK_Up,true);kd=next_key();require(kd.wparam==0x26&&uint32_t(kd.lparam)==0x01480001u,"Extended arrow scan differs");press_key(XK_Up,false);next_key();
+    press_key(XK_Control_R,true);kd=next_key();require(kd.wparam==0x11&&ge6_windows::key_state(0xa3)&&!ge6_windows::key_state(0xa2),"Extended right Control state differs");press_key(XK_Control_R,false);next_key();
+    press_key(XK_Alt_L,true);kd=next_key();require(kd.message==0x104&&kd.wparam==0x12,"Alt key did not produce system key message");
+    press_key(XK_w,true);kd=next_key();require(kd.message==0x104&&(uint32_t(kd.lparam)&0x20000000u),"Alt context/system key bit missing");press_key(XK_w,false);next_key();press_key(XK_Alt_L,false);next_key();
+    press_key(XK_Return,true);kd=next_key();ge6_windows::keyboard_snapshot(state.data()+1);require(kd.wparam==13&&ge6_windows::to_unicode(13,28,state.data()+1,chars+1,1,0)==1&&chars[1]==13,"Enter transport/text differs");press_key(XK_Return,false);next_key();
+    require(ge6_windows::map_key(0x26,4)==0xe048&&ge6_windows::map_key(0xe01d,3)==0xa3,"Extended MapVirtualKey differs");
+    require(!ge6_windows::keyboard_snapshot(nullptr)&&error==87&&!ge6_windows::to_unicode('W',17,state.data()+1,chars+1,0,0)&&error==87,"Invalid keyboard buffer accepted");
+    // Holding a real key across focus loss must not leave GE6 moving forever.
+    press_key(XK_w,true);next_key();XSetInputFocus(display,PointerRoot,RevertToPointerRoot,CurrentTime);XSync(display,False);
+    ku=next_key();require(ku.message==0x101&&ku.wparam=='W'&&!ge6_windows::key_state('W'),"Focus loss retained held keyboard state");
+    press_key(XK_w,false);ge6_windows::show(hwnd,5);
     dlclose(xtst);
     while(ge6_windows::peek(&activated,hwnd,0x200,0x20e,1)){} // Consume the actual XTest button messages before separate transport fixtures.
     require(!ge6_windows::async_key_state(5)&&error==50&&!ge6_windows::clipboard_sequence_unavailable()&&error==50,"Unavailable extra-button/clipboard access reported data");

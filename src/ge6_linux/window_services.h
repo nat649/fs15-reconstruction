@@ -21,14 +21,14 @@ inline const std::array<uint16_t,128> scan_vk=[] {
     v[69]=0x90;v[70]=0x91;v[71]=0x67;v[72]=0x68;v[73]=0x69;v[74]=0x6d;v[75]=0x64;v[76]=0x65;v[77]=0x66;v[78]=0x6b;v[79]=0x61;v[80]=0x62;v[81]=0x63;v[82]=0x60;v[83]=0x6e;v[86]=0xe2;v[87]=0x7a;v[88]=0x7b;
     return v;
 }();
+#include "keyboard_services.h"
 inline GE6_WIN_MS uint32_t map_key(uint32_t code,uint32_t type){
-    trace("MapVirtualKeyW");std::lock_guard<std::recursive_mutex> lock(mutex);
-    if(type==1)return code<scan_vk.size()?scan_vk[code]:0;
-    if(type==0){for(size_t i=0;i<scan_vk.size();++i)if(scan_vk[i]==code)return uint32_t(i);return 0;}
-    if(type!=2){stop("USER32.dll","MapVirtualKeyW",reinterpret_cast<uintptr_t>(__builtin_return_address(0)));return 0;}
-    if(!connect())return 0;
-    if(code>='A'&&code<='Z')return code; // MAPVK_VK_TO_CHAR always returns uppercase Latin letters.
-    for(size_t i=0;i<scan_vk.size();++i)if(scan_vk[i]==code){auto key=XkbKeycodeToKeysym(display,KeyCode(i+8),0,0);if(key>=32&&key<=126)return uint32_t(key);if((key&0xff000000)==0x01000000)return uint32_t(key&0xffffff);}
+    trace("MapVirtualKeyW");std::lock_guard<std::recursive_mutex> lock(mutex);if(!init_keyboard())return 0;
+    if(type==1||type==3){uint32_t scan=(code&255)|((code&0xff00)==0xe000?0x100:0);for(auto key:host_keys)if(key.scan==scan)return type==3?sided_key(key):key.vk;return 0;}
+    if(type==0||type==4){for(auto key:host_keys)if(key.vk==code||sided_key(key)==code)return type==4?((key.scan&0x100?0xe000u:0u)|(key.scan&255)):(key.scan&255);return 0;}
+    if(type!=2){set_error(87);return 0;}
+    if(code>='A'&&code<='Z')return code;
+    for(size_t i=0;i<host_keys.size();++i)if(host_keys[i].vk==code){auto sym=XkbKeycodeToKeysym(display,KeyCode(i),0,0);if(sym>=32&&sym<=255)return uint32_t(sym);if((sym&0xff000000)==0x01000000)return uint32_t(sym&0xffffff);}
     return 0;
 }
 inline std::map<uintptr_t,Cursor> cursors;
@@ -134,6 +134,7 @@ inline void focus_event(uintptr_t handle,const XFocusChangeEvent& event){
     if((active&&foreground==handle)||(!active&&foreground!=handle))return;
     Window focused=0;int revert=0;XGetInputFocus(display,&focused,&revert);
     auto other=active?foreground:handle_for_xid(focused);
+    if(!active){for(size_t i=0;i<held_keys.size();++i)if(held_keys[i]){auto key=host_keys[i];held_keys[i]=false;auto lp=uint32_t(1u|(uint32_t(key.scan&255)<<16)|(key.scan&0x100?1u<<24:0u)|0xc0000000u);messages.push_back(Message{handle,key.vk==0x12?0x105u:0x101u,0,key.vk,intptr_t(lp),milliseconds(),{0,0},0});}}
     foreground=active?handle:0;
     messages.push_back(Message{handle,6,0,uintptr_t(active),intptr_t(other),milliseconds(),{0,0},0});
     messages.push_back(Message{handle,active?7u:8u,0,other,0,milliseconds(),{0,0},0});
@@ -141,9 +142,20 @@ inline void focus_event(uintptr_t handle,const XFocusChangeEvent& event){
 }
 inline void events(){
     if(!display)return;
-    while(XPending(display)){XEvent event{};XNextEvent(display,&event);uintptr_t handle=0;for(auto& item:windows)if(item.second.xid==event.xany.window){handle=item.first;break;}if(!handle)continue;
+    while(XPending(display)){XEvent event{};XNextEvent(display,&event);if(event.type==MappingNotify){XRefreshKeyboardMapping(&event.xmapping);keyboard_ready=false;continue;}uintptr_t handle=0;for(auto& item:windows)if(item.second.xid==event.xany.window){handle=item.first;break;}if(!handle)continue;
         auto& data=windows.at(handle);uint32_t type=0;uintptr_t wp=0;intptr_t lp=0;
         if(event.type==FocusIn||event.type==FocusOut){focus_event(handle,event.xfocus);continue;}
+        if(event.type==KeyPress||event.type==KeyRelease){
+            if(!init_keyboard())continue;
+            auto code=event.xkey.keycode;if(code>=host_keys.size())continue;auto key=host_keys[code];if(!key.vk)continue;
+            const bool down=event.type==KeyPress,previous=held_keys[code];
+            if(!down&&!detectable_repeat&&XPending(display)){XEvent next_event{};XPeekEvent(display,&next_event);if(next_event.type==KeyPress&&next_event.xkey.window==event.xkey.window&&next_event.xkey.keycode==code&&next_event.xkey.time==event.xkey.time)continue;}
+            held_keys[code]=down;bool alt=(event.xkey.state&Mod1Mask)!=0;bool system=key.vk==0x12||alt;
+            uint32_t packed=1u|(uint32_t(key.scan&255)<<16)|(key.scan&0x100?1u<<24:0u)|(alt?1u<<29:0u)|(previous?1u<<30:0u)|(!down?1u<<31:0u);
+            uint32_t message=system?(down?0x104:0x105):(down?0x100:0x101);
+            messages.push_back(Message{handle,message,0,key.vk,intptr_t(packed),uint32_t(event.xkey.time),{event.xkey.x_root,event.xkey.y_root},0});
+            std::fprintf(stderr,"GE6_X11_KEY_EVENT hwnd=0x%lx message=0x%x vk=0x%x scan=0x%x previous=%d time=%u\n",handle,message,key.vk,key.scan,int(previous),uint32_t(event.xkey.time));continue;
+        }
         Message mouse{};if(mouse_message(handle,data,event,mouse)){messages.push_back(mouse);continue;}
         if(event.type==LeaveNotify&&event.xcrossing.detail!=NotifyInferior&&data.mouse_leave){data.mouse_leave=false;messages.push_back(Message{handle,0x2a3,0,0,0,uint32_t(event.xcrossing.time),{event.xcrossing.x_root,event.xcrossing.y_root},0});continue;}
         switch(event.type){case Expose:data.damaged.push_back({event.xexpose.x,event.xexpose.y,event.xexpose.x+event.xexpose.width,event.xexpose.y+event.xexpose.height});type=15;break;case ConfigureNotify:data.x=event.xconfigure.x;data.y=event.xconfigure.y;data.width=event.xconfigure.width;data.height=event.xconfigure.height;type=5;lp=intptr_t((uint32_t(data.height)<<16)|(uint32_t(data.width)&65535));break;case MapNotify:data.style|=0x10000000;type=24;wp=1;break;case UnmapNotify:data.style&=~0x10000000u;type=24;break;case ClientMessage:if(Atom(event.xclient.data.l[0])==XInternAtom(display,"WM_DELETE_WINDOW",False))type=16;break;default:break;}
@@ -191,10 +203,9 @@ inline GE6_WIN_MS int validate_rect(uintptr_t handle,const Rect* validated){
     if(data->damaged.empty()){messages.erase(std::remove_if(messages.begin(),messages.end(),[handle](const Message& item){return item.window==handle&&item.message==15;}),messages.end());}
     return 1;
 }
-inline GE6_WIN_MS int peek(Message* result,uintptr_t filter,uint32_t first,uint32_t last,uint32_t flags){trace("PeekMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);if(!result||flags>1){set_error(87);return 0;}events();for(auto it=messages.begin();it!=messages.end();++it)if((!filter||filter==it->window)&&((!first&&!last)||(it->message>=first&&it->message<=last))){*result=*it;if(flags&1)messages.erase(it);return 1;}return 0;}
-inline GE6_WIN_MS int translate(const Message*){trace("TranslateMessage");return 0;} // Character translation is added with keyboard event delivery, not synthesized here.
+inline GE6_WIN_MS int peek(Message* result,uintptr_t filter,uint32_t first,uint32_t last,uint32_t flags){trace("PeekMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);if(!result||flags>1){set_error(87);return 0;}events();for(auto it=messages.begin();it!=messages.end();++it)if((!filter||filter==it->window)&&((!first&&!last)||(it->message>=first&&it->message<=last))){*result=*it;if(flags&1){if(result->message==0x100||result->message==0x101||result->message==0x104||result->message==0x105)consume_key(result->message,result->wparam,result->lparam);messages.erase(it);}return 1;}return 0;}
+inline GE6_WIN_MS int translate(const Message*){trace("TranslateMessage");return 0;} // Original SDL calls ToUnicode itself; WM_CHAR delivery is not implemented.
 inline GE6_WIN_MS intptr_t dispatch(const Message* message){trace("DispatchMessageW");std::lock_guard<std::recursive_mutex> lock(mutex);if(!message)return 0;auto* data=window(message->window);return data?data->procedure(message->window,message->message,message->wparam,message->lparam):0;}
-inline GE6_WIN_MS int16_t key_state(int code){trace("GetKeyState");std::lock_guard<std::recursive_mutex> lock(mutex);if(!connect())return 0;char keys[32]{};XQueryKeymap(display,keys);std::vector<int> scans;if(code==0xa0)scans={42};else if(code==0xa1)scans={54};else for(size_t i=0;i<scan_vk.size();++i)if(scan_vk[i]==code)scans.push_back(int(i));for(auto scan:scans){auto key=scan+8;if(keys[key/8]&(1<<(key%8)))return int16_t(0x8000);}return 0;}
 inline std::array<bool,256> async_down{};
 inline GE6_WIN_MS int16_t async_key_state(int code){
     trace("GetAsyncKeyState");std::lock_guard<std::recursive_mutex> lock(mutex);
@@ -210,7 +221,7 @@ inline GE6_WIN_MS int16_t async_key_state(int code){
         if(logical>5){set_error(50);return 0;}
         down=logical&&(state&(Button1Mask<<(logical-1)));
     }else if(code==5||code==6){set_error(50);return 0;} // Core X11 cannot query held buttons 8/9.
-    else down=bool(uint16_t(key_state(code))&0x8000u);
+    else down=physical_key_down(code);
     bool pressed=down&&!async_down[size_t(code)];async_down[size_t(code)]=down;
     // Only observed press transitions set bit 0; transient unobserved presses
     // may be missed. Original SDL activation reads only the current-state bit.
@@ -255,7 +266,7 @@ inline uintptr_t resolve(const std::string& library,const std::string& name){
     WINDOW_BIND("GetUpdateRect",update_rect);WINDOW_BIND("ValidateRect",validate_rect);
     WINDOW_BIND("TrackMouseEvent",track_mouse);
     WINDOW_BIND("RegisterRawInputDevices",register_raw_input);WINDOW_BIND("ClipCursor",clip_cursor);
-    WINDOW_BIND("IsRectEmpty",rect_empty);
+    WINDOW_BIND("IsRectEmpty",rect_empty);WINDOW_BIND("GetKeyboardState",keyboard_snapshot);WINDOW_BIND("ToUnicode",to_unicode);
     WINDOW_BIND("SetCursor",set_cursor);WINDOW_BIND("ShowCursor",show_cursor);
     WINDOW_BIND("LoadIconA",load_icon_a);WINDOW_BIND("SendMessageA",send_a);
     WINDOW_BIND("GetPropW",get_property);WINDOW_BIND("SetPropW",set_property);WINDOW_BIND("RemovePropW",remove_property);

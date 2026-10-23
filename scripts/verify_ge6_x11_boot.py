@@ -149,7 +149,7 @@ def verify(directory,executable,source_commit,run_id,verified_frame=None,frame_f
     commit=subprocess.check_output(['git','rev-parse',source_commit+'^{commit}'],cwd=ROOT,text=True).strip()
     sources=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'src/ge6_linux'],cwd=ROOT,text=True).splitlines()
     sources+=['tests/check_ge6_x11.cpp','.github/workflows/ge6-linux-native-boot.yml']
-    evidence_tools=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/ge6_xorg_dummy.conf','scripts/ge6_vm_run.py','scripts/ge6_vm_pointer.py','scripts/ge6_vm_loading_probe.py','scripts/ge6_vm_end_run.py','scripts/ge6_vm_window_capture.py','scripts/verify_ge6_x11_boot.py','tests/test_ge6_x11_evidence.py']
+    evidence_tools=['scripts/ge6_graphics_vm.py','scripts/setup_ge6_graphics_vm.py','scripts/ge6_xorg_dummy.conf','scripts/ge6_vm_run.py','scripts/ge6_vm_pointer.py','scripts/ge6_vm_keyboard.py','scripts/ge6_vm_loading_probe.py','scripts/ge6_vm_end_run.py','scripts/ge6_vm_window_capture.py','scripts/verify_ge6_x11_boot.py','tests/test_ge6_x11_evidence.py']
     evidence_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     if subprocess.run(['git','diff','--quiet',evidence_commit,'--',*evidence_tools],cwd=ROOT).returncode:
         raise ValueError('Commit the evidence tools before publishing a source-pinned report')
