@@ -18,10 +18,14 @@ repository does not provide a ready-to-download copy of the game.
 x64 engine code and works on missing OS dependencies. ReFarm and the object
 preview remain fixtures. **Original GE6 now displays Bjornholm's 3D farm view
 and HUD on Linux**, with mouse-look response observed in a low-resolution
-software-rendering diagnostic. Keyboard input, vehicle/farming control and
-Windows graphics/gameplay parity remain unverified.
+software-rendering diagnostic. Real keyboard input now dismisses the original
+help message and selects a starting combine with its original vehicle HUD.
+Sustained walking/driving, farming and Windows graphics/gameplay parity remain
+unverified. See the [keyboard and vehicle-selection test](docs/GE6_LINUX_NATIVE_BOOT.md#original-keyboard-transport-2026-10-23).
 
 ![Original GE6 Bjornholm world on Linux, 320 x 180 diagnostic window](docs/screenshots/ge6-linux-native-world-2026-10-22.png)
+
+![Original GE6 starting combine selected with keyboard input on Linux](docs/screenshots/ge6-linux-native-combine-2026-10-23.png)
 
 See the [first original-world frame, captures and limitations](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-world-frame-2026-10-22)
 and [source-pinned world evidence](analysis/ge6-linux-world-validation.json).
@@ -59,8 +63,8 @@ these files remain local. The original loading finishes, its Start button opens
 the new-career welcome dialog, and dismissing the tutorial invitation exposes
 the original 3D scene. See [mission-loading progress](docs/GE6_LINUX_NATIVE_BOOT.md#original-mission-loading-2026-10-22).
 The image retains its previous Windows platform-bootstrap modification; the
-Linux loader adds no instruction patches. Complete renderer parity, keyboard
-control and playable vehicle/farming simulation remain unverified.
+Linux loader adds no instruction patches. Complete renderer/input parity and
+playable vehicle/farming simulation remain unverified.
 See [the original-menu milestone and remaining work](docs/GE6_LINUX_NATIVE_BOOT.md#first-original-main-menu-2026-10-22)
 and its [source-pinned evidence](analysis/ge6-linux-x11-validation.json).
 

@@ -1,6 +1,6 @@
 # Project progress checklist
 
-Updated: **2026-10-22**. Checked items have supporting local build, analysis
+Updated: **2026-10-23**. Checked items have supporting local build, analysis
 or execution evidence. They do not represent a percentage of the full game.
 
 **Exclusive active focus:** original GE6 startup on Linux. The
@@ -191,7 +191,10 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 - [x] Add private world-resource staging, verify all 3,335 staged files against their SHA-256 hashes in the VM, and publish only completed uploads atomically.
 - [x] Honor idempotent removal of an absent raw-mouse subscription and release of empty cursor confinement; raw-input registration and requested confinement remain unavailable.
 - [x] Activate the original SDL top-level window through real X11 focus, honor nonactivating show requests, query actual physical mouse state, and bind the original cursor-rectangle emptiness check.
-- [ ] Complete original window/input event processing and remaining startup dependencies, including keyboard delivery, relative mouse input and focus/capture.
+- [x] Forward actual XKB keyboard input, synchronous key state and simple UTF-16 text into the original SDL handler; validate Enter dismissing the original in-world help and Tab selecting the starting combine. See [scope and captures](docs/GE6_LINUX_NATIVE_BOOT.md#original-keyboard-transport-2026-10-23).
+- [x] Select and render the original starting combine and vehicle HUD through native GE6 keyboard handling on Linux.
+- [ ] Complete original window/input event processing and remaining startup dependencies, including full keyboard/layout parity, relative mouse input and focus/capture.
+- [ ] Verify sustained player walking and vehicle acceleration, steering and braking; keyboard GUI actions and vehicle selection alone do not prove driving.
 - [ ] Validate complete original worker shutdown/CRT cleanup and extend thread/fiber/SEH/APC services where required; authored lifecycle checks do not prove complete game shutdown.
 - [x] Execute original menu/script startup and dispatch original GUI handlers on Linux through the same native runtime.
 - [ ] Complete and validate original game-resource/script services and engine subsystems needed for mission loading and simulation.

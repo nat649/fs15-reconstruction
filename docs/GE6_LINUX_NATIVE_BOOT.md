@@ -40,6 +40,71 @@ The normal dynamic build enables `FS15_GE6_X11=ON`. It needs a real X11 server
 and host OpenGL/GLX drivers. `FS15_GE6_BOOT_STATIC=ON` retains the separate
 headless diagnostic with X11 disabled. Neither build includes original files.
 
+## Original keyboard transport (2026-10-23)
+
+The authored Linux window adapter now forwards real X11 key presses and releases
+as Windows keyboard messages to the original SDL procedure. Physical Set 1 scan
+codes come from actual XKB key names, including extended navigation and right
+modifiers. Virtual keys and simple text use the installed X keyboard layout.
+`GetKeyboardState` and `GetKeyState` advance when a keyboard message is removed
+from the queue; `GetAsyncKeyState` queries the actual server keymap separately.
+The original SDL handler calls `ToUnicode` itself, so this backend does not add
+a second character event. Repeated presses retain the previous-state bit;
+losing focus releases held keys in the adapter's queue.
+
+The authored XTest integration fixture exercises queued press/release ordering,
+nonremoving peeks, guarded 256-byte snapshots and UTF-16 output, Shift/Control/Alt,
+extended arrows, Enter, Caps Lock, actual server autorepeat and focus loss.
+These fixture results establish OS/ABI transport, not gameplay. Dead-key
+composition, AltGr/IME, arbitrary layouts, keyboard grabs and complete Windows
+input parity remain outside the validated scope.
+
+Queue-state semantics follow [GetKeyboardState](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardstate);
+key identity and layout lookup use the [XKB interface](https://www.x.org/archive/X11R7.7/doc/libX11/XKB/xkblib.html).
+
+The private diagnostic helper `scripts/ge6_vm_keyboard.py` requires the observed
+window to own actual X keyboard focus, sends a bounded XTest press, and releases
+the key in `finally`. It never calls game functions or changes game memory.
+
+The same CI-built original-instruction transport was then run privately with
+unchanged original archives, map and starting vehicles. Holding **Enter** across
+several native frames dismisses the original on-foot help message. Holding
+**Tab** selects the original starting combine, changes to its chase camera and
+displays its original vehicle HUD. No replacement player, vehicle, rendering or
+physics code is introduced.
+
+![Original in-world help before Enter](screenshots/ge6-linux-before-keyboard-help-2026-10-23.png)
+
+![Original help dismissed by keyboard input](screenshots/ge6-linux-after-keyboard-help-2026-10-23.png)
+
+![Original combine selected with Tab on Linux](screenshots/ge6-linux-native-combine-2026-10-23.png)
+
+These are direct **320 x 180 window captures**, without scaling or scene redraw.
+The private trial uses the same temporary windowed/MSAA-off profile and explicit
+`GALLIVM_PERF=nopt` diagnostic as the first world frame. A read-only sample of the
+authored draw/swap counters advanced from 711 to 712 frames in twenty seconds;
+another advanced from 740 to 741. Long bounded key holds are therefore needed
+to span actual native updates. The GUI input result is confirmed, but repeated
+forward-input trials do not yet establish sustained player movement or vehicle
+acceleration/braking. Driving, farming, usable frame rate, full-resolution
+rendering and complete Windows behavior parity remain unverified.
+
+Native CI source: `0ad07ed5988515df4d25460094c3f1bc04f209db`,
+[successful Linux CI run](https://github.com/nat649/fs15-reconstruction/actions/runs/39914187891).
+Both native-static and X11 jobs pass, including actual server autorepeat. The
+executed X11 ELF SHA-256 is
+`07a016b73350c3fcc7a10cc6a69dd091cf325bf777ebec3209201924f673a54d`.
+See [source-pinned keyboard/world evidence](../analysis/ge6-linux-keyboard-validation.json).
+The 1,800-second controller limit ends this diagnostic after saving the actual
+final framebuffer (process result 143). No native fault, unbound import or
+original-journal resource error was reported. This is a controlled test stop,
+not validation of original worker/CRT shutdown. The normal 1280 x 720/MSAA-2
+profile was restored afterward.
+
+The separate reference image still stops at `SteamAPI_RestartAppIfNecessary`
+with exit 78 and 129 OS calls. This trial uses the already prepared Local image;
+it does not establish a complete GE6 source decompilation or recompilation.
+
 ## First original world frame (2026-10-22)
 
 **The original GE6 now renders Bjornholm's 3D farm and player HUD on Linux.**
@@ -76,7 +141,7 @@ a PID-pinned Linux handle to the known diagnostic process; the journal records
 an operator stop rather than a timeout or native crash. This does not validate
 GE6's complete normal shutdown path.
 
-Keyboard message delivery, walking, vehicle controls, farming interactions,
+At this 2026-10-22 checkpoint, keyboard message delivery, walking, vehicle controls, farming interactions,
 full-resolution desktop/GPU rendering, audible audio, saves and complete engine
 compatibility remain open. `playable_game_verified` stays false. No ReFarm,
 replacement scene renderer, Wine or Proton is linked to this runtime.
@@ -102,7 +167,7 @@ held extra-button queries and clipboard access remain explicitly unavailable.
 The clipboard sequence returns zero, not an invented clipboard generation.
 See Microsoft's [async-state contract](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getasynckeystate)
 and [clipboard access contract](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclipboardsequencenumber).
-Keyboard message delivery, complete focus/capture semantics and clipboard data
+At this 2026-10-22 checkpoint, keyboard delivery, complete focus/capture semantics and clipboard data
 transport remain open.
 
 The native transport from source `60d7f708022fb184f18363c9c2dc42a779f304e3`
