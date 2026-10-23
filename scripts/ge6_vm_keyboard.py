@@ -16,8 +16,8 @@ def main():
     parser.add_argument('--key', required=True, help='X keysym name, e.g. Return or w')
     parser.add_argument('--hold', type=float, default=0.15)
     args = parser.parse_args()
-    if not 0 < args.hold <= 30:
-        parser.error('--hold must be between 0 and 30 seconds')
+    if not 0 < args.hold <= 120:
+        parser.error('--hold must be between 0 and 120 seconds')
     x = C.CDLL('libX11.so.6')
     xt = C.CDLL('libXtst.so.6')
     x.XOpenDisplay.argtypes = [C.c_char_p]
