@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Install baseline desktop build dependencies
         run: |
+          # The glibc baseline is archived Debian 11; keep signed APT metadata.
+          printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' 'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
           apt-get update -qq
           apt-get install -y --no-install-recommends ca-certificates git build-essential cmake libssl-dev libasound2-dev libpulse-dev libpng-dev libx11-dev libxrandr-dev libgl-dev python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -66,6 +68,9 @@ jobs:
           if command -v pacman >/dev/null 2>&1; then
             pacman -Syu --noconfirm --needed ca-certificates git python libx11 libxrandr libglvnd mesa xorg-server-xvfb xorg-xauth xorg-xrandr libxtst alsa-lib libpulse
           else
+            if [ "$DISTRO" = debian11 ]; then
+              printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' 'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+            fi
             apt-get update -qq
             alsa=libasound2
             if [ "$DISTRO" = debian13 ]; then alsa=libasound2t64; fi
