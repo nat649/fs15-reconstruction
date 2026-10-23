@@ -302,7 +302,9 @@ def check(exe, workdir):
     rejected = subprocess.run([str(exe.resolve()), '--check-alertable-wait'], capture_output=True, text=True, timeout=15)
     assert rejected.returncode == 78 and 'KERNEL32.dll!WaitForSingleObjectEx' in rejected.stderr and 'alertable=1' in rejected.stderr, rejected
     with tempfile.TemporaryDirectory(dir=workdir) as directory:
-        subprocess.run([str(exe.resolve()), '--check-files', directory], check=True, timeout=15)
+        # Python <3.12 can return a relative temporary-directory name here.
+        # This fixture explicitly tests Z:/ absolute Linux-root mapping.
+        subprocess.run([str(exe.resolve()), '--check-files', str(Path(directory).resolve())], check=True, timeout=15)
     path = workdir / 'authored.exe'
     def run(data, mode='--fixture'):
         path.write_bytes(data)
