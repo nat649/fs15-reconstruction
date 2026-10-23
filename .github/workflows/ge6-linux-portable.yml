@@ -1,0 +1,91 @@
+name: GE6 desktop distro compatibility
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  portable-build:
+    runs-on: ubuntu-24.04
+    container: debian:bullseye
+    timeout-minutes: 20
+    steps:
+      - name: Install baseline desktop build dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends ca-certificates git build-essential cmake libssl-dev libasound2-dev libpulse-dev libpng-dev libx11-dev libxrandr-dev libgl-dev python3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Compile the original-instruction desktop transport against glibc 2.31
+        run: |
+          cmake -S src/ge6_linux -B build/ge6-portable -DCMAKE_BUILD_TYPE=Release -DFS15_GE6_PORTABLE=ON
+          cmake --build build/ge6-portable --parallel 2
+          python3 scripts/check_ge6_portable_abi.py build/ge6-portable/FS15GE6LinuxBoot build/ge6-portable/FS15GE6X11Check build/ge6-portable/FS15GE6X11Snapshot --output build/ge6-portable/ABI.json
+      - name: Package only authored runtime and required dependency materials
+        run: |
+          mkdir -p build/ge6-portable-artifact/licenses
+          cp build/ge6-portable/FS15GE6LinuxBoot build/ge6-portable/FS15GE6X11Check build/ge6-portable/FS15GE6X11Snapshot build/ge6-portable/ABI.json build/ge6-portable-artifact/
+          cp -r packaging/ge6-linux build/ge6-portable-artifact/launcher
+          cmake --install build/ge6-portable --prefix build/ge6-portable-installed
+          cp -r build/ge6-portable-installed/share/fs15-reconstruction/ge6-audio-relink build/ge6-portable-artifact/
+          for package in libssl-dev libc6 libstdc++6 libpng-dev zlib1g-dev libx11-dev libxrandr-dev libgl1; do
+            cp /usr/share/doc/$package/copyright build/ge6-portable-artifact/licenses/$package-copyright.txt
+          done
+          sh build/ge6-portable-artifact/ge6-audio-relink/relink.sh
+          ALSOFT_DRIVERS=null build/ge6-portable-artifact/ge6-audio-relink/FS15GE6LinuxBoot-relinked --check-audio
+          python3 -c 'import json,os; from pathlib import Path; Path("build/ge6-portable-artifact/BUILD.json").write_text(json.dumps({"source_commit":os.environ["GITHUB_SHA"],"baseline":"Debian 11 / glibc 2.31","x86_64":True})+"\n")'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ge6-linux-portable-x86_64
+          path: build/ge6-portable-artifact/
+          if-no-files-found: error
+          retention-days: 14
+  distro-runtime:
+    needs: portable-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian11
+            image: debian:bullseye
+          - distro: debian12
+            image: debian:bookworm
+          - distro: debian13
+            image: debian:trixie
+          - distro: arch
+            image: archlinux:base
+    container: ${{ matrix.image }}
+    steps:
+      - name: Install host graphics and test dependencies
+        env:
+          DISTRO: ${{ matrix.distro }}
+        run: |
+          if command -v pacman >/dev/null 2>&1; then
+            pacman -Syu --noconfirm --needed ca-certificates git python libx11 libxrandr libglvnd mesa xorg-server-xvfb xorg-xauth xorg-xrandr libxtst alsa-lib libpulse
+          else
+            apt-get update -qq
+            alsa=libasound2
+            if [ "$DISTRO" = debian13 ]; then alsa=libasound2t64; fi
+            apt-get install -y --no-install-recommends ca-certificates git python3 libx11-6 libxrandr2 libgl1 libgl1-mesa-dri xvfb xauth x11-xserver-utils libxtst6 "$alsa" libpulse0
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ge6-linux-portable-x86_64
+          path: build/portable
+      - name: Verify the same ELF against each distribution's real libraries
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          ALSOFT_DRIVERS: 'null'
+        run: |
+          chmod +x build/portable/FS15GE6LinuxBoot build/portable/FS15GE6X11Check build/portable/FS15GE6X11Snapshot
+          ldd --version | head -1
+          ldd build/portable/FS15GE6LinuxBoot
+          python3 tests/check_ge6_linux_boot.py --exe build/portable/FS15GE6LinuxBoot --workdir build/portable-fixtures
+          xvfb-run -a -s '-screen 0 1280x720x24' build/portable/FS15GE6X11Check
+          python3 -m unittest discover -s tests -p 'test_ge6_tester.py'
