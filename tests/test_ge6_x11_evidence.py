@@ -25,6 +25,18 @@ GE6_GRAPHICS_RESULT=78
 
 
 class X11EvidenceTests(unittest.TestCase):
+    def test_keyboard_transport_does_not_establish_gameplay(self):
+        keys='''GE6_X11_KEY_EVENT hwnd=0x10 message=0x100 vk=0x57 scan=0x11 previous=0 time=123
+GE6_X11_KEY_EVENT hwnd=0x10 message=0x101 vk=0x57 scan=0x11 previous=1 time=456
+GE6_X11_KEY_EVENT hwnd=0x99 message=0x100 vk=0xd scan=0x1c previous=0 time=789
+'''
+        result=observations(LOG+keys)
+        self.assertEqual(len(result['original_window_keyboard_events']),2)
+        self.assertEqual(result['original_window_keyboard_events'][1],dict(
+            message='0x101',virtual_key='0x57',scan_code='0x11',previously_down=True,server_time=456))
+        self.assertFalse(result['playable_game_verified'])
+        self.assertFalse(result['original_frame_rendered'])
+
     def test_early_stop_needs_explicit_operator_record_and_does_not_prove_world(self):
         base=LOG.replace('GE6_BLOCKED_IMPORT GDI32.dll!GetDeviceGammaRamp caller=0x140382f02 os_calls=2000\n','').replace('GE6_GRAPHICS_RESULT=78','GE6_GRAPHICS_RESULT=143')
         for text in (base,base+'GE6_GRAPHICS_OPERATOR_STOP pid=0 monotonic=123.5 reason=world-frame-observed\n',base+'GE6_GRAPHICS_OPERATOR_STOP pid=123 monotonic=123.5 reason=unexpected\n'):
