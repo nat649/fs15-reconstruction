@@ -99,6 +99,7 @@ def verify(all_files=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true', help='Check platform, libraries and X11 without starting GE6')
     parser.add_argument('--verify', action='store_true', help='Verify every packaged file without starting GE6')
     parser.add_argument('--silent', action='store_true', help='Use the explicit silent audio backend')
     parser.add_argument('--seconds', type=int, help='Stop this diagnostic after a bounded number of seconds')
@@ -132,6 +133,9 @@ def main():
     if display.returncode:
         raise RuntimeError('Cannot query the actual X11 display.\n' + display.stderr)
     display_rates(display.stdout)
+    if args.check:
+        print('Platform, libraries and actual display preflight passed; GE6 was not started.')
+        return 0
     profile = ROOT / 'profile'
     if profile.is_symlink():
         raise RuntimeError('Refusing a linked test profile.')
@@ -149,7 +153,9 @@ def main():
         'FarmingSimulator2015Game.exe', '-profile', 'Z:' + profile.as_posix()])
     command = [str(binary), '--image', str(ROOT / 'resources/x64/FarmingSimulator2015Game.exe'),
                '--command-line', command_line]
-    report = dict(scope='Original GE6 Linux test; complete gameplay unverified',
+    build_file = ROOT / 'BUILD.json'
+    build = json.loads(build_file.read_text(encoding='utf-8')) if build_file.is_file() else {}
+    report = dict(build=build, scope='Original GE6 Linux test; complete gameplay unverified',
                   system=platform.system(), machine=platform.machine(), kernel=platform.release(),
                   libc=[libc, libc_version], distro=distro, session=os.environ.get('XDG_SESSION_TYPE'),
                   display_mode=display.stdout, silent_audio=args.silent, result=None, stopped_by=None)
