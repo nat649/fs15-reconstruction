@@ -9,7 +9,10 @@ case "$mode" in
   static) set -- -static ;;
   dynamic) set -- ;;
   x11) set -- -lX11 -lXrandr -lGL ;;
-  x11-portable) set -- -static-libstdc++ -static-libgcc -Wl,-Bstatic -lcrypto -lpng -lz -Wl,-Bdynamic -lX11 -lXrandr -lGL ;;
+  x11-portable)
+    crypto=-lcrypto
+    if [ -f libcrypto.a ]; then crypto=./libcrypto.a; fi
+    set -- -static-libstdc++ -static-libgcc -Wl,-Bstatic "$crypto" -lpng -lz -Wl,-Bdynamic -lX11 -lXrandr -lGL ;;
   *) printf '%s\n' 'Unknown relink mode' >&2; exit 1 ;;
 esac
 case "$mode" in

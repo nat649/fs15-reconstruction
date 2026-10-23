@@ -15,14 +15,24 @@ jobs:
           # The glibc baseline is archived Debian 11; keep signed APT metadata.
           printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' 'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
           apt-get update -qq
-          apt-get install -y --no-install-recommends ca-certificates git build-essential cmake libssl-dev libasound2-dev libpulse-dev libpng-dev libx11-dev libxrandr-dev libgl-dev python3 python3-pip
+          apt-get install -y --no-install-recommends ca-certificates git build-essential cmake libasound2-dev libpulse-dev libpng-dev libx11-dev libxrandr-dev libgl-dev python3 python3-pip
           python3 -m pip install --no-cache-dir cmake==3.28.3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Compile pinned OpenSSL 3 LTS against the same glibc baseline
+        run: |
+          mkdir -p build
+          python3 -c 'import urllib.request; urllib.request.urlretrieve("https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz", "build/openssl-3.5.9.tar.gz")'
+          printf '%s\n' '603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a  build/openssl-3.5.9.tar.gz' | sha256sum -c -
+          tar -xzf build/openssl-3.5.9.tar.gz -C build
+          cd build/openssl-3.5.9
+          ./Configure linux-x86_64 no-shared no-tests no-module no-legacy --prefix="$GITHUB_WORKSPACE/build/openssl" --libdir=lib
+          make -j2 build_libs
+          make install_dev
       - name: Compile the original-instruction desktop transport against glibc 2.31
         run: |
-          cmake -S src/ge6_linux -B build/ge6-portable -DCMAKE_BUILD_TYPE=Release -DFS15_GE6_PORTABLE=ON
+          cmake -S src/ge6_linux -B build/ge6-portable -DCMAKE_BUILD_TYPE=Release -DFS15_GE6_PORTABLE=ON -DOPENSSL_ROOT_DIR="$PWD/build/openssl" -DOPENSSL_INCLUDE_DIR="$PWD/build/openssl/include" -DOPENSSL_CRYPTO_LIBRARY="$PWD/build/openssl/lib/libcrypto.a"
           cmake --build build/ge6-portable --parallel 2
           python3 scripts/check_ge6_portable_abi.py build/ge6-portable/FS15GE6LinuxBoot build/ge6-portable/FS15GE6X11Check build/ge6-portable/FS15GE6X11Snapshot --output build/ge6-portable/ABI.json
       - name: Package only authored runtime and required dependency materials
@@ -32,12 +42,13 @@ jobs:
           cp -r packaging/ge6-linux build/ge6-portable-artifact/launcher
           cmake --install build/ge6-portable --prefix build/ge6-portable-installed
           cp -r build/ge6-portable-installed/share/fs15-reconstruction/ge6-audio-relink build/ge6-portable-artifact/
-          for package in libssl-dev libc6 libstdc++6 libpng-dev zlib1g-dev libx11-dev libxrandr-dev libgl1; do
+          cp build/openssl-3.5.9/LICENSE.txt build/ge6-portable-artifact/licenses/OpenSSL-3.5.9-LICENSE.txt
+          for package in libc6 libstdc++6 libpng-dev zlib1g-dev libx11-dev libxrandr-dev libgl1; do
             cp /usr/share/doc/$package/copyright build/ge6-portable-artifact/licenses/$package-copyright.txt
           done
           sh build/ge6-portable-artifact/ge6-audio-relink/relink.sh
           ALSOFT_DRIVERS=null build/ge6-portable-artifact/ge6-audio-relink/FS15GE6LinuxBoot-relinked --check-audio
-          python3 -c 'import json,os; from pathlib import Path; Path("build/ge6-portable-artifact/BUILD.json").write_text(json.dumps({"source_commit":os.environ["GITHUB_SHA"],"baseline":"Debian 11 / glibc 2.31","x86_64":True})+"\n")'
+          python3 -c 'import json,os; from pathlib import Path; Path("build/ge6-portable-artifact/BUILD.json").write_text(json.dumps({"source_commit":os.environ["GITHUB_SHA"],"baseline":"Debian 11 / glibc 2.31","openssl":"3.5.9","openssl_source_sha256":"603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a","x86_64":True})+"\n")'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ge6-linux-portable-x86_64

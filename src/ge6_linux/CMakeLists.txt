@@ -11,7 +11,7 @@ endif()
 if(FS15_GE6_BOOT_STATIC OR FS15_GE6_PORTABLE)
   set(OPENSSL_USE_STATIC_LIBS TRUE)
 endif()
-find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 function(ge6_png)
   if(FS15_GE6_BOOT_STATIC OR FS15_GE6_PORTABLE)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
@@ -101,3 +101,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/FS15GE6LinuxBoot.dir/main.c
   ${CMAKE_CURRENT_BINARY_DIR}/link-mode.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/relink.sh ${CMAKE_CURRENT_SOURCE_DIR}/AUDIO_DEPENDENCY.md
   DESTINATION share/fs15-reconstruction/ge6-audio-relink)
+if(FS15_GE6_PORTABLE)
+  install(FILES ${OPENSSL_CRYPTO_LIBRARY}
+    DESTINATION share/fs15-reconstruction/ge6-audio-relink RENAME libcrypto.a)
+endif()
