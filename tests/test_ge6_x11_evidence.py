@@ -30,8 +30,11 @@ class X11EvidenceTests(unittest.TestCase):
 GE6_X11_KEY_EVENT hwnd=0x10 message=0x101 vk=0x57 scan=0x11 previous=1 time=456
 GE6_X11_KEY_EVENT hwnd=0x99 message=0x100 vk=0xd scan=0x1c previous=0 time=789
 '''
-        result=observations(LOG+keys)
+        repeated='GE6_X11_KEY_EVENT hwnd=0x10 message=0x100 vk=0x57 scan=0x11 previous=1 time=234\n'
+        result=observations(LOG+keys+repeated*100)
         self.assertEqual(len(result['original_window_keyboard_events']),2)
+        self.assertEqual(result['original_window_keyboard_event_count'],102)
+        self.assertEqual(result['original_window_keyboard_repeat_count'],100)
         self.assertEqual(result['original_window_keyboard_events'][1],dict(
             message='0x101',virtual_key='0x57',scan_code='0x11',previously_down=True,server_time=456))
         self.assertFalse(result['playable_game_verified'])

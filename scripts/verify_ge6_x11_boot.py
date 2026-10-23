@@ -81,11 +81,15 @@ def observations(text):
     focus_events=[dict(active=active=='1',other_window=other,mode=int(mode),detail=int(detail))
                   for owner,active,other,mode,detail in re.findall(r'GE6_X11_FOCUS hwnd=(0x[0-9a-f]+) active=([01]) other=(0x[0-9a-f]+) mode=(\d+) detail=(\d+)',text)
                   if owner==handle]
-    keyboard_events=[dict(message=message,virtual_key=vk,scan_code=scan,
+    all_keyboard_events=[dict(message=message,virtual_key=vk,scan_code=scan,
                           previously_down=previous=='1',server_time=int(timestamp))
                      for owner,message,vk,scan,previous,timestamp in re.findall(
                          r'GE6_X11_KEY_EVENT hwnd=(0x[0-9a-f]+) message=(0x10[0145]) vk=(0x[0-9a-f]+) scan=(0x[0-9a-f]+) previous=([01]) time=(\d+)',text)
                      if owner==handle]
+    # Long holds are needed under TCG. Keep physical transitions and aggregate
+    # autorepeat instead of publishing thousands of duplicate key-down records.
+    keyboard_events=[event for event in all_keyboard_events
+                     if not event['previously_down'] or event['message'] in ('0x101','0x105')]
     return dict(scope='Original GE6 main window and GL context on Linux; rendering requires separate visual confirmation, not a playable game',
                 kernel=kernel[0].strip(),image_kind='local-platform',original_image_sha256=LOCAL_IMAGE,
                 existing_local_platform_bootstrap_modified=True,linux_loader_patches_instructions=False,
@@ -98,6 +102,8 @@ def observations(text):
                 original_window_pointer_events=pointer_events,
                 original_window_focus_events=focus_events,
                 original_window_keyboard_events=keyboard_events,
+                original_window_keyboard_event_count=len(all_keyboard_events),
+                original_window_keyboard_repeat_count=len(all_keyboard_events)-len(keyboard_events),
                 captured_root_dimensions=[int(capture[1]),int(capture[2])],
                 bound_import_names=int(mapped[1]),stop_trampoline_names=int(mapped[2]),
                 stopped_at=boundary,
