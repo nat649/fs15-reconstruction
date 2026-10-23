@@ -46,3 +46,22 @@ Only the Windows router selectors `Generic Software` and `Generic Hardware`
 map to the Linux default device, with a trace. Explicit device names are passed
 unchanged and invalid names fail. No success, device, context or audio sample is
 fabricated. Extensions are not exposed as unsafe System V function pointers.
+
+## Portable desktop variant
+
+`FS15_GE6_PORTABLE=ON` keeps X11/RandR/OpenGL and glibc dynamic, and statically
+links libstdc++, libgcc, libpng, zlib and crypto dependencies. The desktop
+workflow builds on Debian 11 and audits the resulting ELF for glibc <= 2.31
+and absence of distribution-specific C++/PNG/crypto shared requirements.
+It does not bundle GPU drivers or glibc.
+
+The portable workflow builds unmodified OpenSSL **3.5.9** from its official
+release archive, SHA-256
+`603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a`.
+OpenSSL 3 is required by the host's actual provider/random API. Its Apache 2.0
+license accompanies the artifact. The exact `libcrypto.a` is supplied beside
+the OpenAL relinking materials, and `relink.sh` selects it for `x11-portable`.
+To relink that artifact, install a C++ toolchain plus PNG/zlib and X11/RandR/GL
+development libraries, then run `sh relink.sh` from its directory. Rebuilding
+OpenAL from the supplied complete source still allows replacing `libopenal.a`.
+The public source at `BUILD.json`'s commit contains the authored transport.

@@ -10,7 +10,7 @@ the game-resource results requires your own FS15 1.4.2.0 installation. The
 repository does not provide a ready-to-download copy of the game.
 
 [Progress checklist](PROJECT_CHECKLIST.md) · [Build instructions](#build) ·
-[Linux tester guide](docs/LINUX_TESTER.md) ·
+[Original GE6 Linux tester guide](docs/GE6_LINUX_TESTER.md) ·
 [Contributing](CONTRIBUTING.md) · [Project and dependency notices](NOTICE.md)
 
 **Exclusive active focus: original GE6 startup on Linux.** The new
@@ -22,6 +22,13 @@ software-rendering diagnostic. Real keyboard input now dismisses the original
 help message and selects a starting combine with its original vehicle HUD.
 Sustained walking/driving, farming and Windows graphics/gameplay parity remain
 unverified. See the [keyboard and vehicle-selection test](docs/GE6_LINUX_NATIVE_BOOT.md#original-keyboard-transport-2026-10-23).
+
+**Debian / Arch desktop package:** the portable x86_64 transport is compiled on
+Debian 11 and checked for a glibc 2.31 baseline. It bundles the C++/PNG/crypto
+runtime dependencies while using the desktop's own X11, OpenGL and GPU drivers.
+See the [tester instructions and precise compatibility scope](docs/GE6_LINUX_TESTER.md).
+The public CI artifact contains authored host code and dependency materials;
+original game resources remain private.
 
 ![Original GE6 Bjornholm world on Linux, 320 x 180 diagnostic window](docs/screenshots/ge6-linux-native-world-2026-10-22.png)
 

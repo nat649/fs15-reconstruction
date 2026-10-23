@@ -1,0 +1,104 @@
+{
+  "scope": "Authored portable Linux transport compatibility and private original GE6 startup; complete gameplay unverified",
+  "runtime_source_commit": "fbb9eaee0d6d283f65a9ea63cba8da83482e8c94",
+  "compatibility_ci_run": "https://github.com/nat649/fs15-reconstruction/actions/runs/39960605291",
+  "compatibility_ci_source_commit": "b39da99",
+  "same_elf_hashes_in_both_ci_builds": true,
+  "baseline": "Debian 11 / glibc 2.31 / x86_64",
+  "ci_passed_userspaces": [
+    "Debian 11",
+    "Debian 12",
+    "Debian 13",
+    "Arch Linux"
+  ],
+  "ci_scope": [
+    "authored PE / OS / Microsoft ABI fixtures",
+    "actual X11 / OpenGL pixels and input",
+    "launcher unit tests"
+  ],
+  "original_game_files_in_ci": false,
+  "abi": {
+    "status": "passed",
+    "binaries": [
+      {
+        "file": "FS15GE6LinuxBoot",
+        "sha256": "42784d5219eaf05dd3dab3cfb0c72ae8457e85918ac31ad37007ff959a6618ed",
+        "direct_shared_libraries": [
+          "ld-linux-x86-64.so.2",
+          "libGL.so.1",
+          "libX11.so.6",
+          "libXrandr.so.2",
+          "libc.so.6",
+          "libdl.so.2",
+          "libm.so.6",
+          "libpthread.so.0"
+        ],
+        "maximum_glibc": "2.30",
+        "architecture": "x86_64",
+        "host_glibc_and_graphics_used": true,
+        "game_inputs_included": false
+      },
+      {
+        "file": "FS15GE6X11Check",
+        "sha256": "ac1306f3d41b60e308279d5ad16868ce1f7006f1643aa590ab9b5944cc9b5230",
+        "direct_shared_libraries": [
+          "ld-linux-x86-64.so.2",
+          "libGL.so.1",
+          "libX11.so.6",
+          "libXrandr.so.2",
+          "libc.so.6",
+          "libdl.so.2",
+          "libm.so.6",
+          "libpthread.so.0"
+        ],
+        "maximum_glibc": "2.29",
+        "architecture": "x86_64",
+        "host_glibc_and_graphics_used": true,
+        "game_inputs_included": false
+      },
+      {
+        "file": "FS15GE6X11Snapshot",
+        "sha256": "7901cf7cd6cf228ad55f43b4a337a706f45a099a9d3fed02cd37b8a15d0236e5",
+        "direct_shared_libraries": [
+          "ld-linux-x86-64.so.2",
+          "libX11.so.6",
+          "libc.so.6",
+          "libm.so.6",
+          "libpthread.so.0"
+        ],
+        "maximum_glibc": "2.29",
+        "architecture": "x86_64",
+        "host_glibc_and_graphics_used": true,
+        "game_inputs_included": false
+      }
+    ]
+  },
+  "private_original_startup": {
+    "kernel": "6.18.52-0-virt",
+    "glibc": "2.39",
+    "graphics": "Xorg dummy 1280x720 60 Hz; Mesa llvmpipe 25.2.8",
+    "silent_audio": true,
+    "duration_seconds": 90,
+    "presented_frames": 47,
+    "checks": {
+      "original_main_entered": true,
+      "actual_1280_window_created": true,
+      "original_main_window_shown": true,
+      "actual_gl_context_created": true,
+      "original_frames_presented": true,
+      "no_native_fault": true,
+      "no_invoked_unbound_import": true,
+      "original_vehicle_types_loaded": true,
+      "isolated_profile_used": true,
+      "controller_stopped_after_90_seconds": true
+    },
+    "log_sha256": "4e117de147a1f953a800c663912ad6be2584bc72e9b1289d77b227d1d0a50d3c"
+  },
+  "not_validated": [
+    "original full gameplay on each distribution",
+    "hardware GPU drivers",
+    "audible gameplay",
+    "native Wayland",
+    "all Linux distributions"
+  ]
+}

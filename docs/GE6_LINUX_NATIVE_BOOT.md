@@ -1,5 +1,10 @@
 # Original GE6 startup on Linux x64
 
+For the Debian/Arch portable desktop package, see the
+[original GE6 tester guide](GE6_LINUX_TESTER.md). The x86_64 transport has a
+glibc 2.31 build baseline and uses the host X11/OpenGL driver. Compatibility
+fixtures and original-game execution evidence are tracked separately.
+
 The active task is to run the original GIANTS Engine 6 on Linux. ReFarm and the
 separate original-object preview are fixtures, not this runtime or its startup.
 

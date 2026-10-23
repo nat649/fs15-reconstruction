@@ -1,5 +1,9 @@
 # Linux frontend tester package
 
+For the active **original GE6** Linux package, use the
+[original GE6 tester guide](GE6_LINUX_TESTER.md). This page describes the older,
+separate recovered frontend host.
+
 For the separate original-object OpenGL preview, see
 [GE6 object rendering](GE6_OBJECT_RENDERING.md). Its new executable is included
 in current workflow runtime artifacts, but needs one's own staged scene assets.

@@ -16,6 +16,7 @@
 !/analysis/ge6-linux-mission-loading.json
 !/analysis/ge6-linux-world-validation.json
 !/analysis/ge6-linux-keyboard-validation.json
+!/analysis/ge6-linux-distros-validation.json
 !/analysis/ge6-linux-loading-progress.json
 !/analysis/STATUS.md
 !/analysis/rle8-validation.json

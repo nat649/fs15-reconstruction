@@ -139,6 +139,12 @@ services. Full gameplay remains incomplete. See [gameplay scope](docs/GAMEPLAY_R
 
 ## Linux x64 intermediate target
 
+- [x] Build the original-instruction desktop transport on Debian 11 with a glibc 2.31 baseline, static C++/PNG/crypto dependencies and host X11/OpenGL drivers.
+- [x] Run the identical portable ELF's authored OS/ABI and real X11/OpenGL/input fixtures successfully on Debian 11, 12, 13 and Arch Linux. See [distro evidence](analysis/ge6-linux-distros-validation.json).
+- [x] Validate the portable launcher's original GE6 startup privately for 90 seconds: actual 1280 x 720 window, GL context, presented frames and original vehicle-type loading; explicit silent audio and bounded controller stop.
+- [x] Prepare and independently verify a private tester archive with per-file hashes, distro-specific dependency hints, isolated profile and local startup reports. See [original GE6 tester guide](docs/GE6_LINUX_TESTER.md).
+- [ ] Validate sustained original gameplay, audible audio and hardware graphics on Debian and Arch testers' desktops.
+
 - [x] Choose Linux x64 as the next platform target before Switch packaging.
 - [x] Add an installable headless portability host using recovered Camera/view/shader, spatial visibility and lifetime paths, with authored CPU/platform transport.
 - [x] Verify six installed-host CLI/filesystem checks on Windows; original resources are optional and read-only.
