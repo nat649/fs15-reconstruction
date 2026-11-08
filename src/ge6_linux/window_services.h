@@ -134,7 +134,7 @@ inline void focus_event(uintptr_t handle,const XFocusChangeEvent& event){
     if((active&&foreground==handle)||(!active&&foreground!=handle))return;
     Window focused=0;int revert=0;XGetInputFocus(display,&focused,&revert);
     auto other=active?foreground:handle_for_xid(focused);
-    if(!active){for(size_t i=0;i<held_keys.size();++i)if(held_keys[i]){auto key=host_keys[i];held_keys[i]=false;auto lp=uint32_t(1u|(uint32_t(key.scan&255)<<16)|(key.scan&0x100?1u<<24:0u)|0xc0000000u);messages.push_back(Message{handle,key.vk==0x12?0x105u:0x101u,0,key.vk,intptr_t(lp),milliseconds(),{0,0},0});}}
+    if(!active){for(auto& held:held_keys)if(held.vk){auto key=held;held={};auto lp=uint32_t(1u|(uint32_t(key.scan&255)<<16)|(key.scan&0x100?1u<<24:0u)|0xc0000000u);messages.push_back(Message{handle,key.vk==0x12?0x105u:0x101u,0,key.vk,intptr_t(lp),milliseconds(),{0,0},0});}}
     foreground=active?handle:0;
     messages.push_back(Message{handle,6,0,uintptr_t(active),intptr_t(other),milliseconds(),{0,0},0});
     messages.push_back(Message{handle,active?7u:8u,0,other,0,milliseconds(),{0,0},0});
@@ -146,11 +146,12 @@ inline void events(){
         auto& data=windows.at(handle);uint32_t type=0;uintptr_t wp=0;intptr_t lp=0;
         if(event.type==FocusIn||event.type==FocusOut){focus_event(handle,event.xfocus);continue;}
         if(event.type==KeyPress||event.type==KeyRelease){
-            if(!init_keyboard())continue;
-            auto code=event.xkey.keycode;if(code>=host_keys.size())continue;auto key=host_keys[code];if(!key.vk)continue;
-            const bool down=event.type==KeyPress,previous=held_keys[code];
+            auto code=event.xkey.keycode;if(code>=host_keys.size())continue;
+            const bool down=event.type==KeyPress,previous=held_keys[code].vk!=0;
+            if(!init_keyboard()&&!previous)continue;
+            auto key=previous?held_keys[code]:host_keys[code];if(!key.vk)continue;
             if(!down&&!detectable_repeat&&XPending(display)){XEvent next_event{};XPeekEvent(display,&next_event);if(next_event.type==KeyPress&&next_event.xkey.window==event.xkey.window&&next_event.xkey.keycode==code&&next_event.xkey.time==event.xkey.time)continue;}
-            held_keys[code]=down;bool alt=(event.xkey.state&Mod1Mask)!=0;bool system=key.vk==0x12||alt;
+            held_keys[code]=down?key:HostKey{};bool alt=(event.xkey.state&Mod1Mask)!=0;bool system=key.vk==0x12||alt;
             uint32_t packed=1u|(uint32_t(key.scan&255)<<16)|(key.scan&0x100?1u<<24:0u)|(alt?1u<<29:0u)|(previous?1u<<30:0u)|(!down?1u<<31:0u);
             uint32_t message=system?(down?0x104:0x105):(down?0x100:0x101);
             messages.push_back(Message{handle,message,0,key.vk,intptr_t(packed),uint32_t(event.xkey.time),{event.xkey.x_root,event.xkey.y_root},0});

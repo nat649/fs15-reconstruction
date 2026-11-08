@@ -129,6 +129,45 @@ int main(){try{
     press_key(XK_w,true);next_key();XSetInputFocus(display,PointerRoot,RevertToPointerRoot,CurrentTime);XSync(display,False);
     ku=next_key();require(ku.message==0x101&&ku.wparam=='W'&&!ge6_windows::key_state('W'),"Focus loss retained held keyboard state");
     press_key(XK_w,false);ge6_windows::show(hwnd,5);
+    // Change the real server mapping while a physical key is held, as when a
+    // desktop switches layouts. Its old press must have an old-identity release;
+    // only a fresh press adopts the new mapping. Restore even on test failure.
+    {
+        auto physical=XKeysymToKeycode(display,XK_w);int width=0;
+        auto* original=XGetKeyboardMapping(display,physical,1,&width);
+        require(physical&&original&&width>=2,"Cannot inspect real keyboard mapping");
+        struct MappingRestore {
+            Display* display;unsigned physical;int width;std::vector<KeySym> symbols;ButtonTest key_test;
+            ~MappingRestore(){key_test(display,physical,False,0);XChangeKeyboardMapping(display,int(physical),width,symbols.data(),1);XSync(display,False);}
+        } restore{display,physical,width,std::vector<KeySym>(original,original+width),key_test};
+        XFree(original);
+        auto physical_key=[&](bool down){require(key_test(display,physical,down,0),"Cannot deliver remapped physical key");XSync(display,False);};
+        auto release_message=[&](unsigned vk){
+            bool released=false;
+            while(ge6_windows::peek(&pending,hwnd,0x100,0x105,1)){
+                require(!released&&pending.wparam==vk,"Remapped key release changed identity or duplicated release");
+                if(pending.message==0x101){require((uint32_t(pending.lparam)&0xc0000000u)==0xc0000000u,"Remapped key-up transition differs");released=true;}
+                else require(pending.message==0x100&&(uint32_t(pending.lparam)&0x40000000u),"Held remapped key invented a fresh press");
+            }
+            require(released&&!ge6_windows::key_state(int(vk)),"Remapped release left the original virtual key held");
+        };
+        physical_key(true);kd=next_key();require(kd.wparam=='W',"Initial physical key identity differs");
+        std::vector<KeySym> replacement(size_t(width),NoSymbol);replacement[0]=XK_z;replacement[1]=XK_Z;
+        XChangeKeyboardMapping(display,physical,width,replacement.data(),1);XSync(display,False);ge6_windows::events();
+        require(ge6_windows::map_key(17,1)=='Z',"Server MappingNotify did not refresh the actual key mapping");
+        usleep(900000);XSync(display,False);bool remapped_repeat=false;
+        while(ge6_windows::peek(&pending,hwnd,0x100,0x105,1)){
+            require(pending.message==0x100&&pending.wparam=='W'&&(uint32_t(pending.lparam)&0x40000000u),"Layout switch changed an existing autorepeat identity");remapped_repeat=true;
+        }
+        require(remapped_repeat,"Actual server autorepeat after remapping was not delivered");
+        physical_key(false);release_message('W');require(!ge6_windows::key_state('Z'),"Remapping invented a Z press");
+        physical_key(true);kd=next_key();require(kd.wparam=='Z'&&!(uint32_t(kd.lparam)&0x40000000u),"Fresh press did not adopt changed server mapping");
+        XChangeKeyboardMapping(display,physical,width,restore.symbols.data(),1);XSync(display,False);ge6_windows::events();
+        require(ge6_windows::map_key(17,1)=='W',"Cannot restore original keyboard mapping");
+        XSetInputFocus(display,PointerRoot,RevertToPointerRoot,CurrentTime);XSync(display,False);
+        release_message('Z');require(!ge6_windows::key_state('W'),"Focus loss after remapping left a stale key");
+        physical_key(false);ge6_windows::show(hwnd,5);
+    }
     dlclose(xtst);
     while(ge6_windows::peek(&activated,hwnd,0x200,0x20e,1)){} // Consume the actual XTest button messages before separate transport fixtures.
     require(!ge6_windows::async_key_state(5)&&error==50&&!ge6_windows::clipboard_sequence_unavailable()&&error==50,"Unavailable extra-button/clipboard access reported data");

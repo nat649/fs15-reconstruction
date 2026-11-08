@@ -3,7 +3,9 @@
 // physical scans use actual XKB key names, text uses the installed X layout.
 struct HostKey {uint16_t scan=0,vk=0;};
 inline std::array<HostKey,256> host_keys{};
-inline std::array<bool,256> held_keys{};
+// Pin each physical press to the identity GE6 received. A layout change while
+// held must not turn its repeat/release into a different virtual key.
+inline std::array<HostKey,256> held_keys{};
 inline thread_local std::array<uint8_t,256> keyboard_state{};
 inline bool keyboard_ready=false,detectable_repeat=false;
 inline bool init_keyboard(){
@@ -15,15 +17,16 @@ inline bool init_keyboard(){
     auto row=[&](const char* prefix,int first,int count){for(int i=0;i<count;++i){char name[16]{};std::snprintf(name,sizeof(name),"%s%02d",prefix,i+1);scans[name]=uint16_t(first+i);}};
     row("AE",2,12);row("AD",16,12);row("AC",30,11);row("AB",44,10);row("FK",59,10);
     for(auto item:{std::pair<const char*,uint16_t>{"ESC",1},{"BKSP",14},{"TAB",15},{"RTRN",28},{"LCTL",29},{"TLDE",41},{"LFSH",42},{"BKSL",43},{"RTSH",54},{"KPMU",55},{"LALT",56},{"SPCE",57},{"CAPS",58},{"NMLK",69},{"SCLK",70},{"KP7",71},{"KP8",72},{"KP9",73},{"KPSU",74},{"KP4",75},{"KP5",76},{"KP6",77},{"KPAD",78},{"KP1",79},{"KP2",80},{"KP3",81},{"KP0",82},{"KPDL",83},{"LSGT",86},{"FK11",87},{"FK12",88},{"KPEN",0x11c},{"RCTL",0x11d},{"KPDV",0x135},{"PRSC",0x137},{"RALT",0x138},{"HOME",0x147},{"UP",0x148},{"PGUP",0x149},{"LEFT",0x14b},{"RGHT",0x14d},{"END",0x14f},{"DOWN",0x150},{"PGDN",0x151},{"INS",0x152},{"DELE",0x153},{"LWIN",0x15b},{"RWIN",0x15c},{"MENU",0x15d}})scans[item.first]=item.second;
+    std::array<HostKey,256> mapped{};
     for(unsigned i=kb->min_key_code;i<=kb->max_key_code;++i){
         std::string name(kb->names->keys[i].name,4);while(!name.empty()&&(name.back()==' '||name.back()==0))name.pop_back();auto it=scans.find(name);if(it==scans.end())continue;
         uint16_t scan=it->second,vk=scan<128?scan_vk[scan]:0;
         switch(scan){case 0x11c:vk=13;break;case 0x11d:vk=0x11;break;case 0x135:vk=0x6f;break;case 0x137:vk=0x2c;break;case 0x138:vk=0x12;break;case 0x147:vk=0x24;break;case 0x148:vk=0x26;break;case 0x149:vk=0x21;break;case 0x14b:vk=0x25;break;case 0x14d:vk=0x27;break;case 0x14f:vk=0x23;break;case 0x150:vk=0x28;break;case 0x151:vk=0x22;break;case 0x152:vk=0x2d;break;case 0x153:vk=0x2e;break;case 0x15b:vk=0x5b;break;case 0x15c:vk=0x5c;break;case 0x15d:vk=0x5d;break;default:break;}
         auto sym=XkbKeycodeToKeysym(display,KeyCode(i),0,0);if(sym>='a'&&sym<='z')vk=uint16_t(sym-'a'+'A');else if(sym>='A'&&sym<='Z')vk=uint16_t(sym);
-        host_keys[i]={scan,vk};
+        mapped[i]={scan,vk};
     }
     XkbFreeKeyboard(kb,XkbAllComponentsMask,True);Bool supported=False;XkbSetDetectableAutoRepeat(display,True,&supported);detectable_repeat=supported;
-    keyboard_ready=true;return true;
+    host_keys=mapped;keyboard_ready=true;return true;
 }
 inline uint16_t sided_key(HostKey key){if(key.vk==0x10)return key.scan==54?0xa1:0xa0;if(key.vk==0x11)return key.scan&0x100?0xa3:0xa2;if(key.vk==0x12)return key.scan&0x100?0xa5:0xa4;return key.vk;}
 inline void consume_key(uint32_t message,uintptr_t vk,intptr_t lp){
